@@ -1,0 +1,50 @@
+{
+  "name": "will-mag-api",
+  "type": "module",
+  "version": "1.0.0",
+  "license": "MIT",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node ./dist/src/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "npm run lint --fix",
+    "test": "cross-env NODE_ENV=test vitest",
+    "build": "tsc && tsc-alias",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev --name",
+    "db:studio": "prisma studio",
+    "db:push": "prisma db push",
+    "db:pull": "prisma db pull",
+    "clean": "rm -rf node_modules"
+
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.3",
+    "@hono/zod-openapi": "^0.19.8",
+    "@libsql/client": "^0.15.8",
+    "@prisma/client": "^6.12.0",
+    "@scalar/hono-api-reference": "^0.9.2",
+    "dotenv": "^17.0.1",
+    "dotenv-expand": "^12.0.2",
+    "hono": "^4.7.11",
+    "hono-pino": "^0.9.1",
+    "pino": "^9.7.0",
+    "pino-pretty": "^13.0.0",
+    "stoker": "1.4.3",
+    "zod": "^3.25.51"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^4.13.3",
+    "@types/node": "^24.0.10",
+    "cross-env": "^7.0.3",
+    "eslint": "^9.28.0",
+    "eslint-plugin-format": "^1.0.1",
+    "prisma": "^6.12.0",
+    "prisma-zod-generator": "^1.1.0",
+    "tsc-alias": "^1.8.16",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.1"
+  }
+}

@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// generator zod {
+//   provider          = "prisma-zod-generator"
+//   output            = "../src/db/validation"
+//   isGenerateSelect  = true
+//   isGenerateInclude = true
+// }
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  emailVerified DateTime?
+
+  username  String  @unique @db.VarChar(50)
+  firstName String @db.VarChar(100)
+  lastName  String? @db.VarChar(100)
+
+  role     User_Role @default(USER)
+  isActive Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum User_Role {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum Payment_Status {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}

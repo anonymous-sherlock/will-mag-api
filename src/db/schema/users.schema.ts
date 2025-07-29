@@ -6,17 +6,16 @@ export type UserRole = z.infer<typeof UserRoleEnum>;
 
 // Zod schema for the User model
 export const UserSchema = z.object({
-  id: z.number().int().nonnegative(),
+  id: z.string().cuid(),
   email: z.string().email(),
   emailVerified: z.date().nullable().optional(),
 
   username: z.string().max(50),
-  firstName: z.string().max(100),
-  lastName: z.string().max(100).nullable().optional(),
+  name: z.string().max(255),
 
   role: UserRoleEnum.default("USER"),
   isActive: z.boolean().default(true),
-
+  image: z.string().nullable().optional(),
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),
 });

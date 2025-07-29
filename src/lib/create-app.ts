@@ -23,7 +23,14 @@ export function createBaseAPIRouter() {
 export default function createApp() {
   const app = createRouter();
   app
-    .use(cors())
+    .use(cors({
+      origin: ["http://localhost:3001", "http://localhost:3000", "http://localhost:5173"],
+      allowHeaders: ["Content-Type", "Authorization"],
+      allowMethods: ["POST", "GET", "OPTIONS"],
+      exposeHeaders: ["Content-Length"],
+      maxAge: 600,
+      credentials: true,
+    }))
     .use(requestId())
     .use(serveEmojiFavicon("📝"))
     .use(pinoLogger());

@@ -21,7 +21,7 @@ export default function configureOpenAPI(app: AppOpenAPI) {
       layout: "modern",
       defaultHttpClient: {
         targetKey: "js",
-        clientKey: "fetch",
+        clientKey: "axios",
       },
     }),
   );

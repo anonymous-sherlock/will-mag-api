@@ -15,27 +15,205 @@ datasource db {
 //   isGenerateInclude = true
 // }
 
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?  @db.Text
+  userAgent String?  @db.Text
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String    @db.Text
+  providerId            String    @db.Text
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?   @db.Text
+  password              String?   @db.Text
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String    @db.Text
+  value      String    @db.Text
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
 model User {
-  id            Int       @id @default(autoincrement())
+  id            String    @id @default(cuid())
   email         String    @unique
   emailVerified DateTime?
+  username      String    @unique @db.VarChar(50)
 
-  username  String  @unique @db.VarChar(50)
-  firstName String @db.VarChar(100)
-  lastName  String? @db.VarChar(100)
+  role          User_Role @default(USER)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  profile       Profile?
+  name          String    @db.Text
+  image         String?   @db.Text
+  sessions      Session[]
+  accounts      Account[]
 
-  role     User_Role @default(USER)
-  isActive Boolean   @default(true)
+  @@map("user")
+}
+
+model Profile {
+  id String @id @default(cuid())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  bio String? @db.Text
+
+  avatarUrl String? @db.VarChar(255)
+
+  phone String? @db.VarChar(20)
+
+  address     String
+  city        String?   @db.VarChar(100)
+  country     String?   @db.VarChar(100)
+  postalCode  String?   @db.VarChar(20)
+  dateOfBirth DateTime?
+  gender      String?   @db.VarChar(50)
+
+  hobbiesAndPassions    String?                @db.Text
+  paidVoterMessage      String?                @db.Text
+  freeVoterMessage      String?                @db.Text
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  contestParticipations ContestParticipation[] @relation("ProfileContestParticipations")
+
+  votesCast      Vote[]    @relation("VotesCast")
+  votesReceived  Vote[]    @relation("VotesReceived")
+  lastFreeVoteAt DateTime?
+
+  profilePhotos Media[] @relation("profileImages")
+
+  coverImageId String? @unique
+  coverImage   Media?  @relation("profileCoverImage", fields: [coverImageId], references: [id])
+}
+
+model Contest {
+  id                    String                  @id @default(cuid())
+  name                  String                  @db.VarChar(255)
+  description           String
+  prizePool             Float
+  contestParticipations ContestParticipation[]  @relation("ContestParticipants")
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  awards                ContestAwardOnContest[]
+  votes                 Vote[]
+
+  startDate DateTime
+  endDate   DateTime
+}
+
+model Award {
+  id       String                  @id @default(cuid())
+  name     String
+  icon     String
+  contests ContestAwardOnContest[]
+
+  @@map("contest_awards")
+}
+
+model ContestAwardOnContest {
+  contest   Contest @relation(fields: [contestId], references: [id])
+  contestId String
+  award     Award   @relation(fields: [awardId], references: [id])
+  awardId   String
+
+  @@unique([contestId, awardId])
+}
+
+model Vote {
+  id        String @id @default(cuid())
+  voterId   String
+  voteeId   String
+  contestId String
+
+  voter   Profile @relation("VotesCast", fields: [voterId], references: [id])
+  votee   Profile @relation("VotesReceived", fields: [voteeId], references: [id])
+  contest Contest @relation(fields: [contestId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([voterId, voteeId, contestId])
+}
+
+model ContestParticipation {
+  id        String  @id @default(cuid())
+  profileId String
+  contestId String
+  profile   Profile @relation("ProfileContestParticipations", fields: [profileId], references: [id], onDelete: Cascade)
+  contest   Contest @relation("ContestParticipants", fields: [contestId], references: [id], onDelete: Cascade)
+
+  coverImage String? @db.VarChar(255)
+  isApproved Boolean @default(false)
+
+  isParticipating Boolean? @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
 
 enum User_Role {
   USER
   ADMIN
   MODERATOR
 }
+
+
+model Media {
+  id               String      @id @default(uuid())
+  key              String
+  name             String
+  url              String
+  size             Int?
+  type             String?
+  originalFileName String?
+  status           File_Status @default(PROCESSING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile   Profile? @relation("profileImages", fields: [profileId], references: [id], map: "medias_profileId_fkey")
+  profileId String?
+
+  profileCoverImage Profile? @relation("profileCoverImage")
+
+  @@map("medias")
+}
+
+enum File_Status {
+  FAILED
+  PROCESSING
+  COMPLETED
+}
+
 
 enum Payment_Status {
   PENDING

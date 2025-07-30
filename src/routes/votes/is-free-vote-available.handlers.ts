@@ -1,20 +1,19 @@
-import * as HttpStatusCodes from "stoker/http-status-codes";
+import * as HttpStatusCodes from 'stoker/http-status-codes';
 
-import type { AppRouteHandler } from "@/lib/types";
+import type { AppRouteHandler } from '@/lib/types';
 
-import { db } from "@/db";
+import { db } from '@/db';
+import { IsFreeVoteAvailable } from './is-free-vote-available.routes';
 
-export const isFreeVoteAvailable: AppRouteHandler<any> = async (c) => {
-  const { profileId } = c.req.query();
-  if (!profileId) {
-    return c.json({ error: "profileId is required" }, HttpStatusCodes.UNPROCESSABLE_ENTITY);
-  }
+export const isFreeVoteAvailable: AppRouteHandler<IsFreeVoteAvailable> = async c => {
+  const { profileId } = c.req.valid('json');
+
   const profile = await db.profile.findUnique({
     where: { id: profileId },
     select: { lastFreeVoteAt: true },
   });
   if (!profile) {
-    return c.json({ error: "Profile not found" }, HttpStatusCodes.NOT_FOUND);
+    return c.json({ error: 'Profile not found' }, HttpStatusCodes.NOT_FOUND);
   }
   if (!profile.lastFreeVoteAt) {
     return c.json({ available: true }, HttpStatusCodes.OK);

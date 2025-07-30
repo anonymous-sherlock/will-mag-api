@@ -18,6 +18,10 @@ const EnvSchema = z.object({
   DATABASE_URL: z.string().url(),
   DATABASE_AUTH_TOKEN: z.string().optional(),
   PUBLIC_APP_URL: z.string().default("http://localhost:9999"),
+  BETTER_AUTH_SECRET: z.string(),
+  BETTER_AUTH_URL: z.string().url(),
+  UPLOADTHING_TOKEN: z.string(),
+
 }).superRefine((input, ctx) => {
   if (input.NODE_ENV === "production" && !input.DATABASE_AUTH_TOKEN) {
     ctx.addIssue({

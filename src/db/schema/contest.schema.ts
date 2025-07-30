@@ -6,19 +6,16 @@ export const ContestSchema = z.object({
     example: "Big Weekend",
   }),
   description: z.string(),
-
-  createdAt: z.date().default(() => new Date()),
-  updatedAt: z.date().default(() => new Date()),
-  startDate: z.date().default(() => new Date()),
+  createdAt: z.preprocess(val => val ? new Date(val as string) : undefined, z.date().default(() => new Date())),
+  updatedAt: z.preprocess(val => val ? new Date(val as string) : undefined, z.date().default(() => new Date())),
+  startDate: z.preprocess(val => val ? new Date(val as string) : undefined, z.date().default(() => new Date())),
   prizePool: z.number(),
-  endDate: z.date().default(() => {
+  endDate: z.preprocess(val => val ? new Date(val as string) : undefined, z.date().default(() => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     return tomorrow;
-  }),
-
+  })),
 });
-
 export const ContestInsertSchema = ContestSchema.omit({
   id: true,
   createdAt: true,

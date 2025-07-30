@@ -1,7 +1,7 @@
 import { createBaseAPIRouter } from "@/lib/create-app";
 
-import * as handlers from "./contest.handlers";
-import * as routes from "./contest.routes";
+import * as handlers from "./profile.handlers";
+import * as routes from "./profile.routes";
 
 const router = createBaseAPIRouter()
   .openapi(routes.list, handlers.list)

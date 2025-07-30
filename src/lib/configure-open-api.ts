@@ -11,6 +11,7 @@ export default function configureOpenAPI(app: AppOpenAPI) {
       version: packageJSON.version,
       title: "Will Magazine API",
     },
+
   });
 
   app.get(
@@ -23,6 +24,10 @@ export default function configureOpenAPI(app: AppOpenAPI) {
         targetKey: "js",
         clientKey: "axios",
       },
+      sources: [
+        { url: "/api/v1/doc", title: "Will Mag API" },
+        { url: "/api/v1/auth/doc", title: "Authentication" },
+      ],
     }),
   );
 }

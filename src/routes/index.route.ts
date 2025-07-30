@@ -24,7 +24,7 @@ const router = createRouter()
     }),
     (c) => {
       return c.json({
-        "message": "Will Mag API API",
+        "message": "Will Mag API",
         "API Doc": `${env.PUBLIC_APP_URL}/api/v1/doc`,
         "API Reference": `${env.PUBLIC_APP_URL}/reference`,
       }, HttpStatusCodes.OK);

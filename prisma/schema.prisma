@@ -61,21 +61,24 @@ model Verification {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  emailVerified DateTime?
-  username      String    @unique @db.VarChar(50)
+  id              String  @id @default(cuid())
+  email           String
+  emailVerified   Boolean
+  username        String? @db.VarChar(100)
+  displayUsername String?
 
-  role          User_Role @default(USER)
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  profile       Profile?
-  name          String    @db.Text
-  image         String?   @db.Text
-  sessions      Session[]
-  accounts      Account[]
+  role      User_Role @default(USER)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  profile   Profile?
+  name      String    @db.Text
+  image     String?   @db.Text
+  sessions  Session[]
+  accounts  Account[]
 
+  @@unique([email])
+  @@unique([username])
   @@map("user")
 }
 
@@ -153,7 +156,7 @@ model Vote {
   voterId   String
   voteeId   String
   contestId String
-
+  type      Vote_Type @default(FREE)
   voter   Profile @relation("VotesCast", fields: [voterId], references: [id])
   votee   Profile @relation("VotesReceived", fields: [voteeId], references: [id])
   contest Contest @relation(fields: [contestId], references: [id])
@@ -163,6 +166,11 @@ model Vote {
   @@unique([voterId, voteeId, contestId])
 }
 
+enum Vote_Type {
+  FREE
+  PAID
+}
+
 model ContestParticipation {
   id        String  @id @default(cuid())
   profileId String
@@ -170,7 +178,7 @@ model ContestParticipation {
   profile   Profile @relation("ProfileContestParticipations", fields: [profileId], references: [id], onDelete: Cascade)
   contest   Contest @relation("ContestParticipants", fields: [contestId], references: [id], onDelete: Cascade)
 
-  coverImage String? @db.VarChar(255)
+  coverImage String? @db.VarChar(512)
   isApproved Boolean @default(false)
 
   isParticipating Boolean? @default(true)
@@ -179,13 +187,11 @@ model ContestParticipation {
   updatedAt DateTime @updatedAt
 }
 
-
 enum User_Role {
   USER
   ADMIN
   MODERATOR
 }
-
 
 model Media {
   id               String      @id @default(uuid())
@@ -213,7 +219,6 @@ enum File_Status {
   PROCESSING
   COMPLETED
 }
-
 
 enum Payment_Status {
   PENDING

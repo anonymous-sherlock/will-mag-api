@@ -3,120 +3,120 @@ import * as HttpStatusCodes from "stoker/http-status-codes";
 import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema } from "stoker/openapi/schemas";
 
-import { ContestInsertSchema, ContestSelectSchema } from "@/db/schema/contest.schema";
+import { ProfileInsertSchema, ProfileSelectSchema } from "@/db/schema/profile.schema";
 
-const tags = ["Contest"];
+const tags = ["Profile"];
 
 export const list = createRoute({
-  path: "/contest",
+  path: "/profile",
   method: "get",
   tags,
-  summary: "Contest Lists",
-  description: "Get a list of all contest",
+  summary: "Profile Lists",
+  description: "Get a list of all profiles",
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      z.array(ContestSelectSchema),
-      "The contest lists",
+      z.array(ProfileSelectSchema),
+      "The profile lists",
     ),
   },
 });
 
 export const create = createRoute({
-  path: "/contest",
+  path: "/profile",
   method: "post",
-  summary: "Contest Create",
+  summary: "Profile Create",
   request: {
     body: jsonContentRequired(
-      ContestInsertSchema,
-      "The Contest to create",
+      ProfileInsertSchema,
+      "The Profile to create",
     ),
   },
   tags,
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      ContestSelectSchema,
-      "The created contest",
+      ProfileSelectSchema,
+      "The created profile",
     ),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
-      createErrorSchema(ContestInsertSchema),
+      createErrorSchema(ProfileInsertSchema),
       "The validation error(s)",
     ),
   },
 });
 
 export const getOne = createRoute({
-  path: "/contest/{id}",
+  path: "/profile/{id}",
   method: "get",
   tags,
-  summary: "Get Contest",
-  description: "Get a specific contest by ID",
+  summary: "Get Profile",
+  description: "Get a specific profile by ID",
   request: {
     params: z.object({
-      id: z.string().describe("The contest ID"),
+      id: z.string().describe("The profile ID"),
     }),
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      ContestSelectSchema,
-      "The contest",
+      ProfileSelectSchema,
+      "The profile",
     ),
     [HttpStatusCodes.NOT_FOUND]: jsonContent(
       createErrorSchema(z.object({})),
-      "Contest not found",
+      "Profile not found",
     ),
   },
 });
 
 export const patch = createRoute({
-  path: "/contest/{id}",
+  path: "/profile/{id}",
   method: "patch",
   tags,
-  summary: "Update Contest",
-  description: "Update a specific contest by ID",
+  summary: "Update Profile",
+  description: "Update a specific profile by ID",
   request: {
     params: z.object({
-      id: z.string().describe("The contest ID"),
+      id: z.string().describe("The profile ID"),
     }),
     body: jsonContentRequired(
-      ContestInsertSchema.partial(),
-      "The contest data to update",
+      ProfileInsertSchema.partial(),
+      "The profile data to update",
     ),
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      ContestSelectSchema,
-      "The updated contest",
+      ProfileSelectSchema,
+      "The updated profile",
     ),
     [HttpStatusCodes.NOT_FOUND]: jsonContent(
       createErrorSchema(z.object({})),
-      "Contest not found",
+      "Profile not found",
     ),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
-      createErrorSchema(ContestInsertSchema.partial()),
+      createErrorSchema(ProfileInsertSchema.partial()),
       "The validation error(s)",
     ),
   },
 });
 
 export const remove = createRoute({
-  path: "/contest/{id}",
+  path: "/profile/{id}",
   method: "delete",
   tags,
-  summary: "Delete Contest",
-  description: "Delete a specific contest by ID",
+  summary: "Delete Profile",
+  description: "Delete a specific profile by ID",
   request: {
     params: z.object({
-      id: z.string().describe("The contest ID"),
+      id: z.string().describe("The profile ID"),
     }),
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
       z.object({ message: z.string() }),
-      "Contest deleted successfully",
+      "Profile deleted successfully",
     ),
     [HttpStatusCodes.NOT_FOUND]: jsonContent(
       createErrorSchema(z.object({})),
-      "Contest not found",
+      "Profile not found",
     ),
   },
 });

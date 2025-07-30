@@ -4,87 +4,87 @@ import type { AppRouteHandler } from "@/lib/types";
 
 import { db } from "@/db";
 
-import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from "./contest.routes";
+import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from "./profile.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
-  const contest = await db.contest.findMany();
+  const profiles = await db.profile.findMany();
 
-  return c.json(contest, HttpStatusCodes.OK);
+  return c.json(profiles, HttpStatusCodes.OK);
 };
 
 export const create: AppRouteHandler<CreateRoute> = async (c) => {
-  const contest = c.req.valid("json");
-  const insertedContest = await db.contest.create({
-    data: contest,
+  const profile = c.req.valid("json");
+  const insertedProfile = await db.profile.create({
+    data: profile,
   });
-  return c.json(insertedContest, HttpStatusCodes.OK);
+  return c.json(insertedProfile, HttpStatusCodes.OK);
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
   const { id } = c.req.valid("param");
-  const contest = await db.contest.findUnique({
+  const profile = await db.profile.findUnique({
     where: { id },
   });
 
-  if (!contest) {
+  if (!profile) {
     return c.json({
       error: {
-        issues: [{ code: "NOT_FOUND", path: ["id"], message: "Contest not found" }],
+        issues: [{ code: "NOT_FOUND", path: ["id"], message: "Profile not found" }],
         name: "NotFoundError",
       },
       success: false,
     }, HttpStatusCodes.NOT_FOUND);
   }
 
-  return c.json(contest, HttpStatusCodes.OK);
+  return c.json(profile, HttpStatusCodes.OK);
 };
 
 export const patch: AppRouteHandler<PatchRoute> = async (c) => {
   const { id } = c.req.valid("param");
-  const contestData = c.req.valid("json");
+  const profileData = c.req.valid("json");
 
-  const contest = await db.contest.findUnique({
+  const profile = await db.profile.findUnique({
     where: { id },
   });
 
-  if (!contest) {
+  if (!profile) {
     return c.json({
       error: {
-        issues: [{ code: "NOT_FOUND", path: ["id"], message: "Contest not found" }],
+        issues: [{ code: "NOT_FOUND", path: ["id"], message: "Profile not found" }],
         name: "NotFoundError",
       },
       success: false,
     }, HttpStatusCodes.NOT_FOUND);
   }
 
-  const updatedContest = await db.contest.update({
+  const updatedProfile = await db.profile.update({
     where: { id },
-    data: contestData,
+    data: profileData,
   });
 
-  return c.json(updatedContest, HttpStatusCodes.OK);
+  return c.json(updatedProfile, HttpStatusCodes.OK);
 };
 
 export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
   const { id } = c.req.valid("param");
 
-  const contest = await db.contest.findUnique({
+  const profile = await db.profile.findUnique({
     where: { id },
   });
 
-  if (!contest) {
+  if (!profile) {
     return c.json({
       error: {
-        issues: [{ code: "NOT_FOUND", path: ["id"], message: "Contest not found" }],
+        issues: [{ code: "NOT_FOUND", path: ["id"], message: "Profile not found" }],
         name: "NotFoundError",
       },
       success: false,
     }, HttpStatusCodes.NOT_FOUND);
   }
 
-  await db.contest.delete({
+  await db.profile.delete({
     where: { id },
   });
 
-  return c.json({ message: "Contest deleted successfully" }, HttpStatusCodes.OK);
+  return c.json({ message: "Profile deleted successfully" }, HttpStatusCodes.OK);
 };

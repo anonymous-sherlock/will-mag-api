@@ -11,10 +11,6 @@ export default function configureOpenAPI(app: AppOpenAPI) {
       version: packageJSON.version,
       title: "Will Magazine API",
     },
-    security: [{
-      "Bearer Auth": [],
-    }],
-
   });
 
   app.get(

@@ -1,24 +1,27 @@
 import { z } from "zod";
 
-// Enum schema for User_Role
-export const UserRoleEnum = z.enum(["USER", "ADMIN", "MODERATOR"]);
+import type { User as PrismaUser } from "@/generated/prisma/index";
+
+import { User_Role } from "@/generated/prisma/index";
+// Use Prisma's generated enum
+export const UserRoleEnum = z.nativeEnum(User_Role);
 export type UserRole = z.infer<typeof UserRoleEnum>;
 
 // Zod schema for the User model
 export const UserSchema = z.object({
-  id: z.string().cuid(),
+  id: z.string(),
   email: z.string().email(),
-  emailVerified: z.date().nullable().optional(),
+  emailVerified: z.boolean(),
+  username: z.string().max(100).nullable(),
+  displayUsername: z.string().nullable(),
+  name: z.string(),
+  role: UserRoleEnum,
+  isActive: z.boolean(),
+  image: z.string().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 
-  username: z.string().max(50),
-  name: z.string().max(255),
-
-  role: UserRoleEnum.default("USER"),
-  isActive: z.boolean().default(true),
-  image: z.string().nullable().optional(),
-  createdAt: z.date().default(() => new Date()),
-  updatedAt: z.date().default(() => new Date()),
-});
+}) satisfies z.ZodType<PrismaUser>;
 
 export const UserInsertSchema = UserSchema.omit({
   id: true,
@@ -26,7 +29,10 @@ export const UserInsertSchema = UserSchema.omit({
   updatedAt: true,
   isActive: true,
   emailVerified: true,
-
+  displayUsername: true,
+}).extend({
+  password: z.string().min(6),
+  username: z.string().min(3).max(100),
 });
 
 export type User = z.infer<typeof UserSchema>;

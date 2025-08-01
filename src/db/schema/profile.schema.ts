@@ -4,13 +4,13 @@ import type { Profile } from "@/generated/prisma/index";
 
 export const ProfileSchema = z.object({
   id: z.string(),
-  userId: z.string().cuid(),
+  userId: z.string(),
   bio: z.string().nullable(),
   avatarUrl: z.string().max(255).nullable(),
-  phone: z.string().max(20).nullable(),
+  phone: z.string().max(20).nullable().openapi({ example: "+1 210 456 2719" }),
   address: z.string(),
-  city: z.string().max(100).nullable(),
-  country: z.string().max(100).nullable(),
+  city: z.string().max(100).nullable().openapi({ example: "Manhattan" }),
+  country: z.string().max(100).nullable().openapi({ example: "United States" }),
   postalCode: z.string().max(20).nullable(),
   dateOfBirth: z.date().nullable(),
   gender: z.string().max(50).nullable(),

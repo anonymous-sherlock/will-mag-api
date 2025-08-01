@@ -17,7 +17,14 @@ export function createRouter() {
   });
 }
 export function createBaseAPIRouter() {
-  return createRouter().basePath("api/v1");
+  const app = createRouter().basePath("api/v1");
+  app.openAPIRegistry.registerComponent("securitySchemes", "Bearer Auth", {
+    type: "http",
+    scheme: "bearer",
+    bearerFormat: "bearer",
+    description: "Include this token in the 'Authorization' header",
+  });
+  return app;
 }
 
 export default function createApp() {

@@ -3,8 +3,12 @@ import type { Schema } from "hono";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
+import * as HttpStatusCodes from "stoker/http-status-codes";
+import * as HttpStatusPhrases from "stoker/http-status-phrases";
 import { notFound, onError, serveEmojiFavicon } from "stoker/middlewares";
 import { defaultHook } from "stoker/openapi";
+import { jsonContent } from "stoker/openapi/helpers";
+import { createMessageObjectSchema } from "stoker/openapi/schemas";
 
 import { pinoLogger } from "@/middlewares/pino-logger";
 

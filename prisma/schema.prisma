@@ -16,7 +16,7 @@ datasource db {
 // }
 
 model Session {
-  id        String   @id
+  id        String   @id @default(cuid())
   expiresAt DateTime
   token     String
   createdAt DateTime
@@ -31,7 +31,7 @@ model Session {
 }
 
 model Account {
-  id                    String    @id
+  id                    String    @id @default(cuid())
   accountId             String    @db.Text
   providerId            String    @db.Text
   userId                String
@@ -152,14 +152,14 @@ model ContestAwardOnContest {
 }
 
 model Vote {
-  id        String @id @default(cuid())
+  id        String    @id @default(cuid())
   voterId   String
   voteeId   String
   contestId String
   type      Vote_Type @default(FREE)
-  voter   Profile @relation("VotesCast", fields: [voterId], references: [id])
-  votee   Profile @relation("VotesReceived", fields: [voteeId], references: [id])
-  contest Contest @relation(fields: [contestId], references: [id])
+  voter     Profile   @relation("VotesCast", fields: [voterId], references: [id])
+  votee     Profile   @relation("VotesReceived", fields: [voteeId], references: [id])
+  contest   Contest   @relation(fields: [contestId], references: [id])
 
   createdAt DateTime @default(now())
 

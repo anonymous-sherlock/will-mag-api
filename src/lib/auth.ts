@@ -22,7 +22,7 @@ export const auth = betterAuth({
   user: {
     additionalFields: {
       role: {
-        type: "string",
+        type: ["USER", "ADMIN", "MODERATOR"],
         input: false,
       },
       emailVerified: {
@@ -54,6 +54,9 @@ export const auth = betterAuth({
   ],
 
   advanced: {
+    database: {
+      generateId: false,
+    },
     crossSubDomainCookies: {
       enabled: true,
     },

@@ -108,6 +108,8 @@ model Profile {
   updatedAt             DateTime               @updatedAt
   contestParticipations ContestParticipation[] @relation("ProfileContestParticipations")
 
+  contestWon Contest[]
+
   votesCast      Vote[]    @relation("VotesCast")
   votesReceived  Vote[]    @relation("VotesReceived")
   lastFreeVoteAt DateTime?
@@ -128,9 +130,10 @@ model Contest {
   updatedAt             DateTime                @updatedAt
   awards                ContestAwardOnContest[]
   votes                 Vote[]
-
-  startDate DateTime
-  endDate   DateTime
+  winner                Profile?                @relation(fields: [profileId], references: [id])
+  startDate             DateTime
+  endDate               DateTime
+  profileId             String?
 }
 
 model Award {

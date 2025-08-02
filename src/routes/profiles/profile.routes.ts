@@ -39,7 +39,7 @@ export const create = createRoute({
   },
   tags,
   responses: {
-    [HttpStatusCodes.OK]: jsonContent(
+    [HttpStatusCodes.CREATED]: jsonContent(
       ProfileSelectSchema,
       "The created profile",
     ),

@@ -32,7 +32,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c) => {
   const insertedProfile = await db.profile.create({
     data: profile,
   });
-  return c.json(insertedProfile, HttpStatusCodes.OK);
+  return c.json(insertedProfile, HttpStatusCodes.CREATED);
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {

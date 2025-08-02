@@ -1,5 +1,4 @@
 import * as HttpStatusCodes from "stoker/http-status-codes";
-import * as HttpStatusPhrases from "stoker/http-status-phrases";
 
 import type { AppRouteHandler } from "@/types/types";
 
@@ -44,7 +43,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c) => {
   if (!user) {
     return sendErrorResponse(c, "notFound", "User not found");
   }
-  return c.json(user, HttpStatusCodes.OK);
+  return c.json(user, HttpStatusCodes.CREATED);
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {

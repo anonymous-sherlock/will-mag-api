@@ -32,7 +32,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c) => {
   const insertedContest = await db.contest.create({
     data: contest,
   });
-  return c.json(insertedContest, HttpStatusCodes.OK);
+  return c.json(insertedContest, HttpStatusCodes.CREATED);
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {

@@ -43,7 +43,7 @@ pnpm test
 ## Tasks
 
 - [ ] Integrate Stripe
-- [ ] Implement notification api
+- [x] Implement notification api
 - [ ] Implement file uploads logic
 - [ ] Write logic to pay for extra votes
 - [x] Create common schema for query params options with page, limit.

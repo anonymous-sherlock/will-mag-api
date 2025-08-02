@@ -14,11 +14,20 @@ export const PaginationResponseSchema = z.object({
   previousPage: z.number().nullable().openapi({ example: null }),
 });
 
-export function createPaginatedResponseSchema<T extends z.ZodTypeAny>(dataSchema: T) {
+export function createPaginatedResponseSchema<
+  T extends z.ZodTypeAny,
+  K extends string = "data",
+>(dataSchema: T, key: K = "data" as K) {
   return z.object({
-    data: z.array(dataSchema),
+    [key]: z.array(dataSchema),
     pagination: PaginationResponseSchema,
-  });
+  }) as z.ZodObject<
+    {
+      [P in K]: z.ZodArray<T>;
+    } & {
+      pagination: typeof PaginationResponseSchema;
+    }
+  >;
 }
 
 export interface PaginatedResponse<T> {

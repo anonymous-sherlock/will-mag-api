@@ -67,15 +67,16 @@ model User {
   username        String? @db.VarChar(100)
   displayUsername String?
 
-  role      User_Role @default(USER)
-  isActive  Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  profile   Profile?
-  name      String    @db.Text
-  image     String?   @db.Text
-  sessions  Session[]
-  accounts  Account[]
+  role         User_Role      @default(USER)
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  profile      Profile?
+  name         String         @db.Text
+  image        String?        @db.Text
+  sessions     Session[]
+  accounts     Account[]
+  notification Notification[]
 
   @@unique([email])
   @@unique([username])
@@ -116,8 +117,33 @@ model Profile {
 
   profilePhotos Media[] @relation("profileImages")
 
-  coverImageId String? @unique
-  coverImage   Media?  @relation("profileCoverImage", fields: [coverImageId], references: [id])
+  coverImageId String?        @unique
+  coverImage   Media?         @relation("profileCoverImage", fields: [coverImageId], references: [id])
+  notification Notification[]
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  message   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile   Profile? @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isRead    Boolean  @default(false)
+  archived  Boolean  @default(false)
+  icon      Icon? @default(INFO)
+  action    String?
+
+  @@index([profileId])
+  @@index([userId])
+}
+
+enum Icon {
+  WARNING
+  SUCESS
+  INFO
 }
 
 model Contest {

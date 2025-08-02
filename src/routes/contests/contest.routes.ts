@@ -4,6 +4,8 @@ import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema } from "stoker/openapi/schemas";
 
 import { ContestInsertSchema, ContestSelectSchema } from "@/db/schema/contest.schema";
+import { NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
+import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
 
 const tags = ["Contest"];
 
@@ -13,11 +15,15 @@ export const list = createRoute({
   tags,
   summary: "Contest Lists",
   description: "Get a list of all contest",
+  request: {
+    query: PaginationQuerySchema,
+  },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      z.array(ContestSelectSchema),
+      createPaginatedResponseSchema(ContestSelectSchema),
       "The contest lists",
     ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
   },
 });
 
@@ -37,6 +43,7 @@ export const create = createRoute({
       ContestSelectSchema,
       "The created contest",
     ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(ContestInsertSchema),
       "The validation error(s)",
@@ -60,10 +67,8 @@ export const getOne = createRoute({
       ContestSelectSchema,
       "The contest",
     ),
-    [HttpStatusCodes.NOT_FOUND]: jsonContent(
-      createErrorSchema(z.object({})),
-      "Contest not found",
-    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse(),
   },
 });
 
@@ -87,10 +92,8 @@ export const patch = createRoute({
       ContestSelectSchema,
       "The updated contest",
     ),
-    [HttpStatusCodes.NOT_FOUND]: jsonContent(
-      createErrorSchema(z.object({})),
-      "Contest not found",
-    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse(),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(ContestInsertSchema.partial()),
       "The validation error(s)",
@@ -114,10 +117,8 @@ export const remove = createRoute({
       z.object({ message: z.string() }),
       "Contest deleted successfully",
     ),
-    [HttpStatusCodes.NOT_FOUND]: jsonContent(
-      createErrorSchema(z.object({})),
-      "Contest not found",
-    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse(),
   },
 });
 

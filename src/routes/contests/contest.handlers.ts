@@ -1,15 +1,30 @@
 import * as HttpStatusCodes from "stoker/http-status-codes";
 
-import type { AppRouteHandler } from "@/lib/types";
+import type { AppRouteHandler } from "@/types/types";
 
 import { db } from "@/db";
+import { sendErrorResponse } from "@/helpers/send-error-response";
+import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from "./contest.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
-  const contest = await db.contest.findMany();
+  const { page, limit } = c.req.valid("query");
 
-  return c.json(contest, HttpStatusCodes.OK);
+  const [contests, total] = await Promise.all([
+    db.contest.findMany({
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    db.contest.count(),
+  ]);
+
+  const pagination = calculatePaginationMetadata(total, page, limit);
+
+  return c.json({
+    data: contests,
+    pagination,
+  }, HttpStatusCodes.OK);
 };
 
 export const create: AppRouteHandler<CreateRoute> = async (c) => {
@@ -26,15 +41,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
     where: { id },
   });
 
-  if (!contest) {
-    return c.json({
-      error: {
-        issues: [{ code: "NOT_FOUND", path: ["id"], message: "Contest not found" }],
-        name: "NotFoundError",
-      },
-      success: false,
-    }, HttpStatusCodes.NOT_FOUND);
-  }
+  if (!contest)
+    return sendErrorResponse(c, "notFound", "Contest not found");
 
   return c.json(contest, HttpStatusCodes.OK);
 };
@@ -48,13 +56,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
   });
 
   if (!contest) {
-    return c.json({
-      error: {
-        issues: [{ code: "NOT_FOUND", path: ["id"], message: "Contest not found" }],
-        name: "NotFoundError",
-      },
-      success: false,
-    }, HttpStatusCodes.NOT_FOUND);
+    return sendErrorResponse(c, "notFound", "Contest not found");
   }
 
   const updatedContest = await db.contest.update({
@@ -73,13 +75,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
   });
 
   if (!contest) {
-    return c.json({
-      error: {
-        issues: [{ code: "NOT_FOUND", path: ["id"], message: "Contest not found" }],
-        name: "NotFoundError",
-      },
-      success: false,
-    }, HttpStatusCodes.NOT_FOUND);
+    return sendErrorResponse(c, "notFound", "Contest not found");
   }
 
   await db.contest.delete({

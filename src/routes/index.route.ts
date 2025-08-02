@@ -12,6 +12,7 @@ const router = createRouter()
       tags: ["Index"],
       method: "get",
       path: "/",
+      hide: true,
       responses: {
         [HttpStatusCodes.OK]: jsonContent(
           createMessageObjectSchema("Will Mag API").extend({

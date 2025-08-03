@@ -4,6 +4,8 @@ import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema } from "stoker/openapi/schemas";
 
 import { ProfileInsertSchema, ProfileSelectSchema } from "@/db/schema/profile.schema";
+import { NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
+import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
 
 const tags = ["Profile"];
 
@@ -13,11 +15,15 @@ export const list = createRoute({
   tags,
   summary: "Profile Lists",
   description: "Get a list of all profiles",
+  request: {
+    query: PaginationQuerySchema,
+  },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      z.array(ProfileSelectSchema),
+      createPaginatedResponseSchema(ProfileSelectSchema),
       "The profile lists",
     ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
   },
 });
 
@@ -33,10 +39,11 @@ export const create = createRoute({
   },
   tags,
   responses: {
-    [HttpStatusCodes.OK]: jsonContent(
+    [HttpStatusCodes.CREATED]: jsonContent(
       ProfileSelectSchema,
       "The created profile",
     ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(ProfileInsertSchema),
       "The validation error(s)",
@@ -60,10 +67,7 @@ export const getOne = createRoute({
       ProfileSelectSchema,
       "The profile",
     ),
-    [HttpStatusCodes.NOT_FOUND]: jsonContent(
-      createErrorSchema(z.object({})),
-      "Profile not found",
-    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
   },
 });
 
@@ -87,10 +91,7 @@ export const patch = createRoute({
       ProfileSelectSchema,
       "The updated profile",
     ),
-    [HttpStatusCodes.NOT_FOUND]: jsonContent(
-      createErrorSchema(z.object({})),
-      "Profile not found",
-    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(ProfileInsertSchema.partial()),
       "The validation error(s)",
@@ -114,10 +115,7 @@ export const remove = createRoute({
       z.object({ message: z.string() }),
       "Profile deleted successfully",
     ),
-    [HttpStatusCodes.NOT_FOUND]: jsonContent(
-      createErrorSchema(z.object({})),
-      "Profile not found",
-    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
   },
 });
 

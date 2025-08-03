@@ -1,11 +1,12 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import * as HttpStatusCodes from "stoker/http-status-codes";
-import * as HttpStatusPhrases from "stoker/http-status-phrases";
 import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
-import { createErrorSchema, createMessageObjectSchema } from "stoker/openapi/schemas";
+import { createErrorSchema } from "stoker/openapi/schemas";
 
 import { ProfileSelectSchema } from "@/db/schema/profile.schema";
 import { UserInsertSchema, UserSelectSchema } from "@/db/schema/users.schema";
+import { ForbiddenResponse, NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
+import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
 
 const tags = ["Users"];
 
@@ -14,11 +15,15 @@ export const list = createRoute({
   method: "get",
   tags,
   summary: "User Lists",
+  request: {
+    query: PaginationQuerySchema,
+  },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      z.array(UserSelectSchema),
+      createPaginatedResponseSchema(UserSelectSchema),
       "The user list",
     ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
   },
 });
 
@@ -34,18 +39,12 @@ export const create = createRoute({
   },
   tags,
   responses: {
-    [HttpStatusCodes.OK]: jsonContent(
+    [HttpStatusCodes.CREATED]: jsonContent(
       UserSelectSchema,
       "The created user",
     ),
-    [HttpStatusCodes.FORBIDDEN]: jsonContent(
-      createErrorSchema(z.object({})),
-      "Admin access required",
-    ),
-    [HttpStatusCodes.NOT_FOUND]: jsonContent(
-      createErrorSchema(z.object({})),
-      "User not found",
-    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("User not found"),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(UserInsertSchema),
       "The validation error(s)",
@@ -69,10 +68,8 @@ export const getOne = createRoute({
       UserSelectSchema,
       "The user",
     ),
-    [HttpStatusCodes.NOT_FOUND]: jsonContent(
-      createErrorSchema(z.object({})),
-      "User not found",
-    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("User not found"),
   },
 });
 
@@ -96,18 +93,9 @@ export const patch = createRoute({
       UserSelectSchema,
       "The updated user",
     ),
-    [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
-      createErrorSchema(z.object({})),
-      "Authentication required",
-    ),
-    [HttpStatusCodes.FORBIDDEN]: jsonContent(
-      createErrorSchema(z.object({})),
-      "Insufficient permissions",
-    ),
-    [HttpStatusCodes.NOT_FOUND]: jsonContent(
-      createErrorSchema(z.object({})),
-      "User not found",
-    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.FORBIDDEN]: ForbiddenResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("User not found"),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(UserInsertSchema.partial()),
       "The validation error(s)",
@@ -131,18 +119,9 @@ export const remove = createRoute({
       z.object({ message: z.string() }),
       "User deleted successfully",
     ),
-    [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
-      createErrorSchema(z.object({})),
-      "Authentication required",
-    ),
-    [HttpStatusCodes.FORBIDDEN]: jsonContent(
-      createErrorSchema(z.object({})),
-      "Insufficient permissions",
-    ),
-    [HttpStatusCodes.NOT_FOUND]: jsonContent(
-      createErrorSchema(z.object({})),
-      "User not found",
-    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.FORBIDDEN]: ForbiddenResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("User not found"),
   },
 });
 
@@ -167,14 +146,8 @@ export const getUserProfile = createRoute({
       ProfileSelectSchema,
       "The user's profile",
     ),
-    [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
-      createErrorSchema(z.object({})),
-      "Authentication required",
-    ),
-    [HttpStatusCodes.NOT_FOUND]: jsonContent(
-      createErrorSchema(z.object({})),
-      "User or profile not found",
-    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("User not found"),
   },
 });
 

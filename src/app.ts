@@ -1,3 +1,4 @@
+
 import configureOpenAPI from '@/lib/configure-open-api';
 import createApp from '@/lib/create-app';
 import auth from '@/routes/auth/auth.index';
@@ -13,6 +14,7 @@ import stripeWebhookRouter from './routes/webhooks/stripe/stripe.index';
 
 const app = createApp();
 configureOpenAPI(app);
+
 
 const routes = [
   index,

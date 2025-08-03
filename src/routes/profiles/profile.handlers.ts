@@ -1,15 +1,30 @@
 import * as HttpStatusCodes from "stoker/http-status-codes";
 
-import type { AppRouteHandler } from "@/lib/types";
+import type { AppRouteHandler } from "@/types/types";
 
 import { db } from "@/db";
+import { sendErrorResponse } from "@/helpers/send-error-response";
+import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 
 import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from "./profile.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
-  const profiles = await db.profile.findMany();
+  const { page, limit } = c.req.valid("query");
 
-  return c.json(profiles, HttpStatusCodes.OK);
+  const [profiles, total] = await Promise.all([
+    db.profile.findMany({
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    db.profile.count(),
+  ]);
+
+  const pagination = calculatePaginationMetadata(total, page, limit);
+
+  return c.json({
+    data: profiles,
+    pagination,
+  }, HttpStatusCodes.OK);
 };
 
 export const create: AppRouteHandler<CreateRoute> = async (c) => {
@@ -17,7 +32,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c) => {
   const insertedProfile = await db.profile.create({
     data: profile,
   });
-  return c.json(insertedProfile, HttpStatusCodes.OK);
+  return c.json(insertedProfile, HttpStatusCodes.CREATED);
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
@@ -26,15 +41,8 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
     where: { id },
   });
 
-  if (!profile) {
-    return c.json({
-      error: {
-        issues: [{ code: "NOT_FOUND", path: ["id"], message: "Profile not found" }],
-        name: "NotFoundError",
-      },
-      success: false,
-    }, HttpStatusCodes.NOT_FOUND);
-  }
+  if (!profile)
+    return sendErrorResponse(c, "notFound", "Profile not found");
 
   return c.json(profile, HttpStatusCodes.OK);
 };
@@ -47,15 +55,8 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
     where: { id },
   });
 
-  if (!profile) {
-    return c.json({
-      error: {
-        issues: [{ code: "NOT_FOUND", path: ["id"], message: "Profile not found" }],
-        name: "NotFoundError",
-      },
-      success: false,
-    }, HttpStatusCodes.NOT_FOUND);
-  }
+  if (!profile)
+    return sendErrorResponse(c, "notFound", "Profile not found");
 
   const updatedProfile = await db.profile.update({
     where: { id },
@@ -72,15 +73,8 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
     where: { id },
   });
 
-  if (!profile) {
-    return c.json({
-      error: {
-        issues: [{ code: "NOT_FOUND", path: ["id"], message: "Profile not found" }],
-        name: "NotFoundError",
-      },
-      success: false,
-    }, HttpStatusCodes.NOT_FOUND);
-  }
+  if (!profile)
+    return sendErrorResponse(c, "notFound", "Profile not found");
 
   await db.profile.delete({
     where: { id },

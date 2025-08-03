@@ -4,6 +4,7 @@ import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema } from "stoker/openapi/schemas";
 
 import { ContestInsertSchema, ContestInsertSchemaWithAwards, ContestSelectSchema, ContestSelectSchemaWithAwards } from "@/db/schema/contest.schema";
+import { ProfileSelectSchema } from "@/db/schema/profile.schema";
 import { NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
 import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
 
@@ -166,6 +167,32 @@ export const getJoinedContests = createRoute({
   },
 });
 
+export const getContestWinner = createRoute({
+  path: "/contest/{id}/winner",
+  method: "get",
+  tags: ["Contest Winner"],
+  summary: "Get Contest Winner",
+  description: "Get the winner of a specific contest",
+  request: {
+    params: z.object({
+      id: z.string().describe("The contest ID"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      z.object({
+        contest: ContestSelectSchemaWithAwards,
+        winner: ProfileSelectSchema.nullable(),
+        totalParticipants: z.number(),
+        totalVotes: z.number(),
+      }),
+      "The contest winner information",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Contest not found"),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
@@ -173,3 +200,4 @@ export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
 export type GetUpcomingContestsRoute = typeof getUpcomingContests;
 export type GetJoinedContestsRoute = typeof getJoinedContests;
+export type GetContestWinnerRoute = typeof getContestWinner;

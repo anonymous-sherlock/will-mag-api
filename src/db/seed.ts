@@ -10,7 +10,7 @@ async function runSeed() {
   try {
     // Create more users with faker data
     const users = [];
-    for (let i = 0; i < 25; i++) { // Increased from 10 to 25
+    for (let i = 0; i < 10; i++) { // Increased from 10 to 25
       const user = await db.user.create({
         data: {
           email: faker.internet.email(),
@@ -50,7 +50,7 @@ async function runSeed() {
 
     // Create more contests
     const contests = [];
-    for (let i = 0; i < 15; i++) { // Increased from 5 to 15
+    for (let i = 0; i < 5; i++) { // Increased from 5 to 15
       const contest = await db.contest.create({
         data: {
           name: faker.company.catchPhrase(),
@@ -63,19 +63,27 @@ async function runSeed() {
       contests.push(contest);
     }
 
-    // Create awards
+    // Create awards for each contest
     const awards = [];
     const awardNames = ["Best Photography", "Most Creative", "People's Choice", "Technical Excellence", "Innovation Award"];
     const awardIcons = ["📸", "🎨", "👥", "⚙️", "💡"];
 
-    for (let i = 0; i < awardNames.length; i++) {
-      const award = await db.award.create({
-        data: {
-          name: awardNames[i],
-          icon: awardIcons[i],
-        },
-      });
-      awards.push(award);
+    for (const contest of contests) {
+      // Create 2-4 awards per contest
+      const numAwards = faker.number.int({ min: 2, max: 4 });
+      const shuffledNames = faker.helpers.shuffle([...awardNames]);
+      const shuffledIcons = faker.helpers.shuffle([...awardIcons]);
+
+      for (let i = 0; i < numAwards; i++) {
+        const award = await db.award.create({
+          data: {
+            name: shuffledNames[i],
+            icon: shuffledIcons[i],
+            contestId: contest.id,
+          },
+        });
+        awards.push(award);
+      }
     }
 
     // Create contest participations
@@ -96,7 +104,7 @@ async function runSeed() {
     }
 
     // Create more votes
-    for (let i = 0; i < 50; i++) { // Increased from 20 to 50
+    for (let i = 0; i < 20; i++) {
       const voter = faker.helpers.arrayElement(profiles);
       const votee = faker.helpers.arrayElement(profiles.filter(p => p.id !== voter.id));
       const contest = faker.helpers.arrayElement(contests);

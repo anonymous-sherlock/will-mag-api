@@ -120,6 +120,8 @@ model Profile {
   coverImageId String?        @unique
   coverImage   Media?         @relation("profileCoverImage", fields: [coverImageId], references: [id])
   notification Notification[]
+
+  payments Payment[]
 }
 
 model Notification {
@@ -176,17 +178,22 @@ model Award {
 
 model Vote {
   id        String    @id @default(cuid())
-  voterId   String
-  voteeId   String
-  contestId String
+  
   type      Vote_Type @default(FREE)
+
+  voterId   String
   voter     Profile   @relation("VotesCast", fields: [voterId], references: [id])
+  
+  voteeId   String
   votee     Profile   @relation("VotesReceived", fields: [voteeId], references: [id])
+
+  contestId String
   contest   Contest   @relation(fields: [contestId], references: [id])
 
-  createdAt DateTime @default(now())
+  paymentId String?
+  payment   Payment?  @relation(fields: [paymentId], references: [id])
 
-  @@unique([voterId, voteeId, contestId])
+  createdAt DateTime @default(now())
 }
 
 enum Vote_Type {
@@ -245,9 +252,24 @@ enum File_Status {
   COMPLETED
 }
 
+model Payment {
+  id        String   @id @default(cuid())
+
+  payerId   String
+  payer     Profile     @relation(fields: [payerId], references: [id])
+  
+  amount    Float
+  status    Payment_Status @default(PENDING)
+  
+  votes     Vote[]
+
+  stripeSessionId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 enum Payment_Status {
   PENDING
-  PAID
+  COMPLETED
   FAILED
-  CANCELLED
 }

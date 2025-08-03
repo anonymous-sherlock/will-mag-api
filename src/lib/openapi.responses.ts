@@ -32,3 +32,9 @@ export const BadRequestResponse = createErrorResponse({
   status: HttpStatus.BAD_REQUEST,
   statusText: Phrases.BAD_REQUEST,
 });
+
+export const ServiceUnavailableResponse = createErrorResponse({
+  defaultMessage: "Service Unavailable",
+  status: HttpStatus.SERVICE_UNAVAILABLE,
+  statusText: Phrases.SERVICE_UNAVAILABLE,
+});

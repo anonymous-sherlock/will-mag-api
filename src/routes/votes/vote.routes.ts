@@ -2,12 +2,16 @@ import { createRoute } from '@hono/zod-openapi';
 import * as HttpStatusCodes from 'stoker/http-status-codes';
 import { jsonContent, jsonContentRequired } from 'stoker/openapi/helpers';
 import { createErrorSchema } from 'stoker/openapi/schemas';
+import { z } from 'zod';
 
 import {
   GetLatestVotesResponseSchema,
+  GetVotesByUserIdResponseSchema,
   VoteInsertSchema,
   VoteSelectSchema,
 } from '@/db/schema/vote.schema';
+import { createPaginatedResponseSchema, PaginationQuerySchema } from '@/lib/queries/query.schema';
+import { NotFoundResponse } from '@/lib/openapi.responses';
 
 const tags = ['Vote'];
 
@@ -41,5 +45,26 @@ export const getLatestVotes = createRoute({
   tags,
   responses: {
     [HttpStatusCodes.OK]: jsonContent(GetLatestVotesResponseSchema, 'The latest votes'),
+  },
+});
+
+export const getVotesByUserId = createRoute({
+  path: '/votes/{userId}',
+  method: 'get',
+  tags,
+  summary: 'Get votes by user id',
+  description: 'Get votes for a user by user id',
+  request: {
+    params: z.object({
+      userId: z.string(),
+    }),
+    query: PaginationQuerySchema,
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      createPaginatedResponseSchema(GetVotesByUserIdResponseSchema),
+      'Votes fetched for the user successfully'
+    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse(),
   },
 });

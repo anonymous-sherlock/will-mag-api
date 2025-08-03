@@ -8,6 +8,7 @@ import * as routes from './vote.routes';
 const router = createBaseAPIRouter()
   .openapi(routes.vote, handlers.vote)
   .openapi(freeVoteRoutes.isFreeVoteAvailable, freeVoteHandlers.isFreeVoteAvailable)
-  .openapi(routes.getLatestVotes, handlers.getLatestVotes);
+  .openapi(routes.getLatestVotes, handlers.getLatestVotes)
+  .openapi(routes.getVotesByUserId, handlers.getVotesByUserId);
 
 export default router;

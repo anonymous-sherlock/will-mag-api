@@ -3,7 +3,12 @@ import * as HttpStatusCodes from "stoker/http-status-codes";
 import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema } from "stoker/openapi/schemas";
 
-import { ContestInsertSchema, ContestInsertSchemaWithAwards, ContestSelectSchema, ContestSelectSchemaWithAwards } from "@/db/schema/contest.schema";
+import {
+  ContestInsertSchema,
+  ContestInsertSchemaWithAwards,
+  ContestSelectSchema,
+  ContestSelectSchemaWithAwards,
+} from "@/db/schema/contest.schema";
 import { ProfileSelectSchema } from "@/db/schema/profile.schema";
 import { NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
 import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
@@ -33,17 +38,11 @@ export const create = createRoute({
   method: "post",
   summary: "Contest Create",
   request: {
-    body: jsonContentRequired(
-      ContestInsertSchemaWithAwards,
-      "The Contest to create",
-    ),
+    body: jsonContentRequired(ContestInsertSchemaWithAwards, "The Contest to create"),
   },
   tags,
   responses: {
-    [HttpStatusCodes.CREATED]: jsonContent(
-      ContestSelectSchemaWithAwards,
-      "The created contest",
-    ),
+    [HttpStatusCodes.CREATED]: jsonContent(ContestSelectSchemaWithAwards, "The created contest"),
     [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(ContestInsertSchema),
@@ -64,10 +63,7 @@ export const getOne = createRoute({
     }),
   },
   responses: {
-    [HttpStatusCodes.OK]: jsonContent(
-      ContestSelectSchemaWithAwards,
-      "The contest",
-    ),
+    [HttpStatusCodes.OK]: jsonContent(ContestSelectSchemaWithAwards, "The contest"),
     [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
     [HttpStatusCodes.NOT_FOUND]: NotFoundResponse(),
   },
@@ -83,16 +79,10 @@ export const patch = createRoute({
     params: z.object({
       id: z.string().describe("The contest ID"),
     }),
-    body: jsonContentRequired(
-      ContestInsertSchema.partial(),
-      "The contest data to update",
-    ),
+    body: jsonContentRequired(ContestInsertSchema.partial(), "The contest data to update"),
   },
   responses: {
-    [HttpStatusCodes.OK]: jsonContent(
-      ContestSelectSchema,
-      "The updated contest",
-    ),
+    [HttpStatusCodes.OK]: jsonContent(ContestSelectSchema, "The updated contest"),
     [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
     [HttpStatusCodes.NOT_FOUND]: NotFoundResponse(),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(

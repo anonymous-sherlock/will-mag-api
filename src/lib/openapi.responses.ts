@@ -20,3 +20,15 @@ export const NotFoundResponse = createErrorResponse({
   status: HttpStatus.NOT_FOUND,
   statusText: Phrases.NOT_FOUND,
 });
+
+export const ConflictResponse = createErrorResponse({
+  defaultMessage: "Resource already exists",
+  status: HttpStatus.CONFLICT,
+  statusText: Phrases.CONFLICT,
+});
+
+export const BadRequestResponse = createErrorResponse({
+  defaultMessage: "Invalid request",
+  status: HttpStatus.BAD_REQUEST,
+  statusText: Phrases.BAD_REQUEST,
+});

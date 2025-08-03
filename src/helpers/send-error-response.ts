@@ -1,12 +1,10 @@
 /* eslint-disable ts/consistent-type-definitions */
-// src/utils/send-error-response.ts
-
 import type { Context } from "hono";
 import type { StatusCode } from "hono/utils/http-status";
 import type { JSONValue } from "hono/utils/types";
 
 // Error types
-export type ErrorType = "unauthorized" | "forbidden" | "notFound";
+export type ErrorType = "unauthorized" | "forbidden" | "notFound" | "alreadyExists" | "badRequest";
 
 // Presets for common error responses
 const errorPresets = {
@@ -24,6 +22,16 @@ const errorPresets = {
     status: 404,
     statusText: "Not Found",
     message: "Resource not found",
+  },
+  alreadyExists: {
+    status: 409,
+    statusText: "Conflict",
+    message: "Resource already exists",
+  },
+  badRequest: {
+    status: 400,
+    statusText: "Bad Request",
+    message: "Invalid request",
   },
 } as const;
 

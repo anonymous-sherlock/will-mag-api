@@ -20,3 +20,10 @@ export const GetLatestVotesResponseSchema = z.array(
     createdAt: z.date(),
   })
 );
+
+export const GetVotesByUserIdResponseSchema = z.object({
+  userId: z.string(),
+  userName: z.string(),
+  contestName: z.string(),
+  votedOn: z.string(),
+});

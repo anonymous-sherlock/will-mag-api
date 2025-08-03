@@ -133,7 +133,7 @@ model Notification {
   updatedAt DateTime @updatedAt
   isRead    Boolean  @default(false)
   archived  Boolean  @default(false)
-  icon      Icon? @default(INFO)
+  icon      Icon?    @default(INFO)
   action    String?
 
   @@index([profileId])
@@ -147,37 +147,31 @@ enum Icon {
 }
 
 model Contest {
-  id                    String                  @id @default(cuid())
-  name                  String                  @db.VarChar(255)
+  id                    String                 @id @default(cuid())
+  name                  String                 @db.VarChar(255)
   description           String
   prizePool             Float
-  contestParticipations ContestParticipation[]  @relation("ContestParticipants")
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
-  awards                ContestAwardOnContest[]
+  contestParticipations ContestParticipation[] @relation("ContestParticipants")
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  awards                Award[]
   votes                 Vote[]
-  winner                Profile?                @relation(fields: [profileId], references: [id])
+  winner                Profile?               @relation(fields: [winnerProfileId], references: [id])
   startDate             DateTime
   endDate               DateTime
-  profileId             String?
+  winnerProfileId       String?
 }
 
 model Award {
-  id       String                  @id @default(cuid())
-  name     String
-  icon     String
-  contests ContestAwardOnContest[]
+  id   String @id @default(cuid())
+  name String
+  icon String
 
-  @@map("contest_awards")
-}
-
-model ContestAwardOnContest {
-  contest   Contest @relation(fields: [contestId], references: [id])
   contestId String
-  award     Award   @relation(fields: [awardId], references: [id])
-  awardId   String
+  contest   Contest @relation(fields: [contestId], references: [id])
 
-  @@unique([contestId, awardId])
+  @@unique([name, icon, contestId])
+  @@map("contest_awards")
 }
 
 model Vote {
@@ -214,6 +208,8 @@ model ContestParticipation {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([profileId, contestId])
 }
 
 enum User_Role {
@@ -240,7 +236,7 @@ model Media {
 
   profileCoverImage Profile? @relation("profileCoverImage")
 
-  @@map("medias")
+  @@map("media")
 }
 
 enum File_Status {

@@ -5,7 +5,7 @@ import type { AppRouteHandler } from "@/types/types";
 import { db } from "@/db";
 import { sendErrorResponse } from "@/helpers/send-error-response";
 
-import type { CreateContestAwardsRoute, DeleteAwardRoute, GetAwardRoute, GetContestAwardsRoute } from "./award.routes";
+import type { CreateContestAwardsRoute, DeleteAwardRoute, GetAwardRoute, GetContestAwardsRoute, UpdateAwardRoute } from "./award.routes";
 
 export const createContestAwards: AppRouteHandler<CreateContestAwardsRoute> = async (c) => {
   const { contestId: id } = c.req.valid("param");
@@ -65,11 +65,11 @@ export const getContestAwards: AppRouteHandler<GetContestAwardsRoute> = async (c
 };
 
 export const getAward: AppRouteHandler<GetAwardRoute> = async (c) => {
-  const { awardId } = c.req.valid("param");
+  const { id } = c.req.valid("param");
 
   // Check if award exists
   const award = await db.award.findUnique({
-    where: { id: awardId },
+    where: { id },
   });
 
   if (!award) {
@@ -80,11 +80,9 @@ export const getAward: AppRouteHandler<GetAwardRoute> = async (c) => {
 };
 
 export const deleteAward: AppRouteHandler<DeleteAwardRoute> = async (c) => {
-  const { awardId } = c.req.valid("param");
-
-  // Check if award exists
+  const { id } = c.req.valid("param");
   const award = await db.award.findUnique({
-    where: { id: awardId },
+    where: { id },
   });
 
   if (!award) {
@@ -93,8 +91,30 @@ export const deleteAward: AppRouteHandler<DeleteAwardRoute> = async (c) => {
 
   // Delete the award
   await db.award.delete({
-    where: { id: awardId },
+    where: { id },
   });
 
   return c.json({ message: "Award deleted successfully" }, HttpStatusCodes.OK);
+};
+
+export const updateAward: AppRouteHandler<UpdateAwardRoute> = async (c) => {
+  const { id } = c.req.valid("param");
+  const awardData = c.req.valid("json");
+
+  // Check if award exists
+  const existingAward = await db.award.findUnique({
+    where: { id },
+  });
+
+  if (!existingAward) {
+    return sendErrorResponse(c, "notFound", "Award not found");
+  }
+
+  // Update the award
+  const updatedAward = await db.award.update({
+    where: { id },
+    data: awardData,
+  });
+
+  return c.json(updatedAward, HttpStatusCodes.OK);
 };

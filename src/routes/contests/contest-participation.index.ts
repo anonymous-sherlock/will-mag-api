@@ -5,6 +5,9 @@ import * as routes from "./contest-participation.routes";
 
 const router = createBaseAPIRouter()
   .openapi(routes.join, handlers.join)
-  .openapi(routes.leave, handlers.leave);
+  .openapi(routes.leave, handlers.leave)
+  .openapi(routes.getParticipants, handlers.getParticipants)
+  .openapi(routes.getContestWinner, handlers.getContestWinner)
+  .openapi(routes.setContestWinner, handlers.setContestWinner);
 
 export default router;

@@ -124,11 +124,29 @@ export const remove = createRoute({
 });
 
 export const getUpcomingContests = createRoute({
-  path: "/contest/{userId}/upcoming",
+  path: "/contest/upcoming",
   method: "get",
   tags,
   summary: "Get Upcoming Contests",
-  description: "Get contests that the user hasn't joined and are upcoming",
+  description: "Get all upcoming contests",
+  request: {
+    query: PaginationQuerySchema,
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      createPaginatedResponseSchema(ContestSelectSchemaWithAwards),
+      "The upcoming contests list",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+  },
+});
+
+export const getAvailableContests = createRoute({
+  path: "/contest/{userId}/available",
+  method: "get",
+  tags,
+  summary: "Get Available Contests",
+  description: "Get contests that the user hasn't joined and are available",
   request: {
     query: PaginationQuerySchema,
     params: z.object({
@@ -167,37 +185,11 @@ export const getJoinedContests = createRoute({
   },
 });
 
-export const getContestWinner = createRoute({
-  path: "/contest/{id}/winner",
-  method: "get",
-  tags: ["Contest Winner"],
-  summary: "Get Contest Winner",
-  description: "Get the winner of a specific contest",
-  request: {
-    params: z.object({
-      id: z.string().describe("The contest ID"),
-    }),
-  },
-  responses: {
-    [HttpStatusCodes.OK]: jsonContent(
-      z.object({
-        contest: ContestSelectSchemaWithAwards,
-        winner: ProfileSelectSchema.nullable(),
-        totalParticipants: z.number(),
-        totalVotes: z.number(),
-      }),
-      "The contest winner information",
-    ),
-    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
-    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Contest not found"),
-  },
-});
-
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
 export type GetUpcomingContestsRoute = typeof getUpcomingContests;
+export type GetAvailableContestsRoute = typeof getAvailableContests;
 export type GetJoinedContestsRoute = typeof getJoinedContests;
-export type GetContestWinnerRoute = typeof getContestWinner;

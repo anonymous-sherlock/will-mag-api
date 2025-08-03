@@ -14,11 +14,25 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 6,
+    autoSignIn: false,
   },
   username: {
     enabled: true,
   },
-
+  databaseHooks: {
+    user: {
+      create: {
+        async after(user, _context) {
+          await db.profile.create({
+            data: {
+              userId: user.id,
+              address: "",
+            },
+          });
+        },
+      },
+    },
+  },
   user: {
     additionalFields: {
       role: {

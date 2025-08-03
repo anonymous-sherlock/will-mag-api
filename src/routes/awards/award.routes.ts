@@ -60,14 +60,14 @@ export const getContestAwards = createRoute({
 });
 
 export const getAward = createRoute({
-  path: "/awards/{awardId}",
+  path: "/awards/{id}",
   method: "get",
   tags,
   summary: "Get Award",
   description: "Get a specific award by ID",
   request: {
     params: z.object({
-      awardId: z.string().describe("The award ID"),
+      id: z.string().describe("The award ID"),
     }),
   },
   responses: {
@@ -81,14 +81,14 @@ export const getAward = createRoute({
 });
 
 export const deleteAward = createRoute({
-  path: "/awards/{awardId}",
+  path: "/awards/{id}",
   method: "delete",
   tags,
-  summary: "Delete Contest Award",
+  summary: "Delete Award",
   description: "Delete a specific award by ID",
   request: {
     params: z.object({
-      awardId: z.string().describe("The award ID"),
+      id: z.string().describe("The award ID"),
     }),
   },
   responses: {
@@ -103,7 +103,37 @@ export const deleteAward = createRoute({
   },
 });
 
+export const updateAward = createRoute({
+  path: "/awards/{id}",
+  method: "patch",
+  tags,
+  summary: "Update Award",
+  description: "Update a specific award by ID",
+  request: {
+    params: z.object({
+      id: z.string().describe("The award ID"),
+    }),
+    body: jsonContentRequired(
+      AwardInsertSchema.partial(),
+      "The award data to update",
+    ),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      AwardSelectSchema,
+      "The updated award",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse(),
+    [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(AwardInsertSchema.partial()),
+      "The validation error(s)",
+    ),
+  },
+});
+
 export type CreateContestAwardsRoute = typeof createContestAwards;
 export type GetContestAwardsRoute = typeof getContestAwards;
 export type GetAwardRoute = typeof getAward;
 export type DeleteAwardRoute = typeof deleteAward;
+export type UpdateAwardRoute = typeof updateAward;

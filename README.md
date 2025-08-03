@@ -43,13 +43,13 @@ pnpm test
 ## Tasks
 
 - [ ] Integrate Stripe
-- [ ] Implement notification api
+- [x] Implement notification api
 - [ ] Implement file uploads logic
 - [ ] Write logic to pay for extra votes
-- [ ] Create common schema for query params options with page, limit.
+- [x] Create common schema for query params options with page, limit.
 - [ ] Create api to check available competitions and user rank in a contest.
-- [ ] Update users api to use better auth
-- [ ] Write logic to get top 10 users with the highest votes
+- [x] Update users api to use better auth
+- [x] Write logic to get top 10 users with the highest votes
 - [ ] Write logic to get the latest 20 votes
 - [ ] Write logic to implement prize history (previous winners of a contest)
 - [ ] Secure apis with authentication middleware

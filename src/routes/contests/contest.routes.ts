@@ -3,7 +3,7 @@ import * as HttpStatusCodes from "stoker/http-status-codes";
 import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema } from "stoker/openapi/schemas";
 
-import { ContestInsertSchema, ContestSelectSchema } from "@/db/schema/contest.schema";
+import { ContestInsertSchema, ContestInsertSchemaWithAwards, ContestSelectSchema, ContestSelectSchemaWithAwards } from "@/db/schema/contest.schema";
 import { NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
 import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
 
@@ -20,7 +20,7 @@ export const list = createRoute({
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      createPaginatedResponseSchema(ContestSelectSchema),
+      createPaginatedResponseSchema(ContestSelectSchemaWithAwards),
       "The contest lists",
     ),
     [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
@@ -33,14 +33,14 @@ export const create = createRoute({
   summary: "Contest Create",
   request: {
     body: jsonContentRequired(
-      ContestInsertSchema,
+      ContestInsertSchemaWithAwards,
       "The Contest to create",
     ),
   },
   tags,
   responses: {
     [HttpStatusCodes.CREATED]: jsonContent(
-      ContestSelectSchema,
+      ContestSelectSchemaWithAwards,
       "The created contest",
     ),
     [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
@@ -64,7 +64,7 @@ export const getOne = createRoute({
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      ContestSelectSchema,
+      ContestSelectSchemaWithAwards,
       "The contest",
     ),
     [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
@@ -122,8 +122,54 @@ export const remove = createRoute({
   },
 });
 
+export const getUpcomingContests = createRoute({
+  path: "/contest/{userId}/upcoming",
+  method: "get",
+  tags,
+  summary: "Get Upcoming Contests",
+  description: "Get contests that the user hasn't joined and are upcoming",
+  request: {
+    query: PaginationQuerySchema,
+    params: z.object({
+      userId: z.string().describe("The User ID"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      createPaginatedResponseSchema(ContestSelectSchemaWithAwards),
+      "The available contests list",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
+  },
+});
+
+export const getJoinedContests = createRoute({
+  path: "/contest/{userId}/joined",
+  method: "get",
+  tags,
+  summary: "Get Joined Contests",
+  description: "Get contests that the user has joined",
+  request: {
+    query: PaginationQuerySchema,
+    params: z.object({
+      userId: z.string().describe("The User ID"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      createPaginatedResponseSchema(ContestSelectSchemaWithAwards),
+      "The joined contests list",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
+export type GetUpcomingContestsRoute = typeof getUpcomingContests;
+export type GetJoinedContestsRoute = typeof getJoinedContests;

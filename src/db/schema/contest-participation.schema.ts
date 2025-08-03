@@ -18,8 +18,15 @@ export const ContestParticipationInsertSchema = ContestParticipationSchema.omit(
   createdAt: true,
   updatedAt: true,
   isApproved: true,
+  profileId: true,
 }).extend({
   isParticipating: z.boolean().optional(),
+  userId: z.string(),
+});
+
+export const ContestParticipationLeaveSchema = ContestParticipationInsertSchema.pick({
+  userId: true,
+  contestId: true,
 });
 
 export const ContestParticipationSelectSchema = ContestParticipationSchema;

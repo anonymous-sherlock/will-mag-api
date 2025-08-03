@@ -8,31 +8,73 @@ import { sendErrorResponse } from "@/helpers/send-error-response";
 import type { JoinRoute, LeaveRoute } from "./contest-participation.routes";
 
 export const join: AppRouteHandler<JoinRoute> = async (c) => {
-  const data = c.req.valid("json");
+  const { userId, contestId, coverImage } = c.req.valid("json");
+
+  const profile = await db.profile.findFirst({
+    where: { userId },
+  });
+  const contest = await db.contest.findFirst({
+    where: {
+      id: contestId,
+    },
+  });
+
+  if (!profile) {
+    return sendErrorResponse(c, "notFound", "Profile not found");
+  }
+  if (!contest) {
+    return sendErrorResponse(c, "notFound", "Contest not found");
+  }
+
   const existing = await db.contestParticipation.findFirst({
     where: {
-      profileId: data.profileId,
-      contestId: data.contestId,
+      profileId: profile.id,
+      contestId: contest.id,
     },
   });
   if (existing) {
-    return c.json(existing, HttpStatusCodes.OK);
+    return sendErrorResponse(c, "alreadyExists", "Participant already joined the contest");
   }
 
   const participation = await db.contestParticipation.create({
-    data,
+    data: {
+      contestId: contest.id,
+      profileId: profile.id,
+      coverImage,
+    },
+
   });
-  return c.json(participation, HttpStatusCodes.OK);
+  return c.json({
+    ...participation,
+    contest,
+  }, HttpStatusCodes.OK);
 };
 
 export const leave: AppRouteHandler<LeaveRoute> = async (c) => {
-  const data = c.req.valid("json");
+  const { userId, contestId } = c.req.valid("json");
+
+  const profile = await db.profile.findFirst({
+    where: { userId },
+  });
+
+  const contest = await db.contest.findFirst({
+    where: {
+      id: contestId,
+    },
+  });
+
+  if (!profile) {
+    return sendErrorResponse(c, "notFound", "Profile not found");
+  }
+  if (!contest) {
+    return sendErrorResponse(c, "notFound", "Contest not found");
+  }
 
   // Check if participation exists
   const existing = await db.contestParticipation.findFirst({
     where: {
-      profileId: data.profileId,
-      contestId: data.contestId,
+      profileId: profile.id,
+      contestId: contest.id,
     },
   });
 

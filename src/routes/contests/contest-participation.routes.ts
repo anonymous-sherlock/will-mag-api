@@ -3,8 +3,9 @@ import * as HttpStatusCodes from "stoker/http-status-codes";
 import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema } from "stoker/openapi/schemas";
 
-import { ContestParticipationInsertSchema, ContestParticipationSelectSchema } from "@/db/schema/contest-participation.schema";
-import { NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
+import { ContestParticipationInsertSchema, ContestParticipationLeaveSchema, ContestParticipationSelectSchema } from "@/db/schema/contest-participation.schema";
+import { ContestSelectSchema } from "@/db/schema/contest.schema";
+import { ConflictResponse, NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
 
 const tags = ["ContestParticipation"];
 
@@ -17,15 +18,19 @@ export const join = createRoute({
   request: {
     body: jsonContentRequired(
       ContestParticipationInsertSchema,
-      "The join contest payload (profileId, contestId, ...)",
+      "The join contest payload (profileId, contestId, coverImage)",
     ),
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      ContestParticipationSelectSchema,
-      "The created contest participation record",
+      ContestParticipationSelectSchema.extend({
+        contest: ContestSelectSchema,
+      }),
+      "The created contest participation record with contest details",
     ),
     [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse(),
+    [HttpStatusCodes.CONFLICT]: ConflictResponse("Participant already joined the contest"),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(ContestParticipationInsertSchema),
       "The validation error(s)",
@@ -35,13 +40,13 @@ export const join = createRoute({
 
 export const leave = createRoute({
   path: "/contest/leave",
-  method: "delete",
+  method: "post",
   summary: "Leave Contest",
   description: "Leave a contest by removing the participation record.",
   tags,
   request: {
     body: jsonContentRequired(
-      ContestParticipationInsertSchema,
+      ContestParticipationLeaveSchema,
       "The leave contest payload (profileId, contestId)",
     ),
   },

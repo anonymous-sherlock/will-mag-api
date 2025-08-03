@@ -10,6 +10,7 @@ const router = createBaseAPIRouter()
   .openapi(routes.patch, handlers.patch)
   .openapi(routes.remove, handlers.remove)
   .openapi(routes.getUpcomingContests, handlers.getUpcomingContests)
-  .openapi(routes.getJoinedContests, handlers.getJoinedContests);
+  .openapi(routes.getJoinedContests, handlers.getJoinedContests)
+  .openapi(routes.getContestWinner, handlers.getContestWinner);
 
 export default router;

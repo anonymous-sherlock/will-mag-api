@@ -6,7 +6,7 @@ import { db } from "@/db";
 import { sendErrorResponse } from "@/helpers/send-error-response";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 
-import type { CreateRoute, GetJoinedContestsRoute, GetOneRoute, GetUpcomingContestsRoute, ListRoute, PatchRoute, RemoveRoute } from "./contest.routes";
+import type { CreateRoute, GetContestWinnerRoute, GetJoinedContestsRoute, GetOneRoute, GetUpcomingContestsRoute, ListRoute, PatchRoute, RemoveRoute } from "./contest.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const { page, limit } = c.req.valid("query");
@@ -215,5 +215,38 @@ export const getJoinedContests: AppRouteHandler<GetJoinedContestsRoute> = async 
   return c.json({
     data: contests,
     pagination,
+  }, HttpStatusCodes.OK);
+};
+
+export const getContestWinner: AppRouteHandler<GetContestWinnerRoute> = async (c) => {
+  const { id } = c.req.valid("param");
+
+  const contest = await db.contest.findUnique({
+    where: { id },
+    include: {
+      awards: true,
+      winner: true,
+    },
+  });
+
+  if (!contest) {
+    return sendErrorResponse(c, "notFound", "Contest not found");
+  }
+
+  // Get total participants
+  const totalParticipants = await db.contestParticipation.count({
+    where: { contestId: id },
+  });
+
+  // Get total votes for this contest
+  const totalVotes = await db.vote.count({
+    where: { contestId: id },
+  });
+
+  return c.json({
+    contest,
+    winner: contest.winner,
+    totalParticipants,
+    totalVotes,
   }, HttpStatusCodes.OK);
 };

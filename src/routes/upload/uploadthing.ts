@@ -1,5 +1,4 @@
 /* eslint-disable no-console */
-import type { FileRouter } from "uploadthing/server";
 
 import { createUploadthing } from "uploadthing/server";
 

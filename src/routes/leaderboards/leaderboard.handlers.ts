@@ -68,12 +68,12 @@ export const getLeaderboard: AppRouteHandler<typeof GetLeaderboardRoute> = async
   profilesWithVotes.sort((a, b) => {
     const aPaidVotes = a.votesReceived.filter(vote => vote.type === "PAID").length;
     const bPaidVotes = b.votesReceived.filter(vote => vote.type === "PAID").length;
-    
+
     // First sort by paid votes (descending)
     if (aPaidVotes !== bPaidVotes) {
       return bPaidVotes - aPaidVotes;
     }
-    
+
     // If paid votes are equal, sort by total votes (descending)
     return b.votesReceived.length - a.votesReceived.length;
   });

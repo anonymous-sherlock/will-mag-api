@@ -29,8 +29,14 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
 
 export const create: AppRouteHandler<CreateRoute> = async (c) => {
   const profile = c.req.valid("json");
-  const insertedProfile = await db.profile.create({
-    data: profile,
+  const insertedProfile = await db.profile.upsert({
+    where: { userId: profile.userId },
+    update: {
+      ...profile,
+    },
+    create: {
+      ...profile,
+    },
   });
   return c.json(insertedProfile, HttpStatusCodes.CREATED);
 };

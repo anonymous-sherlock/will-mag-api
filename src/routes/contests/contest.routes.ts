@@ -9,7 +9,6 @@ import {
   ContestSelectSchema,
   ContestSelectSchemaWithAwards,
 } from "@/db/schema/contest.schema";
-import { ProfileSelectSchema } from "@/db/schema/profile.schema";
 import { NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
 import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
 

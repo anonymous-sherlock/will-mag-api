@@ -79,7 +79,7 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
           unit_amount: 100,
           product_data: {
             name: "Vote Credits",
-            description: `${voteCount}votes for ${votee.user.name}`,
+            description: `${voteCount} votes for ${votee.user.name}`,
           },
         },
         quantity: Number.parseInt(voteCount),

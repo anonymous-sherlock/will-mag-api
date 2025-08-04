@@ -14,8 +14,8 @@ import payment from "@/routes/payments/payments.index";
 import profile from "@/routes/profiles/profile.index";
 import ranks from "@/routes/ranks/ranks.index";
 import user from "@/routes/users/user.index";
-import vote from "@/routes/votes/vote.index";
 import voteMultiplier from "@/routes/votes/vote-multiplier.index";
+import vote from "@/routes/votes/vote.index";
 
 import stripeWebhookRouter from "./routes/webhooks/stripe/stripe.index";
 

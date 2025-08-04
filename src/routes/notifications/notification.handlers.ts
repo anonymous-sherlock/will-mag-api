@@ -5,7 +5,6 @@ import type { AppRouteHandler } from "@/types/types";
 
 import { db } from "@/db";
 import { sendErrorResponse } from "@/helpers/send-error-response";
-import { auth } from "@/lib/auth";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 
 import type {

@@ -1,13 +1,13 @@
-import * as HttpStatusCodes from 'stoker/http-status-codes';
+import * as HttpStatusCodes from "stoker/http-status-codes";
 
-import type { AppRouteHandler } from '@/types/types';
+import type { AppRouteHandler } from "@/types/types";
 
-import { db } from '@/db';
+import { db } from "@/db";
 
-import type { ListRoute } from './ranks.routes';
+import type { ListRoute } from "./ranks.routes";
 
-export const list: AppRouteHandler<ListRoute> = async c => {
-  const { limit, page } = c.req.valid('query');
+export const list: AppRouteHandler<ListRoute> = async (c) => {
+  const { limit, page } = c.req.valid("query");
 
   const ranks = await db.profile.findMany({
     select: {
@@ -24,12 +24,12 @@ export const list: AppRouteHandler<ListRoute> = async c => {
     skip: (page - 1) * limit,
     orderBy: {
       votesReceived: {
-        _count: 'desc',
+        _count: "desc",
       },
     },
   });
 
-  const formattedRanks = ranks.map(rank => {
+  const formattedRanks = ranks.map((rank) => {
     return {
       profileId: rank.id,
       name: rank.user.name,

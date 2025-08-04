@@ -2,6 +2,8 @@ import { createRoute, z } from "@hono/zod-openapi";
 import * as HttpStatusCodes from "stoker/http-status-codes";
 import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 
+import { NotFoundResponse } from "@/lib/openapi.responses";
+
 const tags = ["Vote"];
 
 export const isFreeVoteAvailable = createRoute({
@@ -31,7 +33,7 @@ export const isFreeVoteAvailable = createRoute({
       z.object({ error: z.string() }),
       "Missing or invalid profileId.",
     ),
-    [HttpStatusCodes.NOT_FOUND]: jsonContent(z.object({ message: z.string() }), "Profile not found."),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found."),
   },
 });
 

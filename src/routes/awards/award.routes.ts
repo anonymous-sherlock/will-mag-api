@@ -6,13 +6,12 @@ import { createErrorSchema } from "stoker/openapi/schemas";
 import { AwardInsertSchema, AwardSelectSchema } from "@/db/schema/award.schema";
 import { NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
 
-const tags = ["Awards"];
-const awardsWithContestTags = [...tags, "Contest"];
+const tags = ["Award"];
 
 export const createContestAwards = createRoute({
   path: "/contest/{contestId}/awards",
   method: "post",
-  tags: awardsWithContestTags,
+  tags,
   summary: "Create Contest Awards",
   description: "Create awards for a specific contest",
   request: {
@@ -41,7 +40,7 @@ export const createContestAwards = createRoute({
 export const getContestAwards = createRoute({
   path: "/contest/{contestId}/awards",
   method: "get",
-  tags: awardsWithContestTags,
+  tags,
   summary: "Get Contest Awards",
   description: "Get all awards for a specific contest",
   request: {

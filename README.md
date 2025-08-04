@@ -54,14 +54,14 @@ pnpm test
 
 ## P 🏆 Enhanced Contest Features
 
-- [ ] GET /api/v1/contest/{id}/leaderboard
-- [ ] GET /api/v1/contest/{id}/stats
+- [x] GET /api/v1/contest/{id}/leaderboard
+- [x] GET /api/v1/contest/{id}/stats
 
 ---
 
 ## P 💳 Payment & Subscription System
 
-- [ ] GET /api/v1/payments/history
+- [x] GET /api/v1/payments/history
 
 ---
 
@@ -100,4 +100,4 @@ pnpm test
 ## P 🗳️ Enhanced Voting System
 
 - [ ] GET /api/v1/votes/analytics
-- [ ] GET /api/v1/votes/leaderboard
+- [x] GET /api/v1/votes/leaderboard

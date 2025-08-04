@@ -1,5 +1,5 @@
 import env from "@/env";
-import { PrismaClient } from "@/generated/prisma/index";
+import { PrismaClient } from "@/generated/prisma/index.js";
 
 declare global {
   /* eslint-disable vars-on-top */

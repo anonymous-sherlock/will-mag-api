@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import type { User as PrismaUser } from "@/generated/prisma/index";
+import type { User as PrismaUser } from "@/generated/prisma/index.js";
 
-import { User_Role } from "@/generated/prisma/index";
+import { User_Role } from "@/generated/prisma/index.js";
 
 export const UserRoleEnum = z.nativeEnum(User_Role);
 export type UserRole = z.infer<typeof UserRoleEnum>;

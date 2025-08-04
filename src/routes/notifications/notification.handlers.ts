@@ -1,6 +1,6 @@
 import * as HttpStatusCodes from "stoker/http-status-codes";
 
-import type { Prisma } from "@/generated/prisma/index";
+import type { Prisma } from "@/generated/prisma/index.js";
 import type { AppRouteHandler } from "@/types/types";
 
 import { db } from "@/db";

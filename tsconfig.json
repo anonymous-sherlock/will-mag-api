@@ -20,5 +20,7 @@
   },
   "tsc-alias": {
     "resolveFullPaths": true
-  }
+  },
+  "esModuleInterop": true
+
 }

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { Contest } from "@/generated/prisma/index";
+import type { Contest } from "@/generated/prisma/index.js";
 
 import { AwardInsertSchema, AwardSchema } from "@/db/schema/award.schema";
 

@@ -1,8 +1,8 @@
 import z from "zod";
 
-import type { Media } from "@/generated/prisma/index";
+import type { Media } from "@/generated/prisma/index.js";
 
-import { File_Status, Media_Type } from "@/generated/prisma/index";
+import { File_Status, Media_Type } from "@/generated/prisma/index.js";
 
 export const MediaSchema = z.object({
   id: z.string(),

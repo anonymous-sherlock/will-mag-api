@@ -1,6 +1,6 @@
 import z from "zod";
 
-import type { Profile } from "@/generated/prisma/index";
+import type { Profile } from "@/generated/prisma/index.js";
 
 export const ProfileSchema = z.object({
   id: z.string(),

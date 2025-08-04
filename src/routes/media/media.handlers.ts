@@ -1,7 +1,7 @@
 import type { AppRouteHandler } from "@/types/types";
 
 import { db } from "@/db";
-import { File_Status } from "@/generated/prisma/index";
+// import { File_Status } from "@/generated/prisma/index.js";
 import { utapi } from "@/lib/uploadthing";
 
 import type { UploadMediaRoute } from "./media.routes";
@@ -34,7 +34,7 @@ export const uploadMedia: AppRouteHandler<UploadMediaRoute> = async (c) => {
       url: files.url,
       size: files.size,
       name: files.name,
-      status: File_Status.COMPLETED,
+      status: "COMPLETED",
       originalFileName: files.name,
       mediaType,
       profileId,

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { Award } from "@/generated/prisma/index";
+import type { Award } from "@/generated/prisma/index.js";
 
 export const AwardSchema = z.object({
   id: z.string(),

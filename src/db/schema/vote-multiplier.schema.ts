@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { VoteMultiplierPeriod } from "@/generated/prisma/index";
+import type { VoteMultiplierPeriod } from "@/generated/prisma/index.js";
 
 export const VoteMultiplierSchema = z.object({
   id: z.string(),

@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import type { Notification } from "@/generated/prisma/index";
+import type { Notification } from "@/generated/prisma/index.js";
 
-import { Icon } from "@/generated/prisma/index";
+import { Icon } from "@/generated/prisma/index.js";
 
 export const IconSchema = z.nativeEnum(Icon);
 

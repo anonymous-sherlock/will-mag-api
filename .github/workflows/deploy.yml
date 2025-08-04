@@ -34,12 +34,8 @@ jobs:
           host: ${{ secrets.HOSTINGER_HOST }}
           username: ${{ secrets.HOSTINGER_USER }}
           key: ${{ secrets.HOSTINGER_KEY }}
-          source: |
-            dist
-            package.json
-            pnpm-lock.yaml
-            prisma
-          target: /root/swing-mag-api
+          source: "dist/*"
+          target: "/root/swing-mag-api"
           strip_components: 0
 
       - name: Restart App on VPS with PM2

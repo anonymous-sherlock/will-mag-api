@@ -45,6 +45,9 @@ jobs:
           username: ${{ secrets.HOSTINGER_USER }}
           key: ${{ secrets.HOSTINGER_KEY }}
           script: |
+            export NVM_DIR="$HOME/.nvm"
+            export PATH="$NVM_DIR/versions/node/v20.19.4/bin:$PATH"
             cd ${{ secrets.APP_DIRECTORY }}
-            /root/.nvm/versions/node/v20.19.4/bin/pnpm install --prod
-            /root/.nvm/versions/node/v20.19.4/bin/pm2 restart app || /root/.nvm/versions/node/v20.19.4/bin/pm2 start dist/src/index.js --name "app"
+            pnpm install --prod
+            pm2 restart app || pm2 start dist/src/index.js --name "app"
+            pm2 save

@@ -4,7 +4,7 @@ import type { StatusCode } from "hono/utils/http-status";
 import type { JSONValue } from "hono/utils/types";
 
 // Error types
-export type ErrorType = "unauthorized" | "forbidden" | "notFound" | "alreadyExists" | "badRequest" | "serviceUnavailable";
+export type ErrorType = "unauthorized" | "forbidden" | "notFound" | "alreadyExists" | "badRequest" | "serviceUnavailable" | "conflict";
 
 // Presets for common error responses
 const errorPresets = {
@@ -36,6 +36,11 @@ const errorPresets = {
   serviceUnavailable: {
     status: 503,
     statusText: "Service unavailable",
+    message: "",
+  },
+  conflict: {
+    status: 409,
+    statusText: "Conflict",
     message: "",
   },
 } as const;

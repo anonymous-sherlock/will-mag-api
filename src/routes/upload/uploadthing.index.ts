@@ -6,9 +6,9 @@ import { uploadRouter } from "./uploadthing";
 
 const handlers = createRouteHandler({
   router: uploadRouter,
-  config: { isDev: true },
+  config: { logLevel: "Debug" },
 });
 
-const router = createBaseAPIRouter().all("/uploadthing", context => handlers(context.req.raw));
+const router = createBaseAPIRouter().on(["GET", "POST", "PUT", "DELETE", "PATCH"], "/uploadthing", context => handlers(context.req.raw));
 
 export default router;

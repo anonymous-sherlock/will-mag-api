@@ -1,22 +1,22 @@
-import { createRoute, z } from '@hono/zod-openapi';
-import * as HttpStatusCodes from 'stoker/http-status-codes';
-import { jsonContent, jsonContentRequired } from 'stoker/openapi/helpers';
+import { createRoute, z } from "@hono/zod-openapi";
+import * as HttpStatusCodes from "stoker/http-status-codes";
+import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 
-const tags = ['Vote'];
+const tags = ["Vote"];
 
 export const isFreeVoteAvailable = createRoute({
-  path: '/votes/is-free-vote-available',
-  method: 'post',
-  summary: 'Check free vote status',
+  path: "/votes/is-free-vote-available",
+  method: "post",
+  summary: "Check free vote status",
   description:
-    'Returns whether a free vote is available for the given profileId, and if not, when it will be available.',
+    "Returns whether a free vote is available for the given profileId, and if not, when it will be available.",
   tags,
   request: {
     body: jsonContentRequired(
       z.object({
-        profileId: z.string().describe('The profile ID to check free vote availability for'),
+        profileId: z.string().describe("The profile ID to check free vote availability for"),
       }),
-      'The profile ID to check free vote availability for'
+      "The profile ID to check free vote availability for",
     ),
   },
   responses: {
@@ -25,13 +25,13 @@ export const isFreeVoteAvailable = createRoute({
         available: z.boolean(),
         nextAvailableAt: z.date().optional(),
       }),
-      'Whether a free vote is available and the next available time if not.'
+      "Whether a free vote is available and the next available time if not.",
     ),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       z.object({ error: z.string() }),
-      'Missing or invalid profileId.'
+      "Missing or invalid profileId.",
     ),
-    [HttpStatusCodes.NOT_FOUND]: jsonContent(z.object({ error: z.string() }), 'Profile not found.'),
+    [HttpStatusCodes.NOT_FOUND]: jsonContent(z.object({ message: z.string() }), "Profile not found."),
   },
 });
 

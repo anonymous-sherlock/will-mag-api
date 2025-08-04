@@ -177,21 +177,22 @@ model Award {
 }
 
 model Vote {
-  id        String    @id @default(cuid())
-  
-  type      Vote_Type @default(FREE)
+  id String @id @default(cuid())
 
-  voterId   String
-  voter     Profile   @relation("VotesCast", fields: [voterId], references: [id])
-  
-  voteeId   String
-  votee     Profile   @relation("VotesReceived", fields: [voteeId], references: [id])
+  type Vote_Type @default(FREE)
+
+  voterId String
+  voter   Profile @relation("VotesCast", fields: [voterId], references: [id])
+
+  voteeId String
+  votee   Profile @relation("VotesReceived", fields: [voteeId], references: [id])
 
   contestId String
-  contest   Contest   @relation(fields: [contestId], references: [id])
+  contest   Contest @relation(fields: [contestId], references: [id])
+  count     Int     @default(1)
 
   paymentId String?
-  payment   Payment?  @relation(fields: [paymentId], references: [id])
+  payment   Payment? @relation(fields: [paymentId], references: [id])
 
   createdAt DateTime @default(now())
 }
@@ -199,6 +200,18 @@ model Vote {
 enum Vote_Type {
   FREE
   PAID
+}
+
+model VoteMultiplierPeriod {
+  id              String   @id @default(cuid())
+  startTime       DateTime
+  endTime         DateTime
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  multiplierTimes Int      @default(2)
+
+  @@map("vote_multiplier_period")
 }
 
 model ContestParticipation {
@@ -234,6 +247,7 @@ model Media {
   type             String?
   originalFileName String?
   status           File_Status @default(PROCESSING)
+  mediaType        Media_Type? @default(PROFILE_IMAGE)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -246,6 +260,16 @@ model Media {
   @@map("media")
 }
 
+enum Media_Type {
+  USER_IMAGE
+  PROFILE_IMAGE
+  PROFILE_COVER_IMAGE
+  PROFILE_AVATAR
+  VOTING_IMAGE
+  COVER_IMAGE
+  CONTEST_IMAGE
+}
+
 enum File_Status {
   FAILED
   PROCESSING
@@ -253,19 +277,19 @@ enum File_Status {
 }
 
 model Payment {
-  id        String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  payerId   String
-  payer     Profile     @relation(fields: [payerId], references: [id])
-  
-  amount    Float
-  status    Payment_Status @default(PENDING)
-  
-  votes     Vote[]
+  payerId String
+  payer   Profile @relation(fields: [payerId], references: [id])
+
+  amount Float
+  status Payment_Status @default(PENDING)
+
+  votes Vote[]
 
   stripeSessionId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 enum Payment_Status {

@@ -11,7 +11,7 @@ import {
 import { NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
 import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
 
-const tags = ["Notifications"];
+const tags = ["Notification"];
 
 export const getNotifications = createRoute({
   path: "/notifications",

@@ -6,7 +6,7 @@ import { db } from "@/db";
 import { sendErrorResponse } from "@/helpers/send-error-response";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 
-import type { CreateRoute, GetAvailableContestsRoute, GetJoinedContestsRoute, GetOneRoute, GetUpcomingContestsRoute, ListRoute, PatchRoute, RemoveRoute } from "./contest.routes";
+import type { CreateRoute, GetAvailableContestsRoute, GetContestLeaderboardRoute, GetContestStatsRoute, GetJoinedContestsRoute, GetOneRoute, GetUpcomingContestsRoute, ListRoute, PatchRoute, RemoveRoute } from "./contest.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const { page, limit } = c.req.valid("query");
@@ -207,7 +207,6 @@ export const getJoinedContests: AppRouteHandler<GetJoinedContestsRoute> = async 
 
   const profile = await db.profile.findFirst({
     where: { userId },
-
   });
 
   if (!profile) {
@@ -246,6 +245,146 @@ export const getJoinedContests: AppRouteHandler<GetJoinedContestsRoute> = async 
 
   return c.json({
     data: contests,
+    pagination,
+  }, HttpStatusCodes.OK);
+};
+
+export const getContestStats: AppRouteHandler<GetContestStatsRoute> = async (c) => {
+  const { id } = c.req.valid("param");
+
+  const contest = await db.contest.findUnique({
+    where: { id },
+    include: {
+      contestParticipations: {
+        include: {
+          profile: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      },
+      votes: true,
+    },
+  });
+
+  if (!contest) {
+    return sendErrorResponse(c, "notFound", "Contest not found");
+  }
+
+  const now = new Date();
+  const isActive = contest.startDate <= now && contest.endDate >= now;
+  const daysRemaining = isActive ? Math.ceil((contest.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : undefined;
+
+  // Calculate vote statistics
+  const totalVotes = contest.votes.length;
+  const freeVotes = contest.votes.filter(vote => vote.type === "FREE").length;
+  const paidVotes = contest.votes.filter(vote => vote.type === "PAID").length;
+
+  // Calculate participation statistics
+  const totalParticipants = contest.contestParticipations.length;
+  const activeParticipants = contest.contestParticipations.filter(p => p.isParticipating).length;
+  const participationRate = totalParticipants > 0 ? (activeParticipants / totalParticipants) * 100 : 0;
+
+  const stats = {
+    contestId: contest.id,
+    contestName: contest.name,
+    totalParticipants,
+    totalVotes,
+    freeVotes,
+    paidVotes,
+    totalPrizePool: contest.prizePool,
+    startDate: contest.startDate.toISOString(),
+    endDate: contest.endDate.toISOString(),
+    isActive,
+    daysRemaining,
+    participationRate: Math.round(participationRate * 100) / 100, // Round to 2 decimal places
+  };
+
+  return c.json(stats, HttpStatusCodes.OK);
+};
+
+export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> = async (c) => {
+  const { id } = c.req.valid("param");
+  const { page, limit } = c.req.valid("query");
+
+  const contest = await db.contest.findUnique({
+    where: { id },
+  });
+
+  if (!contest) {
+    return sendErrorResponse(c, "notFound", "Contest not found");
+  }
+
+  // Get contest participants with their vote counts
+  const participants = await db.contestParticipation.findMany({
+    where: {
+      contestId: id,
+      isParticipating: true,
+    },
+    include: {
+      profile: {
+        include: {
+          user: true,
+          votesReceived: {
+            where: {
+              contestId: id,
+            },
+          },
+        },
+      },
+    },
+    skip: (page - 1) * limit,
+    take: limit,
+  });
+
+  // Calculate total participants for pagination
+  const totalParticipants = await db.contestParticipation.count({
+    where: {
+      contestId: id,
+      isParticipating: true,
+    },
+  });
+
+  // Process participants and calculate vote statistics
+  const leaderboardData = participants.map((participation, index) => {
+    const profile = participation.profile;
+    const votesReceived = profile.votesReceived;
+
+    const totalVotes = votesReceived.length;
+    const freeVotes = votesReceived.filter(vote => vote.type === "FREE").length;
+    const paidVotes = votesReceived.filter(vote => vote.type === "PAID").length;
+    const rank = (page - 1) * limit + index + 1;
+
+    return {
+      rank,
+      profileId: profile.id,
+      userId: profile.user.id,
+      username: profile.user.username!,
+      displayUsername: profile.user.displayUsername,
+      avatarUrl: profile.avatarUrl,
+      bio: profile.bio,
+      totalVotes,
+      freeVotes,
+      paidVotes,
+      isParticipating: participation.isParticipating ?? true,
+      coverImage: participation.coverImage,
+      isApproved: participation.isApproved,
+    };
+  });
+
+  // Sort by paid votes first, then by total votes
+  leaderboardData.sort((a, b) => {
+    if (a.paidVotes !== b.paidVotes) {
+      return b.paidVotes - a.paidVotes;
+    }
+    return b.totalVotes - a.totalVotes;
+  });
+
+  const pagination = calculatePaginationMetadata(totalParticipants, page, limit);
+
+  return c.json({
+    data: leaderboardData,
     pagination,
   }, HttpStatusCodes.OK);
 };

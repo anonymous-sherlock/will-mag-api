@@ -175,6 +175,78 @@ export const getJoinedContests = createRoute({
   },
 });
 
+export const getContestStats = createRoute({
+  path: "/contest/{id}/stats",
+  method: "get",
+  tags,
+  summary: "Get Contest Stats",
+  description: "Get statistics for a specific contest",
+  request: {
+    params: z.object({
+      id: z.string().describe("The contest ID"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      z.object({
+        contestId: z.string(),
+        contestName: z.string(),
+        totalParticipants: z.number(),
+        totalVotes: z.number(),
+        freeVotes: z.number(),
+        paidVotes: z.number(),
+        totalPrizePool: z.number(),
+        startDate: z.string(),
+        endDate: z.string(),
+        isActive: z.boolean(),
+        daysRemaining: z.number().optional(),
+        participationRate: z.number(),
+      }),
+      "The contest statistics",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Contest not found"),
+  },
+});
+
+export const getContestLeaderboard = createRoute({
+  path: "/contest/{id}/leaderboard",
+  method: "get",
+  tags,
+  summary: "Get Contest Leaderboard",
+  description: "Get leaderboard for a specific contest",
+  request: {
+    query: PaginationQuerySchema,
+    params: z.object({
+      id: z.string().describe("The contest ID"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      createPaginatedResponseSchema(
+        z.object({
+          rank: z.number(),
+          profileId: z.string(),
+          userId: z.string(),
+          username: z.string(),
+          displayUsername: z.string().nullable(),
+          avatarUrl: z.string().nullable(),
+          bio: z.string().nullable(),
+          totalVotes: z.number(),
+          freeVotes: z.number(),
+          paidVotes: z.number(),
+          isParticipating: z.boolean(),
+          coverImage: z.string().nullable(),
+          isApproved: z.boolean(),
+        }),
+      ),
+      "The contest leaderboard",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Contest not found"),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
@@ -183,3 +255,5 @@ export type RemoveRoute = typeof remove;
 export type GetUpcomingContestsRoute = typeof getUpcomingContests;
 export type GetAvailableContestsRoute = typeof getAvailableContests;
 export type GetJoinedContestsRoute = typeof getJoinedContests;
+export type GetContestStatsRoute = typeof getContestStats;
+export type GetContestLeaderboardRoute = typeof getContestLeaderboard;

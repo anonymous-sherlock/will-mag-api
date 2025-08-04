@@ -5,7 +5,7 @@ import { createErrorSchema } from "stoker/openapi/schemas";
 
 import { RankSchema } from "@/db/schema/rank.schema";
 
-const tags = ["Ranks"];
+const tags = ["Rank"];
 
 export const list = createRoute({
   path: "/ranks",

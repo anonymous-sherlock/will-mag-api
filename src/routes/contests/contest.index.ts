@@ -11,6 +11,8 @@ const router = createBaseAPIRouter()
   .openapi(routes.remove, handlers.remove)
   .openapi(routes.getUpcomingContests, handlers.getUpcomingContests)
   .openapi(routes.getAvailableContests, handlers.getAvailableContests)
-  .openapi(routes.getJoinedContests, handlers.getJoinedContests);
+  .openapi(routes.getJoinedContests, handlers.getJoinedContests)
+  .openapi(routes.getContestStats, handlers.getContestStats)
+  .openapi(routes.getContestLeaderboard, handlers.getContestLeaderboard);
 
 export default router;

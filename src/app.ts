@@ -7,6 +7,7 @@ import awards from "@/routes/awards/award.index";
 import contestParticipation from "@/routes/contests/contest-participation.index";
 import contest from "@/routes/contests/contest.index";
 import index from "@/routes/index.route";
+import leaderboard from "@/routes/leaderboards/leaderboard.index";
 import notification from "@/routes/notifications/notification.index";
 import payment from "@/routes/payments/payments.index";
 import profile from "@/routes/profiles/profile.index";
@@ -19,7 +20,7 @@ import stripeWebhookRouter from "./routes/webhooks/stripe/stripe.index";
 const app = createApp();
 configureOpenAPI(app);
 
-const routes = [index, auth, user, profile, notification, contest, awards, contestParticipation, vote, ranks, payment] as const;
+const routes = [index, auth, user, profile, notification, contest, awards, contestParticipation, vote, ranks, payment, leaderboard] as const;
 
 routes.forEach((route) => {
   app.route("/", route);

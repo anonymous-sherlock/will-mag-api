@@ -15,7 +15,7 @@ const router = createRouter()
       hide: true,
       responses: {
         [HttpStatusCodes.OK]: jsonContent(
-          createMessageObjectSchema("Will Mag API").extend({
+          createMessageObjectSchema("Swing Mag API").extend({
             "API Doc": z.string(),
             "API Reference": z.string(),
           }),
@@ -25,7 +25,7 @@ const router = createRouter()
     }),
     (c) => {
       return c.json({
-        "message": "Will Mag API",
+        "message": "Swing Mag API",
         "API Doc": `${env.PUBLIC_APP_URL}/api/v1/doc`,
         "API Reference": `${env.PUBLIC_APP_URL}/reference`,
       }, HttpStatusCodes.OK);

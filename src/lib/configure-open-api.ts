@@ -31,7 +31,7 @@ export default function configureOpenAPI(app: AppOpenAPI) {
         clientKey: "axios",
       },
       sources: [
-        { url: "/api/v1/doc", title: "Will Mag API" },
+        { url: "/api/v1/doc", title: "Swing Mag API" },
         { url: "/api/v1/auth/doc", title: "Authentication" },
       ],
     }),

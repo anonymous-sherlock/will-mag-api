@@ -1,0 +1,50 @@
+name: Deploy Node.js App to Hostinger VPS
+
+on:
+  push:
+    branches:
+      - production
+
+jobs:
+  deploy:
+    name: Build and Deploy with pnpm
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      - name: Build project
+        run: pnpm build
+
+      - name: Copy files to VPS via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.HOSTINGER_KEY }}
+          source: "dist/*"
+          target: "${{ secrets.APP_DIRECTORY }}"
+          strip_components: 1
+
+      - name: Restart App on VPS with PM2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.HOSTINGER_KEY }}
+          script: |
+            cd ${{ secrets.APP_DIRECTORY }}
+            pnpm install --prod
+            pm2 restart app || pm2 start dist/src/index.js --name "app"

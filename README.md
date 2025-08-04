@@ -1,4 +1,4 @@
-# Will Mag API
+# Swing Mag API
 
 ## Setup
 

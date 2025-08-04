@@ -28,15 +28,19 @@ jobs:
       - name: Build project
         run: pnpm build
 
-      - name: Copy files to VPS via SCP
+      - name: Copy necessary files to VPS via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HOSTINGER_HOST }}
           username: ${{ secrets.HOSTINGER_USER }}
           key: ${{ secrets.HOSTINGER_KEY }}
-          source: "dist/*"
-          target: "${{ secrets.APP_DIRECTORY }}"
-          strip_components: 1
+          source: |
+            dist
+            package.json
+            pnpm-lock.yaml
+            prisma
+          target: /root/swing-mag-api
+          strip_components: 0
 
       - name: Restart App on VPS with PM2
         uses: appleboy/ssh-action@v1.0.3
@@ -47,7 +51,7 @@ jobs:
           script: |
             export NVM_DIR="$HOME/.nvm"
             export PATH="$NVM_DIR/versions/node/v20.19.4/bin:$PATH"
-            cd ${{ secrets.APP_DIRECTORY }}
+            cd /root/swing-mag-api
             pnpm install --prod
             pm2 restart app || pm2 start dist/src/index.js --name "app"
             pm2 save

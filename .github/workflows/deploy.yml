@@ -46,5 +46,5 @@ jobs:
           key: ${{ secrets.HOSTINGER_KEY }}
           script: |
             cd ${{ secrets.APP_DIRECTORY }}
-            pnpm install --prod
-            pm2 restart app || pm2 start dist/src/index.js --name "app"
+            /root/.nvm/versions/node/v20.19.4/bin/pnpm install --prod
+            /root/.nvm/versions/node/v20.19.4/bin/pm2 restart app || /root/.nvm/versions/node/v20.19.4/bin/pm2 start dist/src/index.js --name "app"

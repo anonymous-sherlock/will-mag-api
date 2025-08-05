@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "lint:fix": "npm run lint --fix",
     "test": "cross-env NODE_ENV=test vitest",
-    "build": "npm run clean:dist && tsc && tsc-alias && xcopy /E /I /Y /H src\\generated\\prisma dist\\src\\generated\\prisma && tsx scripts/fix-imports.ts",
+    "build": "npm run clean:dist && tsc && tsc-alias && cp -r src\\generated\\prisma dist\\src\\generated\\prisma && tsx scripts/fix-imports.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --name",
     "db:studio": "prisma studio",

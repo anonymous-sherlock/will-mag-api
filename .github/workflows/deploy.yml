@@ -34,7 +34,7 @@ jobs:
           host: ${{ secrets.HOSTINGER_HOST }}
           username: ${{ secrets.HOSTINGER_USER }}
           key: ${{ secrets.HOSTINGER_KEY }}
-          source: "dist/**/*,package.json,pnpm-lock.yaml,prisma/**/*,.env.production"
+          source: "dist/**/*,package.json,pnpm-lock.yaml,prisma/**/*"
           target: "/root/swing-test-app"
           strip_components: 0
 
@@ -52,12 +52,31 @@ jobs:
             # Install production dependencies
             pnpm install --prod
             
-            # Restart or start the application with PM2
-            if pm2 list | grep -q "swing-test-app"; then
-              pm2 restart swing-test-app
-            else
-              pm2 start dist/src/index.js --name "swing-test-app" --interpreter node
-            fi
+            # Generate Prisma client on the server
+            pnpm db:generate
+            
+            # Create environment file from secrets
+            cat > .env << EOF
+            NODE_ENV=production
+            PORT=9999
+            LOG_LEVEL=info
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            DATABASE_AUTH_TOKEN=${{ secrets.DATABASE_AUTH_TOKEN }}
+            PUBLIC_APP_URL=${{ secrets.PUBLIC_APP_URL }}
+            BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}
+            BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }}
+            UPLOADTHING_TOKEN=${{ secrets.UPLOADTHING_TOKEN }}
+            STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+            STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
+            FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+            EOF
+            
+            # Clean up any existing PM2 processes
+            pm2 delete all 2>/dev/null || true
+            pm2 flush
+            
+            # Start the application with PM2
+            pm2 start dist/src/index.js --name "swing-test-app" --interpreter node
             
             # Save PM2 configuration
             pm2 save

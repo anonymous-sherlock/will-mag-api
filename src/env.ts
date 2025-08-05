@@ -16,7 +16,6 @@ const EnvSchema = z
     PORT: z.coerce.number().default(9999),
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]),
     DATABASE_URL: z.string().url(),
-    DATABASE_AUTH_TOKEN: z.string().optional(),
     PUBLIC_APP_URL: z.string().url().default("http://localhost:9999"),
     BETTER_AUTH_SECRET: z.string(),
     BETTER_AUTH_URL: z.string().url(),
@@ -24,17 +23,6 @@ const EnvSchema = z
     STRIPE_SECRET_KEY: z.string(),
     STRIPE_WEBHOOK_SECRET: z.string(),
     FRONTEND_URL: z.string().url(),
-  })
-  .superRefine((input, ctx) => {
-    if (input.NODE_ENV === "production" && !input.DATABASE_AUTH_TOKEN) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.invalid_type,
-        expected: "string",
-        received: "undefined",
-        path: ["DATABASE_AUTH_TOKEN"],
-        message: "Must be set when NODE_ENV is 'production'",
-      });
-    }
   });
 
 export type env = z.infer<typeof EnvSchema>;

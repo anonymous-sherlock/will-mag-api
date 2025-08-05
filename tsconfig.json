@@ -8,7 +8,7 @@
     "moduleResolution": "Bundler",
     "paths": {
       "@/*": ["./src/*"],
-      "@/generated/prisma/*": ["./generated/prisma/*"]
+      "@/generated/*": ["./src/generated/*"]
     },
     "typeRoots": ["./node_modules/@types"],
     "types": [
@@ -19,8 +19,12 @@
     "skipLibCheck": true
   },
   "tsc-alias": {
-    "resolveFullPaths": true
+    "resolveFullPaths": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "esModuleInterop": true
-
+  "esModuleInterop": true,
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "src/generated/**/*"]
 }

@@ -71,6 +71,26 @@ export const getOne = createRoute({
   },
 });
 
+export const getByUserId = createRoute({
+  path: "/profile/user/{userId}",
+  method: "get",
+  tags,
+  summary: "Get Profile by User ID",
+  description: "Get a specific profile by user ID",
+  request: {
+    params: z.object({
+      userId: z.string().describe("The user ID"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      ProfileSelectSchema,
+      "The profile",
+    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
+  },
+});
+
 export const patch = createRoute({
   path: "/profile/{id}",
   method: "patch",
@@ -122,5 +142,6 @@ export const remove = createRoute({
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
+export type GetByUserIdRoute = typeof getByUserId;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;

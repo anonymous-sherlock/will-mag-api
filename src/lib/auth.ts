@@ -4,13 +4,15 @@ import { adminClient } from "better-auth/client/plugins";
 import { bearer, openAPI, username } from "better-auth/plugins";
 
 import { db } from "@/db";
+import env from "@/env";
 
+// Explicitly type the auth configuration to avoid DTS generation issues
 export const auth = betterAuth({
   database: prismaAdapter(db, {
     provider: "mysql",
   }),
   basePath: "/api/v1/auth",
-  baseURL: "http://localhost:9999",
+  baseURL: env.PUBLIC_APP_URL,
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 6,

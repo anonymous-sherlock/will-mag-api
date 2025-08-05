@@ -1,4 +1,4 @@
-name: Deploy Node.js App to Hostinger VPS
+name: Deploy S App to Hostinger VPS
 
 on:
   push:
@@ -34,12 +34,8 @@ jobs:
           host: ${{ secrets.HOSTINGER_HOST }}
           username: ${{ secrets.HOSTINGER_USER }}
           key: ${{ secrets.HOSTINGER_KEY }}
-          source: |
-            dist
-            package.json
-            pnpm-lock.yaml
-            prisma
-          target: /root/swing-mag-api
+          source: "dist/**/*,package.json,pnpm-lock.yaml,prisma/**/*,.env.production"
+          target: "/root/swing-mag-api"
           strip_components: 0
 
       - name: Restart App on VPS with PM2
@@ -52,6 +48,19 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             export PATH="$NVM_DIR/versions/node/v20.19.4/bin:$PATH"
             cd /root/swing-mag-api
+            
+            # Install production dependencies
             pnpm install --prod
-            pm2 restart app || pm2 start dist/src/index.js --name "app"
+            
+            # Restart or start the application with PM2
+            if pm2 list | grep -q "swing-mag-api"; then
+              pm2 restart swing-mag-api
+            else
+              pm2 start dist/src/index.js --name "swing-mag-api" --interpreter node
+            fi
+            
+            # Save PM2 configuration
             pm2 save
+            
+            # Setup PM2 to start on system boot
+            pm2 startup

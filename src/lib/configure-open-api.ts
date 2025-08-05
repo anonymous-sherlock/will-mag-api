@@ -15,7 +15,7 @@ export default function configureOpenAPI(app: AppOpenAPI) {
     openapi: "3.0.0",
     info: {
       version: packageJSON.version,
-      title: "Will Magazine API",
+      title: "Swing Magazine API",
     },
     security: [{ "Bearer Auth": [] }],
   });

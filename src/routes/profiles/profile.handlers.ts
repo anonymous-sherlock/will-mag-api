@@ -6,7 +6,7 @@ import { db } from "@/db";
 import { sendErrorResponse } from "@/helpers/send-error-response";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 
-import type { CreateRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from "./profile.routes";
+import type { CreateRoute, GetByUserIdRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from "./profile.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const { page, limit } = c.req.valid("query");
@@ -45,6 +45,18 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
   const { id } = c.req.valid("param");
   const profile = await db.profile.findUnique({
     where: { id },
+  });
+
+  if (!profile)
+    return sendErrorResponse(c, "notFound", "Profile not found");
+
+  return c.json(profile, HttpStatusCodes.OK);
+};
+
+export const getByUserId: AppRouteHandler<GetByUserIdRoute> = async (c) => {
+  const { userId } = c.req.valid("param");
+  const profile = await db.profile.findUnique({
+    where: { userId },
   });
 
   if (!profile)

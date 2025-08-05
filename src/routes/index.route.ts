@@ -19,13 +19,13 @@ const router = createRouter()
             "API Doc": z.string(),
             "API Reference": z.string(),
           }),
-          "Will Mag Index",
+          "Swing Magazine API Index",
         ),
       },
     }),
     (c) => {
       return c.json({
-        "message": "Swing Mag API",
+        "message": "Swing Magazine API",
         "API Doc": `${env.PUBLIC_APP_URL}/api/v1/doc`,
         "API Reference": `${env.PUBLIC_APP_URL}/reference`,
       }, HttpStatusCodes.OK);

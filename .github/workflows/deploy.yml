@@ -28,6 +28,9 @@ jobs:
       - name: Build project
         run: pnpm build
 
+      - name: Copy package.json to dist folder
+        run: cp package.json dist/
+
       - name: Copy necessary files to VPS via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -55,11 +58,12 @@ jobs:
             # Generate Prisma client on the server
             pnpm db:generate
             
-            # Create environment file from secrets
-            cat > .env << EOF
+            # Create environment file from secrets only if it doesn't exist
+            if [ ! -f ".env" ]; then
+              cat > .env << EOF
             NODE_ENV=production
             PORT=9999
-            LOG_LEVEL=info
+            LOG_LEVEL=silent
             DATABASE_URL=${{ secrets.DATABASE_URL }}
             DATABASE_AUTH_TOKEN=${{ secrets.DATABASE_AUTH_TOKEN }}
             PUBLIC_APP_URL=${{ secrets.PUBLIC_APP_URL }}
@@ -70,6 +74,9 @@ jobs:
             STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
             FRONTEND_URL=${{ secrets.FRONTEND_URL }}
             EOF
+            else
+              echo ".env file already exists, preserving it"
+            fi
             
             # Clean up any existing PM2 processes
             pm2 delete all 2>/dev/null || true

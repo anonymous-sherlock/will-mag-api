@@ -38,7 +38,7 @@ jobs:
           username: ${{ secrets.HOSTINGER_USER }}
           key: ${{ secrets.HOSTINGER_KEY }}
           source: "dist/**/*,package.json,pnpm-lock.yaml,prisma/**/*"
-          target: "/root/swing-test-app"
+          target: "/root/swing-mag-api"
           strip_components: 0
 
       - name: Restart App on VPS with PM2
@@ -50,7 +50,7 @@ jobs:
           script: |
             export NVM_DIR="$HOME/.nvm"
             export PATH="$NVM_DIR/versions/node/v20.19.4/bin:$PATH"
-            cd /root/swing-test-app
+            cd /root/swing-mag-api
             
             # Install production dependencies
             pnpm install --prod
@@ -78,12 +78,14 @@ jobs:
               echo ".env file already exists, preserving it"
             fi
             
-            # Clean up any existing PM2 processes
-            pm2 delete all 2>/dev/null || true
-            pm2 flush
+            # Clean up any existing PM2 process for this app only
+            if pm2 list | grep -q "swing-mag-prod"; then
+              pm2 delete swing-mag-prod
+            fi
+              pm2 flush
             
             # Start the application with PM2
-            pm2 start dist/src/index.js --name "swing-test-app" --interpreter node
+            pm2 start dist/src/index.js --name "swing-mag-prod" --interpreter node
             
             # Save PM2 configuration
             pm2 save

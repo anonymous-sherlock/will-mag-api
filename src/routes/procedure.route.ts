@@ -41,53 +41,53 @@ export function defineRoute<R extends RouteConfig>(
   return entry;
 }
 
-export class RouteBuilder {
-  private router = createBaseAPIRouter();
+// export class RouteBuilder {
+//   private router = createBaseAPIRouter();
 
-  // Implementation
-  openapi<R extends RouteConfig>(
-    route: R,
-    handler: AppRouteHandler<R>,
-    authOrOptions?: AuthLevel | { auth?: AuthLevel; middlewares?: MiddlewareHandler[] },
-    ...middlewares: MiddlewareHandler[]
-  ) {
-    // Determine auth level and middlewares based on parameter type
-    let auth: AuthLevel = "public";
-    let finalMiddlewares: MiddlewareHandler[] = [];
+//   // Implementation
+//   openapi<R extends RouteConfig>(
+//     route: R,
+//     handler: AppRouteHandler<R>,
+//     authOrOptions?: AuthLevel | { auth?: AuthLevel; middlewares?: MiddlewareHandler[] },
+//     ...middlewares: MiddlewareHandler[]
+//   ) {
+//     // Determine auth level and middlewares based on parameter type
+//     let auth: AuthLevel = "public";
+//     let finalMiddlewares: MiddlewareHandler[] = [];
 
-    if (typeof authOrOptions === "string") {
-      // Overload 2: auth is a string, middlewares are rest parameters
-      auth = authOrOptions;
-      finalMiddlewares = middlewares;
-    }
-    else if (typeof authOrOptions === "object" && authOrOptions !== null) {
-      // Overload 3: options object
-      auth = authOrOptions.auth || "public";
-      finalMiddlewares = authOrOptions.middlewares || [];
-    }
-    // Overload 1: authOrOptions is undefined, use defaults
+//     if (typeof authOrOptions === "string") {
+//       // Overload 2: auth is a string, middlewares are rest parameters
+//       auth = authOrOptions;
+//       finalMiddlewares = middlewares;
+//     }
+//     else if (typeof authOrOptions === "object" && authOrOptions !== null) {
+//       // Overload 3: options object
+//       auth = authOrOptions.auth || "public";
+//       finalMiddlewares = authOrOptions.middlewares || [];
+//     }
+//     // Overload 1: authOrOptions is undefined, use defaults
 
-    if (finalMiddlewares.length) {
-      switch (auth) {
-        case "public":
-          this.router.use(route.getRoutingPath(), ...finalMiddlewares);
-          break;
-        case "private":
-          this.router.use(route.getRoutingPath(), requireAuth, ...finalMiddlewares);
-          break;
-        case "admin":
-          this.router.use(route.getRoutingPath(), requireAuth, requireAdmin, ...finalMiddlewares);
-          break;
-        default:
-          this.router.use(route.getRoutingPath(), ...finalMiddlewares);
-          break;
-      }
-    }
-    this.router.openapi(route, handler);
-    return this;
-  }
+//     if (finalMiddlewares.length) {
+//       switch (auth) {
+//         case "public":
+//           this.router.use(route.getRoutingPath(), ...finalMiddlewares);
+//           break;
+//         case "private":
+//           this.router.use(route.getRoutingPath(), requireAuth, ...finalMiddlewares);
+//           break;
+//         case "admin":
+//           this.router.use(route.getRoutingPath(), requireAuth, requireAdmin, ...finalMiddlewares);
+//           break;
+//         default:
+//           this.router.use(route.getRoutingPath(), ...finalMiddlewares);
+//           break;
+//       }
+//     }
+//     this.router.openapi(route, handler);
+//     return this;
+//   }
 
-  getRouter() {
-    return this.router;
-  }
-}
+//   getRouter() {
+//     return this.router;
+//   }
+// }

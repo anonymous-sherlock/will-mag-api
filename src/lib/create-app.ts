@@ -31,9 +31,9 @@ export default function createApp() {
   const app = createRouter();
   app
     .use(cors({
-      origin: ["http://localhost:3001", "http://localhost:3000", "http://localhost:5173"],
+      origin: ["http://localhost:3001", "http://localhost:3000", "http://localhost:5173", "http://localhost:8080"],
       allowHeaders: ["Content-Type", "Authorization"],
-      allowMethods: ["POST", "GET", "OPTIONS"],
+      allowMethods: ["POST", "GET", "PATCH", "PUT", "DELETE", "OPTIONS"],
       exposeHeaders: ["Content-Length"],
       maxAge: 600,
       credentials: true,

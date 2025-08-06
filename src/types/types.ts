@@ -1,4 +1,3 @@
-/* eslint-disable ts/consistent-type-definitions */
 import type { OpenAPIHono, RouteConfig, RouteHandler } from "@hono/zod-openapi";
 import type { Schema } from "hono";
 import type { PinoLogger } from "hono-pino";
@@ -13,25 +12,26 @@ export interface AppBindings {
   };
 };
 
+export interface ProtectedAppBindings extends AppBindings {
+  Variables: {
+    logger: PinoLogger;
+    user: typeof auth.$Infer.Session.user;
+    session: typeof auth.$Infer.Session.session;
+  };
+}
+
 // eslint-disable-next-line ts/no-empty-object-type
 export type AppOpenAPI<S extends Schema = {}> = OpenAPIHono<AppBindings, S>;
-
 export type AppRouteHandler<R extends RouteConfig> = RouteHandler<R, AppBindings>;
 
-// uploadthing
-export type UploadFileResponse
-  = | { data: UploadData; error: null }
-    | { data: null; error: UploadError };
+// eslint-disable-next-line ts/no-empty-object-type
+export type ProtectedAppOpenAPI<S extends Schema = {}> = OpenAPIHono<ProtectedAppBindings, S>;
+export type ProtectedAppRouteHandler<R extends RouteConfig> = RouteHandler<R, AppBindings>;
 
-type UploadData = {
-  key: string;
-  url: string;
-  name: string;
-  size: number;
-};
+type RouteHandlerTuple<R extends RouteConfig = RouteConfig> = [R, AppRouteHandler<R>];
 
-type UploadError = {
-  code: string;
-  message: string;
-  data: any;
-};
+export interface RouteGroups {
+  public?: RouteHandlerTuple[];
+  private?: RouteHandlerTuple[];
+  admin?: RouteHandlerTuple[];
+}

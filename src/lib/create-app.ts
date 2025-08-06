@@ -31,7 +31,7 @@ export default function createApp() {
   const app = createRouter();
   app
     .use(cors({
-      origin: ["http://localhost:3001", "http://localhost:3000", "http://localhost:5173", "http://localhost:8080"],
+      origin: ["http://localhost:3001", "http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "https://app.swingboudoirmag.com"],
       allowHeaders: ["Content-Type", "Authorization"],
       allowMethods: ["POST", "GET", "PATCH", "PUT", "DELETE", "OPTIONS"],
       exposeHeaders: ["Content-Length"],

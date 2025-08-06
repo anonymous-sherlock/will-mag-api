@@ -1,14 +1,13 @@
-import { createBaseAPIRouter } from "@/lib/create-app";
-
+import { RouteBuilder } from "../procedure.route";
 import * as handlers from "./user.handlers";
 import * as routes from "./user.routes";
 
-const router = createBaseAPIRouter()
-  .openapi(routes.list, handlers.list)
+const userRoutes = new RouteBuilder()
   .openapi(routes.create, handlers.create)
+  .openapi(routes.list, handlers.list)
   .openapi(routes.getOne, handlers.getOne)
-  .openapi(routes.getUserProfile, handlers.getUserProfile)
   .openapi(routes.patch, handlers.patch)
+  .openapi(routes.getUserProfile, handlers.getUserProfile)
   .openapi(routes.remove, handlers.remove);
 
-export default router;
+export default userRoutes.getRouter();

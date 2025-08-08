@@ -10,7 +10,7 @@ import {
   ContestSearchResultSchema,
   ProfileSearchQuerySchema,
   ProfileSearchResultSchema,
-} from "./search.schema";
+} from "../../db/schema/search.schema";
 
 const tags = ["Search"];
 

@@ -3,47 +3,50 @@ import type { Context } from "hono";
 import type { StatusCode } from "hono/utils/http-status";
 import type { JSONValue } from "hono/utils/types";
 
+import * as HttpStatusCodes from "stoker/http-status-codes";
+
 // Error types
-export type ErrorType = "unauthorized" | "forbidden" | "notFound" | "alreadyExists" | "badRequest" | "serviceUnavailable" | "conflict";
+export type ErrorType = "unauthorized" | "forbidden" | "notFound" | "conflict" | "badRequest" | "serviceUnavailable" | "conflict" | "tooManyRequests";
 
 // Presets for common error responses
 const errorPresets = {
   unauthorized: {
-    status: 401,
+    status: HttpStatusCodes.UNAUTHORIZED,
     statusText: "Unauthorized",
     message: "Authentication required",
   },
   forbidden: {
-    status: 403,
+    status: HttpStatusCodes.FORBIDDEN,
     statusText: "Forbidden",
     message: "Insufficient permissions",
   },
   notFound: {
-    status: 404,
+    status: HttpStatusCodes.NOT_FOUND,
     statusText: "Not Found",
     message: "Resource not found",
   },
-  alreadyExists: {
-    status: 409,
+  conflict: {
+    status: HttpStatusCodes.CONFLICT,
     statusText: "Conflict",
     message: "Resource already exists",
   },
   badRequest: {
-    status: 400,
+    status: HttpStatusCodes.BAD_REQUEST,
     statusText: "Bad Request",
     message: "Invalid request",
   },
   serviceUnavailable: {
-    status: 503,
+    status: HttpStatusCodes.SERVICE_UNAVAILABLE,
     statusText: "Service unavailable",
     message: "",
   },
-  conflict: {
-    status: 409,
-    statusText: "Conflict",
-    message: "",
+  tooManyRequests: {
+    status: HttpStatusCodes.TOO_MANY_REQUESTS,
+    statusText: "Too many requests",
+    message: "Too many requests",
   },
-} as const;
+
+} as const satisfies Record<ErrorType, { status: StatusCode; statusText: string; message: string }>;
 
 type ErrorPresets = typeof errorPresets;
 

@@ -6,6 +6,7 @@ import { createErrorSchema } from "stoker/openapi/schemas";
 import { ContestParticipationInsertSchema, ContestParticipationLeaveSchema, ContestParticipationSelectSchema } from "@/db/schema/contest-participation.schema";
 import { ContestSelectSchema, ContestSelectSchemaWithAwards } from "@/db/schema/contest.schema";
 import { ProfileSelectSchema } from "@/db/schema/profile.schema";
+import { UserSelectSchema } from "@/db/schema/users.schema";
 import { ConflictResponse, NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
 import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
 
@@ -82,7 +83,6 @@ export const getParticipants = createRoute({
     [HttpStatusCodes.OK]: jsonContent(
       createPaginatedResponseSchema(
         ContestParticipationSelectSchema.omit({
-          contestId: true,
           profileId: true,
         }).extend({
           profile: ProfileSelectSchema.pick({
@@ -91,7 +91,15 @@ export const getParticipants = createRoute({
             freeVoterMessage: true,
             hobbiesAndPassions: true,
             paidVoterMessage: true,
+          }).extend({
+            user: UserSelectSchema.pick({
+              id: true,
+              email: true,
+              name: true,
+              image: true,
+            }).nullable(),
           }).nullable(),
+
         }),
       ),
       "The contest participants list",

@@ -1,17 +1,29 @@
 import z from "zod";
 
-export const VoteSchema = z.object({
-  voterId: z.string().cuid(), // The profile ID of the voter
-  voteeId: z.string().cuid(), // The profile ID of the participant being voted for
-  contestId: z.string().cuid(),
-  type: z.enum(["FREE", "PAID"]).default("FREE"),
-});
+import type { Vote } from "@/generated/prisma";
 
-export const VoteInsertSchema = VoteSchema;
-export const VoteSelectSchema = VoteSchema.extend({
+import { Vote_Type } from "@/generated/prisma";
+
+export const VoteSchema = z.object({
   id: z.string().cuid(),
+  type: z.nativeEnum(Vote_Type),
+  voterId: z.string(),
+  voteeId: z.string(),
+  contestId: z.string(),
+  count: z.number(),
+  paymentId: z.string().nullable(),
   createdAt: z.date(),
+  updatedAt: z.date(),
+}) satisfies z.ZodType<Vote>;
+
+export const VoteInsertSchema = VoteSchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  paymentId: true,
+  count: true,
 });
+export const VoteSelectSchema = VoteSchema;
 
 export const GetLatestVotesResponseSchema = z.array(
   z.object({

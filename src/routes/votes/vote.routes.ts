@@ -4,36 +4,87 @@ import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema } from "stoker/openapi/schemas";
 import { z } from "zod";
 
+import { PayVoteRequestSchema, PayVoteResponseSchema } from "@/db/schema/payments.schema";
 import {
   GetLatestVotesResponseSchema,
   GetVotesByUserIdResponseSchema,
   VoteInsertSchema,
   VoteSelectSchema,
 } from "@/db/schema/vote.schema";
-import { NotFoundResponse } from "@/lib/openapi.responses";
+import { NotFoundResponse, ServiceUnavailableResponse, TooManyRequestResponse } from "@/lib/openapi.responses";
 import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
 
 const tags = ["Vote"];
 
-export const vote = createRoute({
-  path: "/contest/vote",
+export const freeVote = createRoute({
+  path: "/contest/vote/free",
   method: "post",
-  summary: "Vote a profile in a contest",
+  summary: "Give a free vote",
   description:
-    "Vote for a profile in a contest. Supports free and paid votes. Free votes are limited to one per 24 hours per contest.",
+    "Give a free vote in a contest for a profile. Free votes are limited to one per 24 hours per contest.",
   tags,
   request: {
     body: jsonContentRequired(
-      VoteInsertSchema,
+      VoteInsertSchema.omit({
+        type: true,
+      }),
       "The vote payload (voterId, voteeId, contestId, type)",
     ),
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(VoteSelectSchema, "The created vote record"),
+    [HttpStatusCodes.TOO_MANY_REQUESTS]: TooManyRequestResponse(),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(VoteInsertSchema),
       "The validation error(s)",
     ),
+  },
+});
+
+export const isFreeVoteAvailable = createRoute({
+  path: "/votes/is-free-vote-available",
+  method: "post",
+  summary: "Check free vote status",
+  description:
+    "Returns whether a free vote is available for the given profileId, and if not, when it will be available.",
+  tags,
+  request: {
+    body: jsonContentRequired(
+      z.object({
+        profileId: z.string().describe("The profile ID to check free vote availability for"),
+      }),
+      "The profile ID to check free vote availability for",
+    ),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      z.object({
+        available: z.boolean(),
+        nextAvailableAt: z.date().optional(),
+      }),
+      "Whether a free vote is available and the next available time if not.",
+    ),
+    [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
+      z.object({ error: z.string() }),
+      "Missing or invalid profileId.",
+    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found."),
+  },
+});
+
+export const payVote = createRoute({
+  path: "/contest/vote/pay",
+  method: "post",
+  tags,
+  summary: "Give a paid vote",
+  description: "",
+  request: {
+    body: jsonContentRequired(PayVoteRequestSchema, "The validation error"),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(PayVoteResponseSchema, "Payment made successfully"),
+    [HttpStatusCodes.SERVICE_UNAVAILABLE]: ServiceUnavailableResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse(),
   },
 });
 
@@ -68,3 +119,9 @@ export const getVotesByUserId = createRoute({
     [HttpStatusCodes.NOT_FOUND]: NotFoundResponse(),
   },
 });
+
+export type FreeVote = typeof freeVote;
+export type IsFreeVoteAvailable = typeof isFreeVoteAvailable;
+export type PayVote = typeof payVote;
+export type GetLatestVotes = typeof getLatestVotes;
+export type GetVotesByUserId = typeof getVotesByUserId;

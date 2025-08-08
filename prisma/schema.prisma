@@ -50,7 +50,7 @@ model Account {
 }
 
 model Verification {
-  id         String    @id
+  id         String    @id @default(cuid())
   identifier String    @db.Text
   value      String    @db.Text
   expiresAt  DateTime
@@ -80,6 +80,12 @@ model User {
 
   @@unique([email])
   @@unique([username])
+  
+  @@fulltext([name])
+  @@fulltext([email])
+  @@fulltext([displayUsername])
+  @@fulltext([username])
+  @@fulltext([name, email])
   @@map("user")
 }
 
@@ -122,6 +128,14 @@ model Profile {
   notification Notification[]
 
   payments Payment[]
+
+  @@fulltext([bio])
+  @@fulltext([hobbiesAndPassions])
+  @@fulltext([paidVoterMessage])
+  @@fulltext([freeVoterMessage])
+  @@fulltext([city])
+  @@fulltext([country])
+  @@fulltext([bio, city, country, hobbiesAndPassions, paidVoterMessage, freeVoterMessage])
 }
 
 model Notification {
@@ -195,6 +209,7 @@ model Vote {
   payment   Payment? @relation(fields: [paymentId], references: [id])
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Vote_Type {

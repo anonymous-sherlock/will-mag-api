@@ -1,29 +1,13 @@
 import { createRoute } from "@hono/zod-openapi";
 import * as HttpStatusCodes from "stoker/http-status-codes";
-import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
+import { jsonContent } from "stoker/openapi/helpers";
 import { z } from "zod";
 
-import { PaymentHistorySchema, PayVoteRequestSchema, PayVoteResponseSchema } from "@/db/schema/payments.schema";
-import { ForbiddenResponse, NotFoundResponse, ServiceUnavailableResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
+import { PaymentHistorySchema } from "@/db/schema/payments.schema";
+import { ForbiddenResponse, NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
 import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
 
 const tags = ["Payments"];
-
-export const payVote = createRoute({
-  path: "/payments/vote/pay",
-  method: "post",
-  tags: [...tags, "Vote"],
-  summary: "Paid Votes for Contest",
-  description: "",
-  request: {
-    body: jsonContentRequired(PayVoteRequestSchema, "The validation error"),
-  },
-  responses: {
-    [HttpStatusCodes.OK]: jsonContent(PayVoteResponseSchema, "Payment made successfully"),
-    [HttpStatusCodes.SERVICE_UNAVAILABLE]: ServiceUnavailableResponse(),
-    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse(),
-  },
-});
 
 export const getPaymentHistory = createRoute({
   path: "/payments/{userId}/history",
@@ -67,6 +51,5 @@ export const getAllPayments = createRoute({
   },
 });
 
-export type PayVote = typeof payVote;
 export type GetPaymentHistory = typeof getPaymentHistory;
 export type GetAllPayments = typeof getAllPayments;

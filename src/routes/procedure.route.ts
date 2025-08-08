@@ -1,7 +1,7 @@
-import type { RouteConfig } from "@hono/zod-openapi";
+import type { RouteConfig, RouteHandler } from "@hono/zod-openapi";
 import type { MiddlewareHandler } from "hono";
 
-import type { AppRouteHandler } from "@/types/types";
+import type { AppBindings } from "@/types/types";
 
 import { sendErrorResponse } from "@/helpers/send-error-response";
 import { auth } from "@/lib/auth";
@@ -35,59 +35,54 @@ export const requireAdmin: MiddlewareHandler = async (c, next) => {
   return next();
 };
 
-export function defineRoute<R extends RouteConfig>(
-  entry: { route: R; handler: AppRouteHandler<R>; auth: "public" | "private" | "admin" },
-) {
-  return entry;
+class RouteBuilder {
+  private router: ReturnType<typeof createBaseAPIRouter>;
+
+  constructor(router?: ReturnType<typeof createBaseAPIRouter>) {
+    this.router = router ?? createBaseAPIRouter();
+  }
+
+  openapi<R extends RouteConfig>(
+    route: R,
+    handler: RouteHandler<R, AppBindings>,
+    authOrOptions?: AuthLevel | { auth?: AuthLevel; middlewares?: MiddlewareHandler[] },
+  ) {
+    let auth: AuthLevel = "public";
+    let middlewares: MiddlewareHandler[] = [];
+
+    if (typeof authOrOptions === "string") {
+      auth = authOrOptions;
+    }
+    else if (typeof authOrOptions === "object" && authOrOptions !== null) {
+      auth = authOrOptions.auth ?? "public";
+      middlewares = authOrOptions.middlewares ?? [];
+    }
+
+    const path = (route as any).getRoutingPath();
+
+    const authMiddlewareMap: Record<AuthLevel, MiddlewareHandler[]> = {
+      public: [],
+      private: [requireAuth],
+      admin: [requireAuth, requireAdmin],
+    };
+
+    const appliedMiddlewares = [...authMiddlewareMap[auth], ...middlewares];
+
+    if (appliedMiddlewares.length > 0) {
+      this.router.use(path, ...appliedMiddlewares);
+    }
+
+    // ❗ disable TS inference here
+    (this.router as any).openapi(route, handler);
+
+    return this;
+  }
+
+  getRouter() {
+    return this.router;
+  }
 }
 
-// export class RouteBuilder {
-//   private router = createBaseAPIRouter();
-
-//   // Implementation
-//   openapi<R extends RouteConfig>(
-//     route: R,
-//     handler: AppRouteHandler<R>,
-//     authOrOptions?: AuthLevel | { auth?: AuthLevel; middlewares?: MiddlewareHandler[] },
-//     ...middlewares: MiddlewareHandler[]
-//   ) {
-//     // Determine auth level and middlewares based on parameter type
-//     let auth: AuthLevel = "public";
-//     let finalMiddlewares: MiddlewareHandler[] = [];
-
-//     if (typeof authOrOptions === "string") {
-//       // Overload 2: auth is a string, middlewares are rest parameters
-//       auth = authOrOptions;
-//       finalMiddlewares = middlewares;
-//     }
-//     else if (typeof authOrOptions === "object" && authOrOptions !== null) {
-//       // Overload 3: options object
-//       auth = authOrOptions.auth || "public";
-//       finalMiddlewares = authOrOptions.middlewares || [];
-//     }
-//     // Overload 1: authOrOptions is undefined, use defaults
-
-//     if (finalMiddlewares.length) {
-//       switch (auth) {
-//         case "public":
-//           this.router.use(route.getRoutingPath(), ...finalMiddlewares);
-//           break;
-//         case "private":
-//           this.router.use(route.getRoutingPath(), requireAuth, ...finalMiddlewares);
-//           break;
-//         case "admin":
-//           this.router.use(route.getRoutingPath(), requireAuth, requireAdmin, ...finalMiddlewares);
-//           break;
-//         default:
-//           this.router.use(route.getRoutingPath(), ...finalMiddlewares);
-//           break;
-//       }
-//     }
-//     this.router.openapi(route, handler);
-//     return this;
-//   }
-
-//   getRouter() {
-//     return this.router;
-//   }
-// }
+export function createRouteBuilder(router?: ReturnType<typeof createBaseAPIRouter>) {
+  return new RouteBuilder(router);
+}

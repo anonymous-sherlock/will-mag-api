@@ -2,63 +2,156 @@ import * as HttpStatusCodes from "stoker/http-status-codes";
 
 import type { AppRouteHandler } from "@/types/types";
 
+import { FREE_VOTE_INTERVAL } from "@/constants";
 import { db } from "@/db";
+import env from "@/env";
 import { sendErrorResponse } from "@/helpers/send-error-response";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
+import { stripe } from "@/lib/stripe";
 
-import type {
+import type { FreeVote, GetLatestVotes, GetVotesByUserId, IsFreeVoteAvailable, PayVote } from "./vote.routes";
 
-  getLatestVotes as GetLatestVotes,
-  getVotesByUserId as GetVotesByUserId,
-  vote as VoteRoute,
+import { updateLastFreeVote, validateFreeVote } from "./vote.action";
 
-} from "./vote.routes";
-
-export const vote: AppRouteHandler<typeof VoteRoute> = async (c) => {
+export const freeVote: AppRouteHandler<FreeVote> = async (c) => {
   const data = c.req.valid("json");
-  // Check if this is a free vote
-  if (data.type === "FREE") {
-    // Get the voter's profile
-    const profile = await db.profile.findUnique({
-      where: { id: data.voterId },
-      select: { lastFreeVoteAt: true },
-    });
-    if (profile && profile.lastFreeVoteAt) {
-      const now = new Date();
-      const last = new Date(profile.lastFreeVoteAt);
-      const diff = now.getTime() - last.getTime();
-      if (diff < 24 * 60 * 60 * 1000) {
-        return c.json(
-          {
-            error: {
-              issues: [
-                {
-                  code: "TOO_MANY_REQUESTS",
-                  path: ["type"],
-                  message: "You can only use a free vote once every 24 hours for this contest.",
-                },
-              ],
-              name: "FreeVoteLimitError",
-            },
-            success: false,
-          },
-          HttpStatusCodes.UNPROCESSABLE_ENTITY,
-        );
-      }
-    }
-  } // Create the vote
-  const vote = await db.vote.create({ data });
-  // If free vote, update lastFreeVoteAt
-  if (data.type === "FREE") {
-    await db.profile.update({
-      where: { id: data.voterId },
-      data: { lastFreeVoteAt: new Date() },
-    });
+
+  if (!(await validateFreeVote(data.voterId))) {
+    return sendErrorResponse(
+      c,
+      "tooManyRequests",
+      "You can only use a free vote once every 24 hours for this contest",
+    );
   }
-  return c.json({ ...vote }, HttpStatusCodes.OK);
+
+  const vote = await db.vote.create({ data });
+
+  await updateLastFreeVote(data.voterId);
+
+  return c.json(vote, HttpStatusCodes.OK);
 };
 
-export const getLatestVotes: AppRouteHandler<typeof GetLatestVotes> = async (c) => {
+export const isFreeVoteAvailable: AppRouteHandler<IsFreeVoteAvailable> = async (c) => {
+  const { profileId } = c.req.valid("json");
+
+  const profile = await db.profile.findUnique({
+    where: { id: profileId },
+    select: { lastFreeVoteAt: true },
+  });
+  if (!profile) {
+    return sendErrorResponse(c, "notFound", "Profile not found.");
+  }
+  if (!profile.lastFreeVoteAt) {
+    return c.json({ available: true }, HttpStatusCodes.OK);
+  }
+  const now = new Date();
+  const last = new Date(profile.lastFreeVoteAt);
+  const diff = now.getTime() - last.getTime();
+  if (diff >= FREE_VOTE_INTERVAL) {
+    return c.json({ available: true }, HttpStatusCodes.OK);
+  }
+  const nextAvailableAt = new Date(last.getTime() + FREE_VOTE_INTERVAL);
+  return c.json({ available: false, nextAvailableAt }, HttpStatusCodes.OK);
+};
+
+export const payVote: AppRouteHandler<PayVote> = async (c) => {
+  const { voteeId, voterId, voteCount, contestId } = c.req.valid("json");
+
+  const [voter, votee, contest] = await Promise.all([
+    db.profile.findUnique({
+      where: { id: voterId },
+    }),
+    db.profile.findUnique({
+      where: { id: voteeId },
+      include: {
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    }),
+    db.contest.findUnique({
+      where: { id: contestId },
+    }),
+  ]);
+
+  if (!votee) {
+    return sendErrorResponse(c, "notFound", "Votee with the shared profile id was not found");
+  }
+
+  if (!voter) {
+    return sendErrorResponse(c, "notFound", "Voter with the shared profile id was not found");
+  }
+
+  if (!contest) {
+    return sendErrorResponse(c, "notFound", "Contest with the shared contest id was not found");
+  }
+
+  const isVoteePresent = await db.contestParticipation.findFirst({
+    where: {
+      contestId,
+      profileId: votee.id,
+    },
+  });
+
+  if (!isVoteePresent) {
+    return sendErrorResponse(c, "notFound", "Votee is not a participant in the contest");
+  }
+
+  const payment = await db.payment.create({
+    data: {
+      amount: Number.parseFloat(voteCount),
+      status: "PENDING",
+      payerId: voter.id,
+      stripeSessionId: "",
+    },
+  });
+
+  const session = await stripe.checkout.sessions.create({
+    metadata: {
+      paymentId: payment.id,
+      voteeId: votee.id,
+      contestId: contest.id,
+      voterId: voter.id,
+      voteCount,
+    },
+    line_items: [
+      {
+        price_data: {
+          currency: "usd",
+          unit_amount: 100,
+          product_data: {
+            name: "Vote Credits",
+            description: `${voteCount} votes for ${votee.user.name}`,
+          },
+        },
+        quantity: Number.parseInt(voteCount),
+      },
+    ],
+    mode: "payment",
+    success_url: `${env.FRONTEND_URL}/success`,
+    cancel_url: `${env.FRONTEND_URL}/cancel`,
+  });
+
+  if (!session) {
+    return sendErrorResponse(c, "serviceUnavailable", "Session was not created");
+  }
+
+  if (!session.url) {
+    return sendErrorResponse(c, "notFound", "Session URL was not found");
+  }
+
+  const formattedStripeSession = {
+    url: session.url,
+  };
+
+  console.log(formattedStripeSession);
+
+  return c.json(formattedStripeSession, HttpStatusCodes.OK);
+};
+
+export const getLatestVotes: AppRouteHandler<GetLatestVotes> = async (c) => {
   const votes = await db.vote.findMany({
     orderBy: {
       createdAt: "desc",
@@ -89,7 +182,7 @@ export const getLatestVotes: AppRouteHandler<typeof GetLatestVotes> = async (c) 
   return c.json(formattedVotes, HttpStatusCodes.OK);
 };
 
-export const getVotesByUserId: AppRouteHandler<typeof GetVotesByUserId> = async (c) => {
+export const getVotesByUserId: AppRouteHandler<GetVotesByUserId> = async (c) => {
   const { userId } = c.req.valid("param");
   const { page, limit } = c.req.valid("query");
 

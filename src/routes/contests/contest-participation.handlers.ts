@@ -34,7 +34,7 @@ export const join: AppRouteHandler<JoinRoute> = async (c) => {
     },
   });
   if (existing) {
-    return sendErrorResponse(c, "alreadyExists", "Participant already joined the contest");
+    return sendErrorResponse(c, "conflict", "Participant already joined the contest");
   }
 
   const participation = await db.contestParticipation.create({
@@ -119,6 +119,7 @@ export const getParticipants: AppRouteHandler<GetParticipantsRoute> = async (c) 
         isParticipating: true,
         createdAt: true,
         updatedAt: true,
+        contestId: true,
         profile: {
           select: {
             id: true,
@@ -126,8 +127,17 @@ export const getParticipants: AppRouteHandler<GetParticipantsRoute> = async (c) 
             freeVoterMessage: true,
             hobbiesAndPassions: true,
             paidVoterMessage: true,
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                image: true,
+              },
+            },
           },
         },
+
       },
       orderBy: { createdAt: "desc" },
     }),

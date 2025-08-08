@@ -6,6 +6,7 @@ import { requestId } from "hono/request-id";
 import { notFound, onError, serveEmojiFavicon } from "stoker/middlewares";
 import { defaultHook } from "stoker/openapi";
 
+import env from "@/env";
 import { pinoLogger } from "@/middlewares/pino-logger";
 
 import type { AppBindings, AppOpenAPI } from "../types/types";
@@ -31,8 +32,8 @@ export default function createApp() {
   const app = createRouter();
   app
     .use(cors({
-      origin: ["http://localhost:3001", "http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "https://app.swingboudoirmag.com"],
-      allowHeaders: ["Content-Type", "Authorization"],
+      origin: env.NODE_ENV === "development" ? "*" : ["http://localhost:3001", "http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "https://app.swingboudoirmag.com"],
+      allowHeaders: ["Content-Type", "Authorization", "x-uploadthing-package", "traceparent", "x-uploadthing-package", "x-uploadthing-version", "b3", "field"],
       allowMethods: ["POST", "GET", "PATCH", "PUT", "DELETE", "OPTIONS"],
       exposeHeaders: ["Content-Length"],
       maxAge: 600,

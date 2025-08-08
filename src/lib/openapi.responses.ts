@@ -38,3 +38,9 @@ export const ServiceUnavailableResponse = createErrorResponse({
   status: HttpStatus.SERVICE_UNAVAILABLE,
   statusText: Phrases.SERVICE_UNAVAILABLE,
 });
+
+export const TooManyRequestResponse = createErrorResponse({
+  defaultMessage: "Too many request",
+  status: HttpStatus.TOO_MANY_REQUESTS,
+  statusText: Phrases.TOO_MANY_REQUESTS,
+});

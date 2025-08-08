@@ -23,6 +23,8 @@ const EnvSchema = z
     STRIPE_SECRET_KEY: z.string(),
     STRIPE_WEBHOOK_SECRET: z.string(),
     FRONTEND_URL: z.string().url(),
+    NODEMAILER_USER: z.string(),
+    NODEMAILER_APP_PASSWORD: z.string(),
   });
 
 export type env = z.infer<typeof EnvSchema>;

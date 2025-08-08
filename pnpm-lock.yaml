@@ -38,6 +38,9 @@ importers:
       hono-pino:
         specifier: ^0.9.1
         version: 0.9.1(hono@4.8.12)(pino@9.7.0)
+      nodemailer:
+        specifier: ^7.0.5
+        version: 7.0.5
       pino:
         specifier: ^9.7.0
         version: 9.7.0
@@ -69,6 +72,9 @@ importers:
       '@types/node':
         specifier: ^24.0.10
         version: 24.2.0
+      '@types/nodemailer':
+        specifier: ^6.4.17
+        version: 6.4.17
       cross-env:
         specifier: ^7.0.3
         version: 7.0.3
@@ -794,6 +800,9 @@ packages:
 
   '@types/node@24.2.0':
     resolution: {integrity: sha512-3xyG3pMCq3oYCNg7/ZP+E1ooTaGB4cG8JWRsqqOYQdbWNY4zbaV0Ennrd7stjiJEFZCaybcIgpTjJWHRfBSIDw==}
+
+  '@types/nodemailer@6.4.17':
+    resolution: {integrity: sha512-I9CCaIp6DTldEg7vyUTZi8+9Vo0hi1/T8gv3C89yk1rSAAzoKQ8H8ki/jBYJSFoH/BisgLP8tkZMlQ91CIquww==}
 
   '@types/normalize-package-data@2.4.4':
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
@@ -2122,6 +2131,10 @@ packages:
 
   node-releases@2.0.19:
     resolution: {integrity: sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw==}
+
+  nodemailer@7.0.5:
+    resolution: {integrity: sha512-nsrh2lO3j4GkLLXoeEksAMgAOqxOv6QumNRVQTJwKH4nuiww6iC2y7GyANs9kRAxCexg3+lTWM3PZ91iLlVjfg==}
+    engines: {node: '>=6.0.0'}
 
   normalize-package-data@6.0.2:
     resolution: {integrity: sha512-V6gygoYb/5EmNI+MEGrWkC+e6+Rr7mTmfHrxDbLzxQogBkgzo76rkok0Am6thgSF7Mv2nLOajAJj5vDJZEFn7g==}
@@ -3452,6 +3465,10 @@ snapshots:
   '@types/node@24.2.0':
     dependencies:
       undici-types: 7.10.0
+
+  '@types/nodemailer@6.4.17':
+    dependencies:
+      '@types/node': 24.2.0
 
   '@types/normalize-package-data@2.4.4': {}
 
@@ -5083,6 +5100,8 @@ snapshots:
     optional: true
 
   node-releases@2.0.19: {}
+
+  nodemailer@7.0.5: {}
 
   normalize-package-data@6.0.2:
     dependencies:

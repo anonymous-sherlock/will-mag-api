@@ -1,14 +1,12 @@
-import { createBaseAPIRouter } from "@/lib/create-app";
-
-import * as freeVoteHandlers from "./is-free-vote-available.handlers";
-import * as freeVoteRoutes from "./is-free-vote-available.routes";
+import { createRouteBuilder } from "../procedure.route";
 import * as handlers from "./vote.handlers";
 import * as routes from "./vote.routes";
 
-const router = createBaseAPIRouter()
-  .openapi(routes.vote, handlers.vote)
-  .openapi(freeVoteRoutes.isFreeVoteAvailable, freeVoteHandlers.isFreeVoteAvailable)
+const votesRoutes = createRouteBuilder()
+  .openapi(routes.freeVote, handlers.freeVote)
+  .openapi(routes.payVote, handlers.payVote)
+  .openapi(routes.isFreeVoteAvailable, handlers.isFreeVoteAvailable)
   .openapi(routes.getLatestVotes, handlers.getLatestVotes)
   .openapi(routes.getVotesByUserId, handlers.getVotesByUserId);
 
-export default router;
+export default votesRoutes.getRouter();

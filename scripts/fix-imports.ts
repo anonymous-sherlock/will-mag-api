@@ -7,23 +7,54 @@ const __dirname = path.dirname(__filename);
 
 const distDir = path.join(__dirname, "..", "dist", "src");
 
+function appendIndexIfDirectory(importPath: string, fileDir: string): string {
+  if (importPath.endsWith(".js"))
+    return importPath;
+
+  const resolvedPath = path.resolve(fileDir, importPath);
+  try {
+    const stat = fs.statSync(resolvedPath);
+    if (stat.isDirectory()) {
+      return `${importPath}/index.js`;
+    }
+  }
+  catch {
+    // if path doesn't exist, ignore
+  }
+  return importPath;
+}
+
 function fixImportsInFile(filePath: string): void {
   try {
     let content = fs.readFileSync(filePath, "utf8");
     let modified = false;
 
-    // Replace @/generated with relative path
+    const dirName = path.dirname(filePath);
+
+    // Replace @/generated
     if (content.includes("@/generated")) {
-      const relativePath = path.relative(path.dirname(filePath), path.join(distDir, "generated")).replace(/\\/g, "/");
-      content = content.replace(/@\/generated/g, relativePath);
-      modified = true;
+      const relativePath = path
+        .relative(dirName, path.join(distDir, "generated"))
+        .replace(/\\/g, "/");
+
+      content = content.replace(/@\/generated([^\s'"]*)/g, (_, suffix) => {
+        let updatedPath = `${relativePath}${suffix}`;
+        updatedPath = appendIndexIfDirectory(updatedPath, dirName);
+        modified = true;
+        return updatedPath;
+      });
     }
 
-    // Replace @/ with relative path
+    // Replace @/
     if (content.includes("@/")) {
-      const relativePath = path.relative(path.dirname(filePath), distDir).replace(/\\/g, "/");
-      content = content.replace(/@\//g, `${relativePath}/`);
-      modified = true;
+      const relativePath = path.relative(dirName, distDir).replace(/\\/g, "/");
+
+      content = content.replace(/@\/([^\s'"]*)/g, (_, suffix) => {
+        let updatedPath = `${relativePath}/${suffix}`;
+        updatedPath = appendIndexIfDirectory(updatedPath, dirName);
+        modified = true;
+        return updatedPath;
+      });
     }
 
     if (modified) {
@@ -32,7 +63,10 @@ function fixImportsInFile(filePath: string): void {
     }
   }
   catch (error) {
-    console.error(`Error processing ${filePath}:`, error instanceof Error ? error.message : String(error));
+    console.error(
+      `Error processing ${filePath}:`,
+      error instanceof Error ? error.message : String(error),
+    );
   }
 }
 
@@ -53,7 +87,10 @@ function processDirectory(dir: string): void {
     }
   }
   catch (error) {
-    console.error(`Error processing directory ${dir}:`, error instanceof Error ? error.message : String(error));
+    console.error(
+      `Error processing directory ${dir}:`,
+      error instanceof Error ? error.message : String(error),
+    );
   }
 }
 

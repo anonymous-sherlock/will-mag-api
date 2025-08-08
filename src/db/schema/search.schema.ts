@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { User_Role } from "@/generated/prisma";
+import { User_Role } from "@/generated/prisma/index.js";
 import { PaginationQuerySchema } from "@/lib/queries/query.schema";
 
 // Base search query schema with common search parameters

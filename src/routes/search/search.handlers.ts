@@ -29,7 +29,6 @@ export const searchProfiles: AppRouteHandler<SearchProfiles> = async (c) => {
             { username: { search: query } },
             { displayUsername: { contains: query } },
             { email: { contains: query } },
-            { },
           ],
         },
       },

@@ -42,13 +42,41 @@ pnpm test
 
 ## Tasks
 
+**Get Latest Votes**
+
+- [ ] Implement endpoint to fetch a list of the latest votes.
+- [ ] Return voter and votee details (profile id, names, images).
+- [ ] Include votee property for total votes received.
+- [ ] Ensure admin authentication for this endpoint.
+- [ ] add a pagination to this api.
+
+**Get All Payments**
+
+- [ ] Remove unnecessary details from the payment data (only include essential fields).
+- [ ] Ensure admin authentication for this endpoint.
+
+- [ ] **Assign Global Ranks to Profiles**
+  - [ ] **Top 20 Ranks (Manual by Admin)**
+    - [ ] Create endpoint for admin to assign ranks **1–20** manually.
+    - [ ] Validate no duplicate ranks in top 20.
+    - [ ] Ensure only admin users can perform this action.
+    - [ ] Store ranks in `Profile` table (new `rank` field,`isRankLocked` field).
+    - [ ] Log all rank updates for audit history.
+
+  - [ ] **Ranks 21+ (Automatic by Votes)**
+    - [ ] Calculate total score for each profile:
+      - Paid votes → higher weight (e.g., 2 points each).
+      - Free votes → lower weight (e.g., 1 point each).
+    - [ ] Sort all non-top-20 profiles by score (desc).
+    - [ ] Assign ranks starting from 21 automatically.
+
 ## P 🗂️ Media/File Management
 
 - [ ] POST /api/v1/media/upload
 - [ ] GET /api/v1/media/{id}
 - [ ] DELETE /api/v1/media/{id}
-- [ ] POST /api/v1/profile/{id}/photos
-- [ ] DELETE /api/v1/profile/{id}/photos/{photoId}
+- [x] POST /api/v1/profile/{id}/photos
+- [x] DELETE /api/v1/profile/{id}/photos/{photoId}
 
 ---
 

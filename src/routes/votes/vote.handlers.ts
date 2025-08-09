@@ -226,6 +226,7 @@ export const getVotesByUserId: AppRouteHandler<GetVotesByUserId> = async (c) => 
       skip,
       take,
       orderBy: { createdAt: "desc" },
+
       include: {
         voter: {
           select: {
@@ -237,6 +238,7 @@ export const getVotesByUserId: AppRouteHandler<GetVotesByUserId> = async (c) => 
             },
           },
         },
+
         contest: {
           select: {
             name: true,
@@ -254,6 +256,7 @@ export const getVotesByUserId: AppRouteHandler<GetVotesByUserId> = async (c) => 
     userName: vote.voter.user.name,
     contestName: vote.contest.name,
     votedOn: vote.createdAt.toISOString(),
+    count: vote.count,
   }));
 
   const pagination = calculatePaginationMetadata(total, page, limit);

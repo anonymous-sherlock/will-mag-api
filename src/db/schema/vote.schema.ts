@@ -38,4 +38,5 @@ export const GetVotesByUserIdResponseSchema = z.object({
   userName: z.string(),
   contestName: z.string(),
   votedOn: z.string(),
+  count: z.number(),
 });

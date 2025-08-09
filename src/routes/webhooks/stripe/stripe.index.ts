@@ -3,9 +3,8 @@ import type z from "zod";
 import { Hono } from "hono";
 import Stripe from "stripe";
 
-import type { PaymentMetadataSchema } from "@/db/schema/payments.schema";
-
 import { db } from "@/db";
+import { PaymentMetadataSchema } from "@/db/schema/payments.schema";
 import env from "@/env";
 import { stripe } from "@/lib/stripe";
 import { getActiveVoteMultiplier } from "@/lib/vote-multiplier";
@@ -38,6 +37,9 @@ stripeWebhookRouter.post("/api/v1/webhooks/stripe", async (c) => {
       case "checkout.session.completed":
         sessionCompleted(event);
         break;
+      case "checkout.session.expired":
+        sessionExpired(event);
+        break;
       // case "payment_intent.succeeded":
       //   console.log("✅ Payment intent succeeded:", event.data.object);
       //   // Handle successful payment logic here
@@ -45,18 +47,6 @@ stripeWebhookRouter.post("/api/v1/webhooks/stripe", async (c) => {
       // case "payment_intent.payment_failed":
       //   console.log("❌ Payment intent failed:", event.data.object);
       //   // Handle failed payment logic here
-      //   break;
-      // case "customer.subscription.created":
-      //   console.log("✅ Subscription created:", event.data.object);
-      //   // Handle subscription creation logic here
-      //   break;
-      // case "customer.subscription.updated":
-      //   console.log("✅ Subscription updated:", event.data.object);
-      //   // Handle subscription update logic here
-      //   break;
-      // case "customer.subscription.deleted":
-      //   console.log("❌ Subscription deleted:", event.data.object);
-      //   // Handle subscription deletion logic here
       //   break;
       default:
         // console.log(`⚠️ Unhandled event type: ${event.type}`);
@@ -83,29 +73,32 @@ export default stripeWebhookRouter;
 
 async function sessionCompleted(event: Stripe.Event) {
   const eventObject = event.data.object as Stripe.Checkout.Session;
-  const metadata = eventObject.metadata as z.infer<typeof PaymentMetadataSchema>;
+
+  if (!eventObject.metadata) {
+    throw new Error("Missing metadata in checkout session");
+  }
+
+  const metadata = PaymentMetadataSchema.parse({
+    ...eventObject.metadata,
+    voteCount: Number.parseInt(eventObject.metadata.voteCount || "1"),
+  });
+  // console.log("metadata", metadata);
 
   await db.$transaction(async (tx) => {
-    // Get the active vote multiplier
-    const multiplier = await getActiveVoteMultiplier();
+    const originalVoteCount = metadata.voteCount;
+    const totalVoteCount = originalVoteCount * metadata.votesMultipleBy;
 
-    // Calculate the total number of votes to create (original votes * multiplier)
-    const originalVoteCount = Number.parseInt(metadata.voteCount);
-    const totalVoteCount = originalVoteCount * multiplier;
-
-    // console.log(`🎯 Vote multiplier applied: ${originalVoteCount} votes × ${multiplier} = ${totalVoteCount} total votes`);
-
-    await tx.vote.createMany({
-      data: Array.from({ length: totalVoteCount }).map(() => ({
-        voteeId: metadata.voteeId,
-        voterId: metadata.voterId,
-        contestId: metadata.contestId,
-        type: "PAID",
-        paymentId: metadata.paymentId,
-        createdAt: new Date(),
-      })),
+    const existingPayment = await tx.payment.findUnique({
+      where: { id: metadata.paymentId },
     });
 
+    if (!existingPayment)
+      return;
+
+    if (existingPayment.status === "COMPLETED")
+      return;
+
+    // update payment status
     await tx.payment.update({
       where: { id: metadata.paymentId },
       data: {
@@ -113,5 +106,34 @@ async function sessionCompleted(event: Stripe.Event) {
         stripeSessionId: eventObject.id,
       },
     });
+    // create vote
+    await tx.vote.create({
+      data: {
+        voteeId: metadata.voteeId,
+        voterId: metadata.voterId,
+        contestId: metadata.contestId,
+        type: "PAID",
+        paymentId: metadata.paymentId,
+        count: totalVoteCount,
+      },
+    });
+  });
+}
+
+async function sessionExpired(event: Stripe.Event) {
+  const eventObject = event.data.object as Stripe.Checkout.Session;
+
+  if (!eventObject.metadata) {
+    throw new Error("Missing metadata in checkout session");
+  }
+
+  const metadata = PaymentMetadataSchema.parse({
+    ...eventObject.metadata,
+    voteCount: Number.parseInt(eventObject.metadata.voteCount || "0"),
+  });
+
+  await db.payment.update({
+    where: { id: metadata.paymentId },
+    data: { status: "FAILED", stripeSessionId: eventObject.id },
   });
 }

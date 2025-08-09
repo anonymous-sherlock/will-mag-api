@@ -6,10 +6,10 @@ export const VoteMultiplierSchema = z.object({
   id: z.string(),
   multiplierTimes: z.number(),
   isActive: z.boolean(),
-  startTime: z.date().openapi({ example: "2025-08-02T12:34:56.000Z" }),
-  endTime: z.date().openapi({ example: "2025-08-02T12:34:56.000Z" }),
-  createdAt: z.date().openapi({ example: "2025-08-02T12:34:56.000Z" }),
-  updatedAt: z.date().openapi({ example: "2025-08-02T12:34:56.000Z" }),
+  startTime: z.coerce.date().openapi({ example: "2025-08-02T12:34:56.000Z" }),
+  endTime: z.coerce.date().openapi({ example: "2025-08-02T12:34:56.000Z" }),
+  createdAt: z.coerce.date().openapi({ example: "2025-08-02T12:34:56.000Z" }),
+  updatedAt: z.coerce.date().openapi({ example: "2025-08-02T12:34:56.000Z" }),
 }) satisfies z.ZodType<VoteMultiplierPeriod>;
 
 export const VoteMultiplierInsertSchema = VoteMultiplierSchema.omit({

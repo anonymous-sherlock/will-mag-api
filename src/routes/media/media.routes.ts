@@ -3,6 +3,7 @@ import * as HttpStatusCodes from "stoker/http-status-codes";
 import { jsonContent } from "stoker/openapi/helpers";
 
 import { MediaInsertSchema, MediaSelectSchema } from "@/db/schema/media.schema";
+import { BadRequestResponse, InternalServerErrorResponse } from "@/lib/openapi.responses";
 
 const tags = ["Media"];
 
@@ -32,14 +33,8 @@ export const uploadMedia = createRoute({
       MediaSelectSchema,
       "The uploaded media metadata",
     ),
-    [HttpStatusCodes.BAD_REQUEST]: jsonContent(
-      z.object({ error: z.string() }),
-      "Bad request",
-    ),
-    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
-      z.object({ error: z.string() }),
-      "Upload failed",
-    ),
+    [HttpStatusCodes.BAD_REQUEST]: BadRequestResponse(),
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: InternalServerErrorResponse(),
   },
 });
 

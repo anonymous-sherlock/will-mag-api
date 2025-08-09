@@ -1,8 +1,7 @@
-import { createBaseAPIRouter } from "@/lib/create-app";
-
+import { createRouteBuilder } from "../procedure.route";
 import * as handlers from "./media.handlers";
 import * as routes from "./media.routes";
 
-const router = createBaseAPIRouter().openapi(routes.uploadMedia, handlers.uploadMedia);
+const mediaRouter = createRouteBuilder().openapi(routes.uploadMedia, handlers.uploadMedia);
 
-export default router;
+export default mediaRouter.getRouter();

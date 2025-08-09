@@ -129,7 +129,6 @@ async function runSeed() {
             url: faker.image.url(),
             size: faker.number.int({ min: 1000, max: 10000000 }),
             type: faker.helpers.arrayElement(["image/jpeg", "image/png", "image/webp"]),
-            originalFileName: faker.system.fileName(),
             status: faker.helpers.arrayElement(["PROCESSING", "COMPLETED", "FAILED"]),
             profileId: profile.id,
           },

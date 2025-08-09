@@ -5,8 +5,9 @@ import type { AppRouteHandler } from "@/types/types";
 import { db } from "@/db";
 import { sendErrorResponse } from "@/helpers/send-error-response";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
+import { utapi } from "@/lib/uploadthing";
 
-import type { CreateRoute, GetByUserIdRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute } from "./profile.routes";
+import type { CreateRoute, GetByUserIdRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute, UploadCoverImageRoute, UploadProfilePhotosRoute } from "./profile.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const { page, limit } = c.req.valid("query");
@@ -99,4 +100,162 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
   });
 
   return c.json({ message: "Profile deleted successfully" }, HttpStatusCodes.OK);
+};
+
+export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async (c) => {
+  const { id } = c.req.valid("param");
+  const { file } = c.req.valid("form");
+
+  if (!file) {
+    return sendErrorResponse(c, "badRequest", "No file uploaded");
+  }
+
+  // Check if profile exists
+  const profile = await db.profile.findUnique({
+    where: { id },
+    include: { coverImage: true },
+  });
+
+  if (!profile) {
+    return sendErrorResponse(c, "notFound", "Profile not found");
+  }
+
+  // Store reference to old cover image for deletion
+  const oldCoverImage = profile.coverImage;
+
+  // Upload file using utapi
+  const uploaded = await utapi.uploadFiles([file], {
+    concurrency: 6,
+    acl: "public-read",
+    contentDisposition: "inline",
+  });
+
+  if (!uploaded || !uploaded[0]) {
+    return sendErrorResponse(c, "badRequest", "Upload failed");
+  }
+
+  const files = uploaded[0].data;
+  if (!files) {
+    return sendErrorResponse(c, "badRequest", "Upload failed");
+  }
+
+  // Create media record
+  const media = await db.media.create({
+    data: {
+      key: files.key,
+      url: files.url,
+      size: files.size,
+      name: files.name,
+      status: "COMPLETED",
+      mediaType: "PROFILE_COVER_IMAGE",
+      type: file.type || "image/jpeg",
+    },
+  });
+
+  // Update profile with new cover image
+  const updatedProfile = await db.profile.update({
+    where: { id },
+    data: {
+      coverImageId: media.id,
+    },
+    include: {
+      coverImage: true,
+    },
+  });
+  await db.user.update({
+    where: {
+      id: updatedProfile.userId,
+    },
+    data: {
+      image: media.url,
+    },
+  });
+
+  // Delete old cover image if it exists
+  if (oldCoverImage) {
+    try {
+      // Delete from file storage
+      await utapi.deleteFiles([oldCoverImage.key]);
+
+      // Delete from database
+      await db.media.delete({
+        where: { id: oldCoverImage.id },
+      });
+    }
+    catch (error) {
+      console.error("Error deleting old cover image:", error);
+      // Don't fail the request if deletion fails, just log it
+    }
+  }
+
+  return c.json(updatedProfile, HttpStatusCodes.OK);
+};
+
+export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = async (c) => {
+  const { id } = c.req.valid("param");
+  const { files } = c.req.valid("form");
+
+  if (!files || files.length === 0) {
+    return sendErrorResponse(c, "badRequest", "No files uploaded");
+  }
+
+  // Check if profile exists
+  const profile = await db.profile.findUnique({
+    where: { id },
+    include: { profilePhotos: true },
+  });
+
+  if (!profile) {
+    return sendErrorResponse(c, "notFound", "Profile not found");
+  }
+
+  // Upload files using utapi
+  const uploaded = await utapi.uploadFiles(files, {
+    concurrency: 6,
+    acl: "public-read",
+    contentDisposition: "inline",
+  });
+
+  if (!uploaded || uploaded.length === 0) {
+    return sendErrorResponse(c, "badRequest", "Upload failed");
+  }
+
+  // Create media records for successfully uploaded files
+  const mediaRecords = [];
+  for (const upload of uploaded) {
+    if (upload.data) {
+      const media = await db.media.create({
+        data: {
+          key: upload.data.key,
+          url: upload.data.url,
+          size: upload.data.size,
+          name: upload.data.name,
+          status: "COMPLETED",
+          mediaType: "PROFILE_IMAGE",
+          type: files[uploaded.indexOf(upload)]?.type || "image/jpeg",
+          profileId: profile.id,
+        },
+      });
+      mediaRecords.push(media);
+    }
+  }
+
+  if (mediaRecords.length === 0) {
+    return sendErrorResponse(c, "badRequest", "No files were successfully uploaded");
+  }
+
+  // Get updated profile with all photos
+  const updatedProfile = await db.profile.findUnique({
+    where: { id },
+    include: {
+      profilePhotos: true,
+      coverImage: true,
+    },
+  });
+
+  if (!updatedProfile) {
+    return sendErrorResponse(c, "notFound", "Profile not found after update");
+  }
+
+  return c.json(updatedProfile, HttpStatusCodes.OK);
 };

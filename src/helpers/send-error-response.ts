@@ -4,9 +4,10 @@ import type { StatusCode } from "hono/utils/http-status";
 import type { JSONValue } from "hono/utils/types";
 
 import * as HttpStatusCodes from "stoker/http-status-codes";
+import * as HttpStatusPhrases from "stoker/http-status-phrases";
 
 // Error types
-export type ErrorType = "unauthorized" | "forbidden" | "notFound" | "conflict" | "badRequest" | "serviceUnavailable" | "conflict" | "tooManyRequests";
+export type ErrorType = "unauthorized" | "forbidden" | "notFound" | "conflict" | "badRequest" | "serviceUnavailable" | "conflict" | "tooManyRequests" | "internalServerError";
 
 // Presets for common error responses
 const errorPresets = {
@@ -44,6 +45,11 @@ const errorPresets = {
     status: HttpStatusCodes.TOO_MANY_REQUESTS,
     statusText: "Too many requests",
     message: "Too many requests",
+  },
+  internalServerError: {
+    status: HttpStatusCodes.INTERNAL_SERVER_ERROR,
+    statusText: HttpStatusPhrases.INTERNAL_SERVER_ERROR,
+    message: "Internal Server Error",
   },
 
 } as const satisfies Record<ErrorType, { status: StatusCode; statusText: string; message: string }>;

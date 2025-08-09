@@ -25,7 +25,7 @@ const router = createBaseAPIRouter().get("/auth/doc", async (c) => {
     }
   }
   return c.json(openAPISchema);
-}).on(["POST", "GET"], "/auth/*", (c) => {
+}).on(["POST", "GET", "PUT", "PATCH", "OPTIONS"], "/auth/*", (c) => {
   return auth.handler(c.req.raw);
 });
 

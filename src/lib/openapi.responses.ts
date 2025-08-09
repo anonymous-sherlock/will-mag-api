@@ -44,3 +44,9 @@ export const TooManyRequestResponse = createErrorResponse({
   status: HttpStatus.TOO_MANY_REQUESTS,
   statusText: Phrases.TOO_MANY_REQUESTS,
 });
+
+export const InternalServerErrorResponse = createErrorResponse({
+  defaultMessage: "Interal Server Error",
+  status: HttpStatus.INTERNAL_SERVER_ERROR,
+  statusText: Phrases.INTERNAL_SERVER_ERROR,
+});

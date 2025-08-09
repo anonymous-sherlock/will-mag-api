@@ -4,7 +4,7 @@ import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema } from "stoker/openapi/schemas";
 
 import { ProfileInsertSchema, ProfileSelectSchema } from "@/db/schema/profile.schema";
-import { NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
+import { BadRequestResponse, NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
 import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
 
 const tags = ["Profile"];
@@ -139,9 +139,73 @@ export const remove = createRoute({
   },
 });
 
+export const uploadCoverImage = createRoute({
+  path: "/profile/{id}/upload/cover",
+  method: "post",
+  tags,
+  summary: "Upload Profile Cover",
+  description: "Upload a cover image for a specific profile",
+  request: {
+    params: z.object({
+      id: z.string().describe("The profile ID"),
+    }),
+    body: {
+      content: {
+        "multipart/form-data": {
+          schema: z.object({
+            file: z.instanceof(File).describe("The cover image file to upload"),
+          }),
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      ProfileSelectSchema,
+      "The updated profile with cover image",
+    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
+    [HttpStatusCodes.BAD_REQUEST]: BadRequestResponse("Upload failed"),
+  },
+});
+
+export const uploadProfilePhotos = createRoute({
+  path: "/profile/{id}/upload/photos",
+  method: "post",
+  tags,
+  summary: "Upload Profile Photos",
+  description: "Upload gallery photos for a specific profile, Each file must have a key name files",
+  request: {
+    params: z.object({
+      id: z.string().describe("The profile ID"),
+    }),
+    body: {
+      content: {
+        "multipart/form-data": {
+          schema: z.object({
+            files: z.array(z.instanceof(File)).describe("The profile photo files to upload"),
+          }),
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      ProfileSelectSchema,
+      "The updated profile with new photos",
+    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
+    [HttpStatusCodes.BAD_REQUEST]: BadRequestResponse("Upload failed"),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type GetByUserIdRoute = typeof getByUserId;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
+export type UploadCoverImageRoute = typeof uploadCoverImage;
+export type UploadProfilePhotosRoute = typeof uploadProfilePhotos;

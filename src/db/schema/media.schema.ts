@@ -11,12 +11,12 @@ export const MediaSchema = z.object({
   url: z.string(),
   size: z.number().nullable(),
   type: z.string().nullable(),
-  originalFileName: z.string().nullable(),
   status: z.nativeEnum(File_Status),
-  mediaType: z.nativeEnum(Media_Type).nullable(),
+  mediaType: z.nativeEnum(Media_Type),
   createdAt: z.date(),
   updatedAt: z.date(),
   profileId: z.string().nullable(),
+  caption: z.string().nullable(),
 }) satisfies z.ZodType<Media>;
 
 export const MediaInsertSchema = MediaSchema.pick({

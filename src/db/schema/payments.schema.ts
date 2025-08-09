@@ -4,7 +4,7 @@ export const PayVoteRequestSchema = z.object({
   voteeId: z.string(),
   voterId: z.string(),
   contestId: z.string(),
-  voteCount: z.string(),
+  voteCount: z.coerce.number().int().positive(),
 });
 
 export const PayVoteResponseSchema = z.object({
@@ -13,6 +13,7 @@ export const PayVoteResponseSchema = z.object({
 
 export const PaymentMetadataSchema = PayVoteRequestSchema.extend({
   paymentId: z.string(),
+  votesMultipleBy: z.coerce.number().int().positive().optional().default(1),
 });
 
 export const PaymentHistorySchema = z.object({

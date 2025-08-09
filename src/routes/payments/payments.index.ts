@@ -1,10 +1,9 @@
-import { createBaseAPIRouter } from "@/lib/create-app";
-
+import { createRouteBuilder } from "../procedure.route";
 import * as handlers from "./payments.handlers";
 import * as routes from "./payments.routes";
 
-const router = createBaseAPIRouter()
+const paymentRouter = createRouteBuilder()
   .openapi(routes.getPaymentHistory, handlers.getPaymentHistory)
   .openapi(routes.getAllPayments, handlers.getAllPayments);
 
-export default router;
+export default paymentRouter.getRouter();

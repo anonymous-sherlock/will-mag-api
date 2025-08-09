@@ -80,7 +80,6 @@ model User {
 
   @@unique([email])
   @@unique([username])
-  
   @@fulltext([name])
   @@fulltext([email])
   @@fulltext([displayUsername])
@@ -121,10 +120,13 @@ model Profile {
   votesReceived  Vote[]    @relation("VotesReceived")
   lastFreeVoteAt DateTime?
 
-  profilePhotos Media[] @relation("profileImages")
+  // ONE cover image
+  coverImageId String? @unique
+  coverImage   Media?  @relation("ProfileCoverImage", fields: [coverImageId], references: [id], onDelete: Cascade)
 
-  coverImageId String?        @unique
-  coverImage   Media?         @relation("profileCoverImage", fields: [coverImageId], references: [id])
+  // MULTIPLE profile gallery images
+  profilePhotos Media[] @relation("ProfilePhotos")
+
   notification Notification[]
 
   payments Payment[]
@@ -196,17 +198,17 @@ model Vote {
   type Vote_Type @default(FREE)
 
   voterId String
-  voter   Profile @relation("VotesCast", fields: [voterId], references: [id])
+  voter   Profile @relation("VotesCast", fields: [voterId], references: [id], onDelete: Cascade)
 
   voteeId String
-  votee   Profile @relation("VotesReceived", fields: [voteeId], references: [id])
+  votee   Profile @relation("VotesReceived", fields: [voteeId], references: [id], onDelete: Cascade)
 
   contestId String
-  contest   Contest @relation(fields: [contestId], references: [id])
+  contest   Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
   count     Int     @default(1)
 
   paymentId String?
-  payment   Payment? @relation(fields: [paymentId], references: [id])
+  payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -259,18 +261,20 @@ model Media {
   name             String
   url              String
   size             Int?
+  caption          String?
   type             String?
-  originalFileName String?
   status           File_Status @default(PROCESSING)
-  mediaType        Media_Type? @default(PROFILE_IMAGE)
+  mediaType        Media_Type  @default(PROFILE_IMAGE)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  profile   Profile? @relation("profileImages", fields: [profileId], references: [id], map: "medias_profileId_fkey")
+  // Relation to Profile for gallery images
   profileId String?
+  profile   Profile? @relation("ProfilePhotos", fields: [profileId], references: [id], onDelete: Cascade)
 
-  profileCoverImage Profile? @relation("profileCoverImage")
+  // Relation to Profile as cover image (reverse relation defined in Profile)
+  coverOfProfile Profile? @relation("ProfileCoverImage")
 
   @@map("media")
 }
@@ -295,7 +299,7 @@ model Payment {
   id String @id @default(cuid())
 
   payerId String
-  payer   Profile @relation(fields: [payerId], references: [id])
+  payer   Profile @relation(fields: [payerId], references: [id], onDelete: Cascade)
 
   amount Float
   status Payment_Status @default(PENDING)

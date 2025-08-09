@@ -8,6 +8,7 @@ import env from "@/env";
 import { sendErrorResponse } from "@/helpers/send-error-response";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 import { stripe } from "@/lib/stripe";
+import { getActiveVoteMultiplier } from "@/lib/vote-multiplier";
 
 import type { FreeVote, GetLatestVotes, GetVotesByUserId, IsFreeVoteAvailable, PayVote } from "./vote.routes";
 
@@ -60,13 +61,26 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
   const [voter, votee, contest] = await Promise.all([
     db.profile.findUnique({
       where: { id: voterId },
+      include: {
+        user: {
+          select: {
+            email: true,
+          },
+        },
+      },
     }),
     db.profile.findUnique({
       where: { id: voteeId },
       include: {
+        coverImage: {
+          select: {
+            url: true,
+          },
+        },
         user: {
           select: {
             name: true,
+
           },
         },
       },
@@ -101,12 +115,13 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
 
   const payment = await db.payment.create({
     data: {
-      amount: Number.parseFloat(voteCount),
+      amount: voteCount,
       status: "PENDING",
       payerId: voter.id,
       stripeSessionId: "",
     },
   });
+  const activeMultiplier = await getActiveVoteMultiplier();
 
   const session = await stripe.checkout.sessions.create({
     metadata: {
@@ -115,6 +130,7 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
       contestId: contest.id,
       voterId: voter.id,
       voteCount,
+      votesMultipleBy: activeMultiplier,
     },
     line_items: [
       {
@@ -122,14 +138,20 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
           currency: "usd",
           unit_amount: 100,
           product_data: {
-            name: "Vote Credits",
-            description: `${voteCount} votes for ${votee.user.name}`,
+            name: activeMultiplier > 1 ? `Votes Boost Pack` : "Back Your Favorite",
+            ...(votee.coverImage?.url ? { images: [votee.coverImage?.url] } : null),
+            description:
+              activeMultiplier > 1
+                ? `${voteCount} votes boosted by ${activeMultiplier}x = ${voteCount * activeMultiplier} votes for ${votee.user.name}`
+                : `${voteCount} votes for ${votee.user.name}`,
           },
         },
-        quantity: Number.parseInt(voteCount),
+        quantity: voteCount,
       },
     ],
     mode: "payment",
+    currency: "usd",
+    customer_email: voter.user.email,
     success_url: `${env.FRONTEND_URL}/success`,
     cancel_url: `${env.FRONTEND_URL}/cancel`,
   });

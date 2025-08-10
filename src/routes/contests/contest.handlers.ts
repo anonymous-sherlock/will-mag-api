@@ -17,6 +17,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
       skip: (page - 1) * limit,
       take: limit,
       include: {
+        images: true,
         awards: true,
       },
     }),
@@ -57,6 +58,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
   const contest = await db.contest.findUnique({
     where: { id },
     include: {
+      images: true,
       awards: true,
     },
   });
@@ -278,9 +280,13 @@ export const getContestStats: AppRouteHandler<GetContestStatsRoute> = async (c) 
   const daysRemaining = isActive ? Math.ceil((contest.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : undefined;
 
   // Calculate vote statistics
-  const totalVotes = contest.votes.length;
-  const freeVotes = contest.votes.filter(vote => vote.type === "FREE").length;
-  const paidVotes = contest.votes.filter(vote => vote.type === "PAID").length;
+  const totalVotes = contest.votes.reduce((sum, vote) => sum + vote.count, 0);
+  const freeVotes = contest.votes
+    .filter(vote => vote.type === "FREE")
+    .reduce((sum, vote) => sum + vote.count, 0);
+  const paidVotes = contest.votes
+    .filter(vote => vote.type === "PAID")
+    .reduce((sum, vote) => sum + vote.count, 0);
 
   // Calculate participation statistics
   const totalParticipants = contest.contestParticipations.length;
@@ -345,22 +351,31 @@ export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> 
   // Calculate votes for each participant
   const participantsWithVotes = await Promise.all(
     participants.map(async (participation) => {
-      const [freeVotes, paidVotes] = await Promise.all([
-        db.vote.count({
+      const [freeVotesResult, paidVotesResult] = await Promise.all([
+        db.vote.aggregate({
           where: {
             contestId: id,
             voteeId: participation.profileId,
             type: "FREE",
           },
+          _sum: {
+            count: true,
+          },
         }),
-        db.vote.count({
+        db.vote.aggregate({
           where: {
             contestId: id,
             voteeId: participation.profileId,
             type: "PAID",
           },
+          _sum: {
+            count: true,
+          },
         }),
       ]);
+
+      const freeVotes = freeVotesResult._sum.count || 0;
+      const paidVotes = paidVotesResult._sum.count || 0;
 
       return {
         rank: 0, // Will be calculated below

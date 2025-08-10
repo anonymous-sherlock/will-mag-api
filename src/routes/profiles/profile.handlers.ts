@@ -16,6 +16,16 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
     db.profile.findMany({
       skip: (page - 1) * limit,
       take: limit,
+      include: {
+        coverImage: {
+          select: {
+            id: true,
+            key: true,
+            caption: true,
+            url: true,
+          },
+        },
+      },
     }),
     db.profile.count(),
   ]);
@@ -46,6 +56,24 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
   const { id } = c.req.valid("param");
   const profile = await db.profile.findUnique({
     where: { id },
+    include: {
+      coverImage: {
+        select: {
+          id: true,
+          key: true,
+          caption: true,
+          url: true,
+        },
+      },
+      profilePhotos: {
+        select: {
+          id: true,
+          key: true,
+          caption: true,
+          url: true,
+        },
+      },
+    },
   });
 
   if (!profile)
@@ -58,6 +86,24 @@ export const getByUserId: AppRouteHandler<GetByUserIdRoute> = async (c) => {
   const { userId } = c.req.valid("param");
   const profile = await db.profile.findUnique({
     where: { userId },
+    include: {
+      coverImage: {
+        select: {
+          id: true,
+          key: true,
+          caption: true,
+          url: true,
+        },
+      },
+      profilePhotos: {
+        select: {
+          id: true,
+          key: true,
+          caption: true,
+          url: true,
+        },
+      },
+    },
   });
 
   if (!profile)

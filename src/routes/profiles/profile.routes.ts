@@ -21,7 +21,14 @@ export const list = createRoute({
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      createPaginatedResponseSchema(ProfileSelectSchema),
+      createPaginatedResponseSchema(ProfileSelectSchema.extend({
+        coverImage: MediaSelectSchema.pick({
+          id: true,
+          key: true,
+          caption: true,
+          url: true,
+        }).nullable(),
+      })),
       "The profile lists",
     ),
     [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
@@ -65,7 +72,20 @@ export const getOne = createRoute({
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      ProfileSelectSchema,
+      ProfileSelectSchema.extend({
+        coverImage: MediaSelectSchema.pick({
+          id: true,
+          key: true,
+          caption: true,
+          url: true,
+        }).nullable(),
+        profilePhotos: z.array(MediaSelectSchema.pick({
+          id: true,
+          key: true,
+          caption: true,
+          url: true,
+        })).nullable(),
+      }),
       "The profile",
     ),
     [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
@@ -85,7 +105,20 @@ export const getByUserId = createRoute({
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      ProfileSelectSchema,
+      ProfileSelectSchema.extend({
+        coverImage: MediaSelectSchema.pick({
+          id: true,
+          key: true,
+          caption: true,
+          url: true,
+        }).nullable(),
+        profilePhotos: z.array(MediaSelectSchema.pick({
+          id: true,
+          key: true,
+          caption: true,
+          url: true,
+        })).nullable(),
+      }),
       "The profile",
     ),
     [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),

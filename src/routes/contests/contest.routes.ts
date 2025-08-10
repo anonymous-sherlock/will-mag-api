@@ -8,6 +8,7 @@ import {
   ContestInsertSchemaWithAwards,
   ContestSelectSchema,
   ContestSelectSchemaWithAwards,
+  ContestSelectSchemaWithAwardsandImages,
 } from "@/db/schema/contest.schema";
 import { BadRequestResponse, NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
 import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
@@ -25,7 +26,7 @@ export const list = createRoute({
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      createPaginatedResponseSchema(ContestSelectSchemaWithAwards),
+      createPaginatedResponseSchema(ContestSelectSchemaWithAwardsandImages),
       "The contest lists",
     ),
     [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
@@ -62,7 +63,7 @@ export const getOne = createRoute({
     }),
   },
   responses: {
-    [HttpStatusCodes.OK]: jsonContent(ContestSelectSchemaWithAwards, "The contest"),
+    [HttpStatusCodes.OK]: jsonContent(ContestSelectSchemaWithAwardsandImages, "The contest"),
     [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
     [HttpStatusCodes.NOT_FOUND]: NotFoundResponse(),
   },

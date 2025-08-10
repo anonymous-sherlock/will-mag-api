@@ -73,6 +73,48 @@ export const getOne = createRoute({
   },
 });
 
+export const getByEmail = createRoute({
+  path: "/users/email/{email}",
+  method: "get",
+  tags,
+  summary: "Get User by Email",
+  description: "Get a specific user by email address",
+  request: {
+    params: z.object({
+      email: z.string().email().describe("The user's email address"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      UserSelectSchema,
+      "The user",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("User not found"),
+  },
+});
+
+export const getByUsername = createRoute({
+  path: "/users/username/{username}",
+  method: "get",
+  tags,
+  summary: "Get User by Username",
+  description: "Get a specific user by username",
+  request: {
+    params: z.object({
+      username: z.string().describe("The user's username"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      UserSelectSchema,
+      "The user",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("User not found"),
+  },
+});
+
 export const patch = createRoute({
   path: "/users/{id}",
   method: "patch",
@@ -154,6 +196,8 @@ export const getUserProfile = createRoute({
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
+export type GetByEmailRoute = typeof getByEmail;
+export type GetByUsernameRoute = typeof getByUsername;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
 export type GetUserProfileRoute = typeof getUserProfile;

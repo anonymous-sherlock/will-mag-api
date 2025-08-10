@@ -3,6 +3,7 @@ import * as HttpStatusCodes from "stoker/http-status-codes";
 import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema } from "stoker/openapi/schemas";
 
+import { MediaSelectSchema } from "@/db/schema/media.schema";
 import { ProfileInsertSchema, ProfileSelectSchema } from "@/db/schema/profile.schema";
 import { BadRequestResponse, NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
 import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
@@ -96,7 +97,7 @@ export const getByUsername = createRoute({
   method: "get",
   tags,
   summary: "Get Profile by Username",
-  description: "Get a specific profile by username",
+  description: "Get a specific profile by username with cover image and profile photos",
   request: {
     params: z.object({
       username: z.string().describe("The username"),
@@ -104,8 +105,21 @@ export const getByUsername = createRoute({
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      ProfileSelectSchema,
-      "The profile",
+      ProfileSelectSchema.extend({
+        coverImage: MediaSelectSchema.pick({
+          id: true,
+          key: true,
+          caption: true,
+          url: true,
+        }).nullable(),
+        profilePhotos: z.array(MediaSelectSchema.pick({
+          id: true,
+          key: true,
+          caption: true,
+          url: true,
+        })).nullable(),
+      }),
+      "The profile with cover image and profile photos",
     ),
     [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
   },
@@ -225,7 +239,7 @@ export const removeProfileImage = createRoute({
   path: "/profile/{id}/images/{imageId}",
   method: "delete",
   tags,
-  summary: "Remove Profile Image",
+  summary: "Remove Profile Photos",
   description: "Remove a specific image from a profile",
   request: {
     params: z.object({

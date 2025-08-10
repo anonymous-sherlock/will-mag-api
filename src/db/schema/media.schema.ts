@@ -17,7 +17,7 @@ export const MediaSchema = z.object({
   updatedAt: z.date(),
   profileId: z.string().nullable(),
   caption: z.string().nullable(),
-  contestId: z.string(),
+  contestId: z.string().nullable(),
 }) satisfies z.ZodType<Media>;
 
 export const MediaInsertSchema = MediaSchema.pick({

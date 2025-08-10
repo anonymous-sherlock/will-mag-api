@@ -7,7 +7,7 @@ import { sendErrorResponse } from "@/helpers/send-error-response";
 import { auth } from "@/lib/auth";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 
-import type { CreateRoute, GetOneRoute, GetUserProfileRoute, ListRoute, PatchRoute, RemoveRoute } from "./user.routes";
+import type { CreateRoute, GetByEmailRoute, GetByUsernameRoute, GetOneRoute, GetUserProfileRoute, ListRoute, PatchRoute, RemoveRoute } from "./user.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const { page, limit } = c.req.valid("query");
@@ -51,6 +51,34 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
 
   const user = await db.user.findUnique({
     where: { id },
+  });
+
+  if (!user) {
+    return sendErrorResponse(c, "notFound", "User not found");
+  }
+
+  return c.json(user, HttpStatusCodes.OK);
+};
+
+export const getByEmail: AppRouteHandler<GetByEmailRoute> = async (c) => {
+  const { email } = c.req.valid("param");
+
+  const user = await db.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    return sendErrorResponse(c, "notFound", "User not found");
+  }
+
+  return c.json(user, HttpStatusCodes.OK);
+};
+
+export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async (c) => {
+  const { username } = c.req.valid("param");
+
+  const user = await db.user.findUnique({
+    where: { username },
   });
 
   if (!user) {

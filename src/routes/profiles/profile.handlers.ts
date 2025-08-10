@@ -72,12 +72,35 @@ export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async (c) => {
   // First find the user by username
   const user = await db.user.findUnique({
     where: { username },
-    include: { profile: true },
+    select: {
+      profile: {
+        include: {
+          coverImage: {
+            select: {
+              id: true,
+              key: true,
+              caption: true,
+              url: true,
+            },
+          },
+          profilePhotos: {
+            select: {
+              id: true,
+              key: true,
+              caption: true,
+              url: true,
+            },
+          },
+        },
+      },
+    },
   });
 
-  if (!user || !user.profile)
+  if (!user || !user.profile) {
     return sendErrorResponse(c, "notFound", "Profile not found");
+  }
 
+  // Return the profile with included cover image and profile photos
   return c.json(user.profile, HttpStatusCodes.OK);
 };
 

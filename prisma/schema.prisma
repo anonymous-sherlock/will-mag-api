@@ -178,6 +178,8 @@ model Contest {
   startDate             DateTime
   endDate               DateTime
   winnerProfileId       String?
+
+  images Media[] @relation("ContestImages")
 }
 
 model Award {
@@ -256,15 +258,15 @@ enum User_Role {
 }
 
 model Media {
-  id               String      @id @default(uuid())
-  key              String
-  name             String
-  url              String
-  size             Int?
-  caption          String?
-  type             String?
-  status           File_Status @default(PROCESSING)
-  mediaType        Media_Type  @default(PROFILE_IMAGE)
+  id        String      @id @default(uuid())
+  key       String
+  name      String
+  url       String
+  size      Int?
+  caption   String?
+  type      String?
+  status    File_Status @default(PROCESSING)
+  mediaType Media_Type  @default(PROFILE_IMAGE)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -275,6 +277,10 @@ model Media {
 
   // Relation to Profile as cover image (reverse relation defined in Profile)
   coverOfProfile Profile? @relation("ProfileCoverImage")
+
+  // Relation to Contest for contest images
+  contestId String?
+  contest   Contest? @relation("ContestImages", fields: [contestId], references: [id], onDelete: Cascade)
 
   @@map("media")
 }

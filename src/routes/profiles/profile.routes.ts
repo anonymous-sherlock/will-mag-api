@@ -91,6 +91,26 @@ export const getByUserId = createRoute({
   },
 });
 
+export const getByUsername = createRoute({
+  path: "/profile/username/{username}",
+  method: "get",
+  tags,
+  summary: "Get Profile by Username",
+  description: "Get a specific profile by username",
+  request: {
+    params: z.object({
+      username: z.string().describe("The username"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      ProfileSelectSchema,
+      "The profile",
+    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
+  },
+});
+
 export const patch = createRoute({
   path: "/profile/{id}",
   method: "patch",
@@ -201,11 +221,35 @@ export const uploadProfilePhotos = createRoute({
   },
 });
 
+export const removeProfileImage = createRoute({
+  path: "/profile/{id}/images/{imageId}",
+  method: "delete",
+  tags,
+  summary: "Remove Profile Image",
+  description: "Remove a specific image from a profile",
+  request: {
+    params: z.object({
+      id: z.string().describe("The profile ID"),
+      imageId: z.string().describe("The image ID to remove"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      z.object({ message: z.string() }),
+      "Image removed successfully",
+    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile or image not found"),
+    [HttpStatusCodes.BAD_REQUEST]: BadRequestResponse("Failed to remove image"),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type GetByUserIdRoute = typeof getByUserId;
+export type GetByUsernameRoute = typeof getByUsername;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
 export type UploadCoverImageRoute = typeof uploadCoverImage;
 export type UploadProfilePhotosRoute = typeof uploadProfilePhotos;
+export type RemoveProfileImageRoute = typeof removeProfileImage;

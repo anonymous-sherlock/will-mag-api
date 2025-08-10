@@ -10,9 +10,11 @@ const contestRouter = createRouteBuilder()
   .openapi(routes.getOne, handlers.getOne)
   .openapi(routes.patch, handlers.patch)
   .openapi(routes.remove, handlers.remove)
-  .openapi(routes.getUpcomingContests, handlers.getUpcomingContests)
   .openapi(routes.getAvailableContests, handlers.getAvailableContests)
+  .openapi(routes.getUpcomingContests, handlers.getUpcomingContests)
   .openapi(routes.getJoinedContests, handlers.getJoinedContests)
+  .openapi(routes.uploadContestImages, handlers.uploadContestImages)
+  .openapi(routes.removeContestImage, handlers.removeContestImage)
   .openapi(routes.getContestStats, handlers.getContestStats)
   .openapi(routes.getContestLeaderboard, handlers.getContestLeaderboard);
 

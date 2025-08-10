@@ -5,8 +5,9 @@ import type { AppRouteHandler } from "@/types/types";
 import { db } from "@/db";
 import { sendErrorResponse } from "@/helpers/send-error-response";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
+import { utapi } from "@/lib/uploadthing";
 
-import type { CreateRoute, GetAvailableContestsRoute, GetContestLeaderboardRoute, GetContestStatsRoute, GetJoinedContestsRoute, GetOneRoute, GetUpcomingContestsRoute, ListRoute, PatchRoute, RemoveRoute } from "./contest.routes";
+import type { CreateRoute, GetAvailableContestsRoute, GetContestLeaderboardRoute, GetContestStatsRoute, GetJoinedContestsRoute, GetOneRoute, GetUpcomingContestsRoute, ListRoute, PatchRoute, RemoveContestImageRoute, RemoveRoute, UploadContestImagesRoute } from "./contest.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const { page, limit } = c.req.valid("query");
@@ -308,6 +309,7 @@ export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> 
   const { id } = c.req.valid("param");
   const { page, limit } = c.req.valid("query");
 
+  // Check if contest exists
   const contest = await db.contest.findUnique({
     where: { id },
   });
@@ -316,7 +318,7 @@ export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> 
     return sendErrorResponse(c, "notFound", "Contest not found");
   }
 
-  // Get contest participants with their vote counts
+  // Get contest participants with their profiles and votes
   const participants = await db.contestParticipation.findMany({
     where: {
       contestId: id,
@@ -325,10 +327,12 @@ export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> 
     include: {
       profile: {
         include: {
-          user: true,
-          votesReceived: {
-            where: {
-              contestId: id,
+          user: {
+            select: {
+              id: true,
+              username: true,
+              displayUsername: true,
+              image: true,
             },
           },
         },
@@ -338,53 +342,173 @@ export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> 
     take: limit,
   });
 
-  // Calculate total participants for pagination
-  const totalParticipants = await db.contestParticipation.count({
+  // Calculate votes for each participant
+  const participantsWithVotes = await Promise.all(
+    participants.map(async (participation) => {
+      const [freeVotes, paidVotes] = await Promise.all([
+        db.vote.count({
+          where: {
+            contestId: id,
+            voteeId: participation.profileId,
+            type: "FREE",
+          },
+        }),
+        db.vote.count({
+          where: {
+            contestId: id,
+            voteeId: participation.profileId,
+            type: "PAID",
+          },
+        }),
+      ]);
+
+      return {
+        rank: 0, // Will be calculated below
+        profileId: participation.profileId,
+        userId: participation.profile.user.id,
+        username: participation.profile.user.username || "",
+        displayUsername: participation.profile.user.displayUsername,
+        avatarUrl: participation.profile.avatarUrl,
+        bio: participation.profile.bio,
+        totalVotes: freeVotes + paidVotes,
+        freeVotes,
+        paidVotes,
+        isParticipating: participation.isParticipating || true,
+        coverImage: participation.coverImage,
+        isApproved: participation.isApproved,
+      };
+    }),
+  );
+
+  // Sort by total votes (descending) and assign ranks
+  participantsWithVotes.sort((a, b) => b.totalVotes - a.totalVotes);
+  participantsWithVotes.forEach((participant, index) => {
+    participant.rank = index + 1;
+  });
+
+  // Get total count for pagination
+  const total = await db.contestParticipation.count({
     where: {
       contestId: id,
       isParticipating: true,
     },
   });
 
-  // Process participants and calculate vote statistics
-  const leaderboardData = participants.map((participation, index) => {
-    const profile = participation.profile;
-    const votesReceived = profile.votesReceived;
-
-    const totalVotes = votesReceived.length;
-    const freeVotes = votesReceived.filter(vote => vote.type === "FREE").length;
-    const paidVotes = votesReceived.filter(vote => vote.type === "PAID").length;
-    const rank = (page - 1) * limit + index + 1;
-
-    return {
-      rank,
-      profileId: profile.id,
-      userId: profile.user.id,
-      username: profile.user.username!,
-      displayUsername: profile.user.displayUsername,
-      avatarUrl: profile.avatarUrl,
-      bio: profile.bio,
-      totalVotes,
-      freeVotes,
-      paidVotes,
-      isParticipating: participation.isParticipating ?? true,
-      coverImage: participation.coverImage,
-      isApproved: participation.isApproved,
-    };
-  });
-
-  // Sort by paid votes first, then by total votes
-  leaderboardData.sort((a, b) => {
-    if (a.paidVotes !== b.paidVotes) {
-      return b.paidVotes - a.paidVotes;
-    }
-    return b.totalVotes - a.totalVotes;
-  });
-
-  const pagination = calculatePaginationMetadata(totalParticipants, page, limit);
+  const pagination = calculatePaginationMetadata(total, page, limit);
 
   return c.json({
-    data: leaderboardData,
+    data: participantsWithVotes,
     pagination,
   }, HttpStatusCodes.OK);
+};
+
+export const uploadContestImages: AppRouteHandler<UploadContestImagesRoute> = async (c) => {
+  const { id } = c.req.valid("param");
+  const { files } = c.req.valid("form");
+
+  if (!files || files.length === 0) {
+    return sendErrorResponse(c, "badRequest", "No files uploaded");
+  }
+
+  // Check if contest exists
+  const contest = await db.contest.findUnique({
+    where: { id },
+    include: { images: true },
+  });
+
+  if (!contest) {
+    return sendErrorResponse(c, "notFound", "Contest not found");
+  }
+
+  // Upload files using utapi
+  const uploaded = await utapi.uploadFiles(files, {
+    concurrency: 6,
+    acl: "public-read",
+    contentDisposition: "inline",
+  });
+
+  if (!uploaded || uploaded.length === 0) {
+    return sendErrorResponse(c, "badRequest", "Upload failed");
+  }
+
+  // Create media records for successfully uploaded files
+  const mediaRecords = [];
+  for (const upload of uploaded) {
+    if (upload.data) {
+      const media = await db.media.create({
+        data: {
+          key: upload.data.key,
+          url: upload.data.url,
+          size: upload.data.size,
+          name: upload.data.name,
+          status: "COMPLETED",
+          mediaType: "CONTEST_IMAGE",
+          type: files[uploaded.indexOf(upload)]?.type || "image/jpeg",
+          contestId: contest.id,
+        },
+      });
+      mediaRecords.push(media);
+    }
+  }
+
+  if (mediaRecords.length === 0) {
+    return sendErrorResponse(c, "badRequest", "No files were successfully uploaded");
+  }
+
+  // Get updated contest with all images
+  const updatedContest = await db.contest.findUnique({
+    where: { id },
+    include: {
+      images: true,
+      awards: true,
+    },
+  });
+
+  if (!updatedContest) {
+    return sendErrorResponse(c, "notFound", "Contest not found after update");
+  }
+
+  return c.json(updatedContest, HttpStatusCodes.OK);
+};
+
+export const removeContestImage: AppRouteHandler<RemoveContestImageRoute> = async (c) => {
+  const { id, imageId } = c.req.valid("param");
+
+  // Check if contest exists
+  const contest = await db.contest.findUnique({
+    where: { id },
+    include: { images: true },
+  });
+
+  if (!contest) {
+    return sendErrorResponse(c, "notFound", "Contest not found");
+  }
+
+  // Check if image exists and belongs to this contest
+  const image = await db.media.findFirst({
+    where: {
+      id: imageId,
+      contestId: id,
+    },
+  });
+
+  if (!image) {
+    return sendErrorResponse(c, "notFound", "Image not found or does not belong to this contest");
+  }
+
+  try {
+    // Delete from file storage
+    await utapi.deleteFiles([image.key]);
+
+    // Delete from database
+    await db.media.delete({
+      where: { id: imageId },
+    });
+
+    return c.json({ message: "Image removed successfully" }, HttpStatusCodes.OK);
+  }
+  catch (error) {
+    console.error("Error removing contest image:", error);
+    return sendErrorResponse(c, "badRequest", "Failed to remove image");
+  }
 };

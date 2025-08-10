@@ -7,7 +7,7 @@ import { sendErrorResponse } from "@/helpers/send-error-response";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 import { utapi } from "@/lib/uploadthing";
 
-import type { CreateRoute, GetByUserIdRoute, GetOneRoute, ListRoute, PatchRoute, RemoveRoute, UploadCoverImageRoute, UploadProfilePhotosRoute } from "./profile.routes";
+import type { CreateRoute, GetByUserIdRoute, GetByUsernameRoute, GetOneRoute, ListRoute, PatchRoute, RemoveProfileImageRoute, RemoveRoute, UploadCoverImageRoute, UploadProfilePhotosRoute } from "./profile.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const { page, limit } = c.req.valid("query");
@@ -64,6 +64,21 @@ export const getByUserId: AppRouteHandler<GetByUserIdRoute> = async (c) => {
     return sendErrorResponse(c, "notFound", "Profile not found");
 
   return c.json(profile, HttpStatusCodes.OK);
+};
+
+export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async (c) => {
+  const { username } = c.req.valid("param");
+
+  // First find the user by username
+  const user = await db.user.findUnique({
+    where: { username },
+    include: { profile: true },
+  });
+
+  if (!user || !user.profile)
+    return sendErrorResponse(c, "notFound", "Profile not found");
+
+  return c.json(user.profile, HttpStatusCodes.OK);
 };
 
 export const patch: AppRouteHandler<PatchRoute> = async (c) => {
@@ -258,4 +273,46 @@ export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = as
   }
 
   return c.json(updatedProfile, HttpStatusCodes.OK);
+};
+
+export const removeProfileImage: AppRouteHandler<RemoveProfileImageRoute> = async (c) => {
+  const { id, imageId } = c.req.valid("param");
+
+  // Check if profile exists
+  const profile = await db.profile.findUnique({
+    where: { id },
+    include: { profilePhotos: true },
+  });
+
+  if (!profile) {
+    return sendErrorResponse(c, "notFound", "Profile not found");
+  }
+
+  // Check if image exists and belongs to this profile
+  const image = await db.media.findFirst({
+    where: {
+      id: imageId,
+      profileId: id,
+    },
+  });
+
+  if (!image) {
+    return sendErrorResponse(c, "notFound", "Image not found or does not belong to this profile");
+  }
+
+  try {
+    // Delete from file storage
+    await utapi.deleteFiles([image.key]);
+
+    // Delete from database
+    await db.media.delete({
+      where: { id: imageId },
+    });
+
+    return c.json({ message: "Image removed successfully" }, HttpStatusCodes.OK);
+  }
+  catch (error) {
+    console.error("Error removing profile image:", error);
+    return sendErrorResponse(c, "badRequest", "Failed to remove image");
+  }
 };

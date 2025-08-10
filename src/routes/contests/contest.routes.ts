@@ -9,7 +9,7 @@ import {
   ContestSelectSchema,
   ContestSelectSchemaWithAwards,
 } from "@/db/schema/contest.schema";
-import { NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
+import { BadRequestResponse, NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
 import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
 
 const tags = ["Contest"];
@@ -246,6 +246,59 @@ export const getContestLeaderboard = createRoute({
   },
 });
 
+export const uploadContestImages = createRoute({
+  path: "/contest/{id}/upload/images",
+  method: "post",
+  tags,
+  summary: "Upload Contest Images",
+  description: "Upload multiple images for a specific contest",
+  request: {
+    params: z.object({
+      id: z.string().describe("The contest ID"),
+    }),
+    body: {
+      content: {
+        "multipart/form-data": {
+          schema: z.object({
+            files: z.array(z.instanceof(File)).describe("The contest image files to upload"),
+          }),
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      ContestSelectSchemaWithAwards,
+      "The updated contest with new images",
+    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Contest not found"),
+    [HttpStatusCodes.BAD_REQUEST]: BadRequestResponse("Upload failed"),
+  },
+});
+
+export const removeContestImage = createRoute({
+  path: "/contest/{id}/images/{imageId}",
+  method: "delete",
+  tags,
+  summary: "Remove Contest Image",
+  description: "Remove a specific image from a contest",
+  request: {
+    params: z.object({
+      id: z.string().describe("The contest ID"),
+      imageId: z.string().describe("The image ID to remove"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      z.object({ message: z.string() }),
+      "Image removed successfully",
+    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Contest or image not found"),
+    [HttpStatusCodes.BAD_REQUEST]: BadRequestResponse("Failed to remove image"),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
@@ -256,3 +309,5 @@ export type GetAvailableContestsRoute = typeof getAvailableContests;
 export type GetJoinedContestsRoute = typeof getJoinedContests;
 export type GetContestStatsRoute = typeof getContestStats;
 export type GetContestLeaderboardRoute = typeof getContestLeaderboard;
+export type UploadContestImagesRoute = typeof uploadContestImages;
+export type RemoveContestImageRoute = typeof removeContestImage;

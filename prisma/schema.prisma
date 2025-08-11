@@ -93,7 +93,15 @@ model Profile {
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  bio String? @db.Text
+  bio       String? @db.Text
+  instagram String? @db.VarChar(255)
+  tiktok    String? @db.VarChar(255)
+  youtube   String? @db.VarChar(255)
+  facebook  String? @db.VarChar(255)
+  twitter   String? @db.VarChar(255)
+  linkedin  String? @db.VarChar(255)
+  website   String? @db.VarChar(255)
+  other     String? @db.VarChar(255)
 
   avatarUrl String? @db.VarChar(255)
 

@@ -163,7 +163,7 @@ enum Icon {
 model Contest {
   id                    String                 @id @default(cuid())
   name                  String                 @db.VarChar(255)
-  description           String
+  description           String                 @db.LongText
   prizePool             Float
   contestParticipations ContestParticipation[] @relation("ContestParticipants")
   createdAt             DateTime               @default(now())

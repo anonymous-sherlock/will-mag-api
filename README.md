@@ -52,8 +52,8 @@ pnpm test
 
 **Get All Payments**
 
-- [ ] Remove unnecessary details from the payment data (only include essential fields).
-- [ ] Ensure admin authentication for this endpoint.
+- [x] Remove unnecessary details from the payment data (only include essential fields).
+- [x] Ensure admin authentication for this endpoint.
 
 - [ ] **Assign Global Ranks to Profiles**
   - [ ] **Top 20 Ranks (Manual by Admin)**

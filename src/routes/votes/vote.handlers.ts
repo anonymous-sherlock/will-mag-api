@@ -173,6 +173,8 @@ export const payVote: AppRouteHandler<PayVote> = async c => {
     url: session.url,
   };
 
+  console.log(session.url);
+
   return c.json(formattedStripeSession, HttpStatusCodes.OK);
 };
 

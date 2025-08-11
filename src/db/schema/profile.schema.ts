@@ -21,6 +21,14 @@ export const ProfileSchema = z.object({
   updatedAt: z.date(),
   lastFreeVoteAt: z.date().nullable(),
   coverImageId: z.string().nullable(),
+  instagram: z.string().max(255).nullable(),
+  tiktok: z.string().max(255).nullable(),
+  youtube: z.string().max(255).nullable(),
+  facebook: z.string().max(255).nullable(),
+  twitter: z.string().max(255).nullable(),
+  linkedin: z.string().max(255).nullable(),
+  website: z.string().max(255).nullable(),
+  other: z.string().max(255).nullable(),
 }) satisfies z.ZodType<Profile>;
 
 export const ProfileInsertSchema = ProfileSchema.omit({

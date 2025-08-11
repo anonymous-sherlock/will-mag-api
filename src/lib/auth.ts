@@ -1,13 +1,12 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { adminClient } from "better-auth/client/plugins";
-import { bearer, openAPI, username } from "better-auth/plugins";
+import { bearer, customSession, openAPI, username } from "better-auth/plugins";
 
 import { db } from "@/db";
 import env from "@/env";
 import { sendEmailAction } from "@/helpers/send-email-action";
 
-// Explicitly type the auth configuration to avoid DTS generation issues
 export const auth = betterAuth({
   appName: "Swing Magazine",
   database: prismaAdapter(db, {
@@ -49,6 +48,8 @@ export const auth = betterAuth({
         type: "date",
         input: false,
       },
+      profileId: { type: "string", required: false, input: false },
+
     },
   },
   session: {
@@ -59,9 +60,27 @@ export const auth = betterAuth({
     },
     additionalFields: {
       role: { type: ["USER", "ADMIN", "MODERATOR"], input: false },
+      profileId: { type: "string", required: false, input: false },
     },
   },
   plugins: [
+    customSession(async ({ user, session }) => {
+      const profile = await db.profile.findUnique({
+        where: { userId: user.id },
+        select: { id: true },
+      });
+
+      return {
+        user: {
+          ...user,
+          profileId: profile?.id || null,
+        },
+        session: {
+          ...session,
+          profileId: profile?.id || null,
+        },
+      };
+    }),
     username({
       minUsernameLength: 3,
       maxUsernameLength: 100,

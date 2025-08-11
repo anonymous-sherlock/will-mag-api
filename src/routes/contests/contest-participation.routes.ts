@@ -145,8 +145,8 @@ export const setContestWinner = createRoute({
       id: z.string().describe("The contest ID"),
     }),
     body: jsonContentRequired(
-      z.object({
-        winnerProfileId: z.string().describe("The Profile ID of the winner"),
+      ContestParticipationInsertSchema.pick({
+        profileId: true
       }),
       "The winner profile ID",
     ),

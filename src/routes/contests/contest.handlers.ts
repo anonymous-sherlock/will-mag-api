@@ -17,7 +17,14 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
       skip: (page - 1) * limit,
       take: limit,
       include: {
-        images: true,
+        images: {
+          select: {
+            id: true,
+            url: true,
+            key: true,
+            caption: true,
+          }
+        },
         awards: true,
       },
     }),
@@ -155,10 +162,10 @@ export const getUpcomingContests: AppRouteHandler<GetUpcomingContestsRoute> = as
 
 export const getAvailableContests: AppRouteHandler<GetAvailableContestsRoute> = async (c) => {
   const { page, limit } = c.req.valid("query");
-  const { userId } = c.req.valid("param");
+  const { profileId } = c.req.valid("param");
 
   const profile = await db.profile.findFirst({
-    where: { userId },
+    where: { id: profileId },
   });
 
   if (!profile) {
@@ -206,17 +213,16 @@ export const getAvailableContests: AppRouteHandler<GetAvailableContestsRoute> = 
 
 export const getJoinedContests: AppRouteHandler<GetJoinedContestsRoute> = async (c) => {
   const { page, limit } = c.req.valid("query");
-  const { userId } = c.req.valid("param");
+  const { profileId } = c.req.valid("param");
 
   const profile = await db.profile.findFirst({
-    where: { userId },
+    where: { id: profileId },
   });
 
   if (!profile) {
     return sendErrorResponse(c, "notFound", "Profile not found");
   }
 
-  // Get contests that user has joined
   const [contests, total] = await Promise.all([
     db.contest.findMany({
       where: {
@@ -315,7 +321,6 @@ export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> 
   const { id } = c.req.valid("param");
   const { page, limit } = c.req.valid("query");
 
-  // Check if contest exists
   const contest = await db.contest.findUnique({
     where: { id },
   });
@@ -324,7 +329,6 @@ export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> 
     return sendErrorResponse(c, "notFound", "Contest not found");
   }
 
-  // Get contest participants with their profiles and votes
   const participants = await db.contestParticipation.findMany({
     where: {
       contestId: id,
@@ -348,7 +352,6 @@ export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> 
     take: limit,
   });
 
-  // Calculate votes for each participant
   const participantsWithVotes = await Promise.all(
     participants.map(async (participation) => {
       const [freeVotesResult, paidVotesResult] = await Promise.all([
@@ -378,9 +381,8 @@ export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> 
       const paidVotes = paidVotesResult._sum.count || 0;
 
       return {
-        rank: 0, // Will be calculated below
+        rank: 0,
         profileId: participation.profileId,
-        userId: participation.profile.user.id,
         username: participation.profile.user.username || "",
         displayUsername: participation.profile.user.displayUsername,
         avatarUrl: participation.profile.avatarUrl,

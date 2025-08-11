@@ -132,7 +132,7 @@ export const getUpcomingContests = createRoute({
 });
 
 export const getAvailableContests = createRoute({
-  path: "/contest/{userId}/available",
+  path: "/contest/{profileId}/available",
   method: "get",
   tags,
   summary: "Get Available Contests",
@@ -140,7 +140,7 @@ export const getAvailableContests = createRoute({
   request: {
     query: PaginationQuerySchema,
     params: z.object({
-      userId: z.string().describe("The User ID"),
+      profileId: z.string().describe("The User ID"),
     }),
   },
   responses: {
@@ -154,7 +154,7 @@ export const getAvailableContests = createRoute({
 });
 
 export const getJoinedContests = createRoute({
-  path: "/contest/{userId}/joined",
+  path: "/contest/{profileId}/joined",
   method: "get",
   tags,
   summary: "Get Joined Contests",
@@ -162,7 +162,7 @@ export const getJoinedContests = createRoute({
   request: {
     query: PaginationQuerySchema,
     params: z.object({
-      userId: z.string().describe("The User ID"),
+      profileId: z.string().describe("The User ID"),
     }),
   },
   responses: {
@@ -227,7 +227,6 @@ export const getContestLeaderboard = createRoute({
         z.object({
           rank: z.number(),
           profileId: z.string(),
-          userId: z.string(),
           username: z.string(),
           displayUsername: z.string().nullable(),
           avatarUrl: z.string().nullable(),

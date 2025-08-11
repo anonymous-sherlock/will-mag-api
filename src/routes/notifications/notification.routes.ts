@@ -24,7 +24,7 @@ export const getNotifications = createRoute({
       limit: z.number().default(10),
       isRead: z.boolean().optional(),
       archived: z.boolean().optional(),
-      userId: z.string().min(4),
+      profileId: z.string().min(4),
     }),
   },
   responses: {
@@ -156,14 +156,14 @@ export const markAsRead = createRoute({
 });
 
 export const markAllAsRead = createRoute({
-  path: "/notifications/{userId}/read-all",
+  path: "/notifications/{profileId}/read-all",
   method: "patch",
   summary: "Mark All Notifications as Read",
   description: "Mark all notifications as read for the authenticated user.",
   tags,
   request: {
     params: z.object({
-      userId: z.string().describe("The User ID"),
+      profileId: z.string().describe("The User ID"),
     }),
   },
   responses: {

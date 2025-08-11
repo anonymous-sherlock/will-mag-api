@@ -1,77 +1,84 @@
-import * as HttpStatusCodes from "stoker/http-status-codes";
+import * as HttpStatusCodes from 'stoker/http-status-codes';
 
-import type { AppRouteHandler } from "@/types/types";
+import type { AppRouteHandler } from '@/types/types';
 
-import { db } from "@/db/index";
-import { sendErrorResponse } from "@/helpers/send-error-response";
-import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
+import { db } from '@/db/index';
+import { sendErrorResponse } from '@/helpers/send-error-response';
+import { calculatePaginationMetadata } from '@/lib/queries/query.helper';
 
-import type { GetAllPayments, GetPaymentHistory } from "./payments.routes";
+import type { GetAllPayments, GetPaymentHistory } from './payments.routes';
 
-export const getPaymentHistory: AppRouteHandler<GetPaymentHistory> = async (c) => {
-  const { page, limit } = c.req.valid("query");
-  const { userId } = c.req.valid("param");
+export const getPaymentHistory: AppRouteHandler<GetPaymentHistory> = async c => {
+  const { page, limit } = c.req.valid('query');
+  const { profileId } = c.req.valid('param');
 
-  const session = c.get("session");
-  if (!session) {
-    return sendErrorResponse(c, "unauthorized", "User not authenticated");
-  }
-
-  // Check if the authenticated user is requesting their own payment history
-  // or if they have admin privileges
-  if (session.userId !== userId && session.role !== "ADMIN") {
-    return sendErrorResponse(c, "forbidden", "You can only view your own payment history");
-  }
-
-  // Find the user's profile
   const profile = await db.profile.findFirst({
-    where: { userId },
+    where: { id: profileId },
   });
 
   if (!profile) {
-    return sendErrorResponse(c, "notFound", "Profile not found");
+    return sendErrorResponse(c, 'notFound', 'Profile not found');
   }
 
-  // Get paginated payment history for the user
   const [payments, total] = await Promise.all([
     db.payment.findMany({
       where: {
         payerId: profile.id,
       },
-      include: {
+      select: {
+        id: true,
+        amount: true,
+        createdAt: true,
+        status: true,
+        stripeSessionId: true,
         payer: {
-          include: {
+          select: {
+            id: true,
             user: {
               select: {
                 name: true,
-              },
-            },
-          },
+              }
+            }
+          }
         },
         votes: {
-          include: {
+          select: {
+            count: true,
+            id: true,
+            type: true,
             contest: {
               select: {
-                id: true,
                 name: true,
-              },
+              }
             },
             votee: {
-              include: {
+              select: {
+                id: true,
                 user: {
                   select: {
                     name: true,
-                  },
-                },
-              },
+                  }
+                }
+              }
             },
-          },
-        },
+            voter: {
+              select: {
+                id: true,
+                user: {
+                  select: {
+                    name: true,
+                  }
+                }
+              }
+            },
+            createdAt: true
+          }
+        }
       },
       skip: (page - 1) * limit,
       take: limit,
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
     }),
     db.payment.count({
@@ -83,63 +90,74 @@ export const getPaymentHistory: AppRouteHandler<GetPaymentHistory> = async (c) =
 
   const pagination = calculatePaginationMetadata(total, page, limit);
 
-  return c.json({
-    data: payments,
-    pagination,
-  }, HttpStatusCodes.OK);
+  return c.json(
+    {
+      data: payments,
+      pagination,
+    },
+    HttpStatusCodes.OK
+  );
 };
 
-export const getAllPayments: AppRouteHandler<GetAllPayments> = async (c) => {
-  const { page, limit } = c.req.valid("query");
+export const getAllPayments: AppRouteHandler<GetAllPayments> = async c => {
+  const { page, limit } = c.req.valid('query');
 
-  // Get the authenticated user from the session
-  const session = c.get("session");
-  if (!session) {
-    return sendErrorResponse(c, "unauthorized", "User not authenticated");
-  }
-
-  // Check if the user has admin privileges
-  if (session.role !== "ADMIN") {
-    return sendErrorResponse(c, "forbidden", "Admin access required");
-  }
-
-  // Get paginated list of all payments
   const [payments, total] = await Promise.all([
     db.payment.findMany({
-      include: {
+      select: {
+        id: true,
+        amount: true,
+        createdAt: true,
+        status: true,
+        stripeSessionId: true,
         payer: {
-          include: {
+          select: {
+            id: true,
             user: {
               select: {
                 name: true,
-              },
-            },
-          },
+              }
+            }
+          }
         },
         votes: {
-          include: {
+          select: {
+            count: true,
+            id: true,
+            type: true,
             contest: {
               select: {
-                id: true,
                 name: true,
-              },
+              }
             },
             votee: {
-              include: {
+              select: {
+                id: true,
                 user: {
                   select: {
                     name: true,
-                  },
-                },
-              },
+                  }
+                }
+              }
             },
-          },
-        },
+            voter: {
+              select: {
+                id: true,
+                user: {
+                  select: {
+                    name: true,
+                  }
+                }
+              }
+            },
+            createdAt: true
+          }
+        }
       },
       skip: (page - 1) * limit,
       take: limit,
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
     }),
     db.payment.count(),
@@ -147,8 +165,11 @@ export const getAllPayments: AppRouteHandler<GetAllPayments> = async (c) => {
 
   const pagination = calculatePaginationMetadata(total, page, limit);
 
-  return c.json({
-    data: payments,
-    pagination,
-  }, HttpStatusCodes.OK);
+  return c.json(
+    {
+      data: payments,
+      pagination,
+    },
+    HttpStatusCodes.OK
+  );
 };

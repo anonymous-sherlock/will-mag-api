@@ -10,10 +10,10 @@ import type { GetAllPayments, GetPaymentHistory } from './payments.routes';
 
 export const getPaymentHistory: AppRouteHandler<GetPaymentHistory> = async c => {
   const { page, limit } = c.req.valid('query');
-  const { userId } = c.req.valid('param');
+  const { profileId } = c.req.valid('param');
 
   const profile = await db.profile.findFirst({
-    where: { userId },
+    where: { id: profileId },
   });
 
   if (!profile) {

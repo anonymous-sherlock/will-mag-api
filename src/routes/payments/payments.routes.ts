@@ -10,14 +10,14 @@ import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/quer
 const tags = ["Payments"];
 
 export const getPaymentHistory = createRoute({
-  path: "/payments/{userId}/history",
+  path: "/payments/{profileId}/history",
   method: "get",
   tags,
   summary: "Get user payment history",
   description: "Retrieve paginated payment history for a specific user",
   request: {
     params: z.object({
-      userId: z.string().openapi({ description: "User ID to get payment history for" }),
+      profileId: z.string().openapi({ description: "User ID to get payment history for" }),
     }),
     query: PaginationQuerySchema,
   },

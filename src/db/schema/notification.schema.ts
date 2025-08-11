@@ -25,7 +25,6 @@ export const NotificationInsertSchema = NotificationSchema.omit({
   updatedAt: true,
   isRead: true,
   archived: true,
-  profileId: true,
 }).extend({
   icon: IconSchema.optional(),
   action: z.string().optional(),
@@ -36,7 +35,6 @@ export const NotificationUpdateSchema = NotificationSchema.partial().omit({
   createdAt: true,
   updatedAt: true,
   userId: true,
-  profileId: true,
 }).extend({
   isRead: z.boolean().default(false),
   archived: z.boolean().default(false),

@@ -279,8 +279,12 @@ export const getVotesByUserId: AppRouteHandler<GetVotesByUserId> = async c => {
           select: {
             user: {
               select: {
-                id: true,
                 name: true,
+                profile: {
+                  select: {
+                    id: true
+                  }
+                }
               },
             },
           },
@@ -298,7 +302,7 @@ export const getVotesByUserId: AppRouteHandler<GetVotesByUserId> = async c => {
   ]);
 
   const formattedVotesReceived = votes.map(vote => ({
-    userId: vote.voter.user.id,
+    profileId: vote.voter.user.profile?.id ?? "",
     userName: vote.voter.user.name,
     contestName: vote.contest.name,
     votedOn: vote.createdAt.toISOString(),

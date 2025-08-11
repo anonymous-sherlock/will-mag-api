@@ -9,11 +9,12 @@ import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 import type { GetContestWinnerRoute, GetParticipantsRoute, JoinRoute, LeaveRoute, SetContestWinnerRoute } from "./contest-participation.routes";
 
 export const join: AppRouteHandler<JoinRoute> = async (c) => {
-  const { userId, contestId, coverImage } = c.req.valid("json");
+  const { profileId, contestId, coverImage } = c.req.valid("json");
 
   const profile = await db.profile.findFirst({
-    where: { userId },
+    where: { id: profileId },
   });
+
   const contest = await db.contest.findFirst({
     where: {
       id: contestId,
@@ -52,10 +53,10 @@ export const join: AppRouteHandler<JoinRoute> = async (c) => {
 };
 
 export const leave: AppRouteHandler<LeaveRoute> = async (c) => {
-  const { userId, contestId } = c.req.valid("json");
+  const { profileId, contestId } = c.req.valid("json");
 
   const profile = await db.profile.findFirst({
-    where: { userId },
+    where: { id: profileId },
   });
 
   const contest = await db.contest.findFirst({
@@ -71,7 +72,6 @@ export const leave: AppRouteHandler<LeaveRoute> = async (c) => {
     return sendErrorResponse(c, "notFound", "Contest not found");
   }
 
-  // Check if participation exists
   const existing = await db.contestParticipation.findFirst({
     where: {
       profileId: profile.id,
@@ -83,7 +83,6 @@ export const leave: AppRouteHandler<LeaveRoute> = async (c) => {
     return sendErrorResponse(c, "notFound", "Contest participation not found");
   }
 
-  // Delete the participation
   const deletedParticipation = await db.contestParticipation.delete({
     where: {
       id: existing.id,
@@ -97,7 +96,6 @@ export const getParticipants: AppRouteHandler<GetParticipantsRoute> = async (c) 
   const { contestId: id } = c.req.valid("param");
   const { page, limit } = c.req.valid("query");
 
-  // Check if contest exists
   const contest = await db.contest.findUnique({
     where: { id },
   });
@@ -106,7 +104,6 @@ export const getParticipants: AppRouteHandler<GetParticipantsRoute> = async (c) 
     return sendErrorResponse(c, "notFound", "Contest not found");
   }
 
-  // Get participants with profile information
   const [participants, total] = await Promise.all([
     db.contestParticipation.findMany({
       where: { contestId: id },
@@ -169,12 +166,10 @@ export const getContestWinner: AppRouteHandler<GetContestWinnerRoute> = async (c
     return sendErrorResponse(c, "notFound", "Contest not found");
   }
 
-  // Get total participants
   const totalParticipants = await db.contestParticipation.count({
     where: { contestId: id },
   });
 
-  // Get total votes for this contest
   const totalVotes = await db.vote.count({
     where: { contestId: id },
   });
@@ -189,9 +184,8 @@ export const getContestWinner: AppRouteHandler<GetContestWinnerRoute> = async (c
 
 export const setContestWinner: AppRouteHandler<SetContestWinnerRoute> = async (c) => {
   const { id } = c.req.valid("param");
-  const { winnerProfileId } = c.req.valid("json");
+  const { profileId } = c.req.valid("json");
 
-  // Check if contest exists
   const contest = await db.contest.findUnique({
     where: { id },
     include: {
@@ -203,11 +197,10 @@ export const setContestWinner: AppRouteHandler<SetContestWinnerRoute> = async (c
     return sendErrorResponse(c, "notFound", "Contest not found");
   }
 
-  // Check if the profile exists and is a participant in this contest
   const participant = await db.contestParticipation.findFirst({
     where: {
       contestId: id,
-      profileId: winnerProfileId,
+      profileId: profileId,
     },
   });
 
@@ -215,11 +208,10 @@ export const setContestWinner: AppRouteHandler<SetContestWinnerRoute> = async (c
     return sendErrorResponse(c, "notFound", "Profile is not a participant in this contest");
   }
 
-  // Update the contest with the winner
   const updatedContest = await db.contest.update({
     where: { id },
     data: {
-      winnerProfileId,
+      winnerProfileId: profileId,
     },
     include: {
       awards: true,

@@ -47,7 +47,7 @@ export const VoteListSchema = z.object({
 export const GetLatestVotesResponseSchema = z.array(VoteListSchema);
 
 export const GetVotesByUserIdResponseSchema = z.object({
-  userId: z.string(),
+  profileId: z.string(),
   userName: z.string(),
   contestName: z.string(),
   votedOn: z.string(),

@@ -18,12 +18,12 @@ import type {
 } from "./notification.routes";
 
 export const getNotifications: AppRouteHandler<GetNotificationsRoute> = async (c) => {
-  const { page = 1, limit = 10, isRead, archived, userId } = c.req.valid("query");
+  const { page = 1, limit = 10, isRead, archived, profileId } = c.req.valid("query");
 
   const profile = await db.profile.findFirst({
-    where: { userId },
+    where: { id: profileId },
   });
-  c.var.logger.warn(profile);
+
   if (!profile) {
     return sendErrorResponse(c, "notFound", "Profile not found");
   }
@@ -158,9 +158,9 @@ export const markAsRead: AppRouteHandler<MarkAsReadRoute> = async (c) => {
 };
 
 export const markAllAsRead: AppRouteHandler<MarkAllAsReadRoute> = async (c) => {
-  const { userId } = c.req.valid("param");
+  const { profileId } = c.req.valid("param");
   const profile = await db.profile.findUnique({
-    where: { userId },
+    where: { id: profileId },
   });
 
   if (!profile) {

@@ -8,9 +8,6 @@ import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/quer
 const tags = ["Leaderboard"];
 
 // Override the default limit to 50 for leaderboard
-const LeaderboardPaginationQuerySchema = PaginationQuerySchema.extend({
-  limit: z.coerce.number().max(100).optional().default(50),
-});
 
 export const getLeaderboard = createRoute({
   path: "/leaderboard",
@@ -19,7 +16,9 @@ export const getLeaderboard = createRoute({
   summary: "Get Leaderboard",
   description: "Get the leaderboard of model profiles ranked by total votes received",
   request: {
-    query: LeaderboardPaginationQuerySchema,
+    query: PaginationQuerySchema.extend({
+    limit: z.coerce.number().max(100).optional().default(50),
+  }),
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(

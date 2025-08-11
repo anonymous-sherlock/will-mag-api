@@ -35,6 +35,15 @@ export const ProfileInsertSchema = ProfileSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  instagram: z.string().max(255).nullable().optional(),
+  tiktok: z.string().max(255).nullable().optional(),
+  youtube: z.string().max(255).nullable().optional(),
+  facebook: z.string().max(255).nullable().optional(),
+  twitter: z.string().max(255).nullable().optional(),
+  linkedin: z.string().max(255).nullable().optional(),
+  website: z.string().max(255).nullable().optional(),
+  other: z.string().max(255).nullable().optional(),
 });
 
 export const ProfileSelectSchema = ProfileSchema;

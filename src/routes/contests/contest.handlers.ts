@@ -23,7 +23,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
             url: true,
             key: true,
             caption: true,
-          }
+          },
         },
         awards: true,
       },
@@ -141,6 +141,14 @@ export const getUpcomingContests: AppRouteHandler<GetUpcomingContestsRoute> = as
       orderBy: { startDate: "asc" },
       include: {
         awards: true,
+        images: {
+          select: {
+            id: true,
+            url: true,
+            key: true,
+            caption: true,
+          },
+        },
       },
     }),
     db.contest.count({
@@ -189,6 +197,14 @@ export const getAvailableContests: AppRouteHandler<GetAvailableContestsRoute> = 
       orderBy: { startDate: "asc" },
       include: {
         awards: true,
+        images: {
+          select: {
+            id: true,
+            url: true,
+            key: true,
+            caption: true,
+          },
+        },
       },
     }),
     db.contest.count({
@@ -234,6 +250,14 @@ export const getJoinedContests: AppRouteHandler<GetJoinedContestsRoute> = async 
       },
       include: {
         awards: true,
+        images: {
+          select: {
+            id: true,
+            url: true,
+            key: true,
+            caption: true,
+          },
+        },
       },
       skip: (page - 1) * limit,
       take: limit,

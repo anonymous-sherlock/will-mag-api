@@ -124,7 +124,7 @@ export const getUpcomingContests = createRoute({
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      createPaginatedResponseSchema(ContestSelectSchemaWithAwards),
+      createPaginatedResponseSchema(ContestSelectSchemaWithAwardsandImages),
       "The upcoming contests list",
     ),
     [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
@@ -145,7 +145,7 @@ export const getAvailableContests = createRoute({
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      createPaginatedResponseSchema(ContestSelectSchemaWithAwards),
+      createPaginatedResponseSchema(ContestSelectSchemaWithAwardsandImages),
       "The available contests list",
     ),
     [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
@@ -167,7 +167,7 @@ export const getJoinedContests = createRoute({
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      createPaginatedResponseSchema(ContestSelectSchemaWithAwards),
+      createPaginatedResponseSchema(ContestSelectSchemaWithAwardsandImages),
       "The joined contests list",
     ),
     [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),

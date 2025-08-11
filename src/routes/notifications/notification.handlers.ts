@@ -61,7 +61,7 @@ export const createNotification: AppRouteHandler<CreateNotificationRoute> = asyn
   const data = c.req.valid("json");
 
   const profile = await db.profile.findUnique({
-    where: { userId: data.userId },
+    where: { id: data.profileId },
   });
 
   if (!profile)
@@ -70,7 +70,6 @@ export const createNotification: AppRouteHandler<CreateNotificationRoute> = asyn
   const notification = await db.notification.create({
     data: {
       ...data,
-      userId: data.userId,
       profileId: profile.id,
     },
   });

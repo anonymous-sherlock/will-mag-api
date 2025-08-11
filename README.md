@@ -44,11 +44,11 @@ pnpm test
 
 **Get Latest Votes**
 
-- [ ] Implement endpoint to fetch a list of the latest votes.
-- [ ] Return voter and votee details (profile id, names, images).
-- [ ] Include votee property for total votes received.
-- [ ] Ensure admin authentication for this endpoint.
-- [ ] add a pagination to this api.
+- [x] Implement endpoint to fetch a list of the latest votes.
+- [x] Return voter and votee details (profile id, names, images).
+- [x] Include votee property for total votes received.
+- [x] Ensure admin authentication for this endpoint.
+- [x] add a pagination to this api.
 
 **Get All Payments**
 

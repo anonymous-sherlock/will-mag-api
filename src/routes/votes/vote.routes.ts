@@ -1,59 +1,63 @@
-import { createRoute } from "@hono/zod-openapi";
-import * as HttpStatusCodes from "stoker/http-status-codes";
-import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
-import { createErrorSchema } from "stoker/openapi/schemas";
-import { z } from "zod";
+import { createRoute } from '@hono/zod-openapi';
+import * as HttpStatusCodes from 'stoker/http-status-codes';
+import { jsonContent, jsonContentRequired } from 'stoker/openapi/helpers';
+import { createErrorSchema } from 'stoker/openapi/schemas';
+import { z } from 'zod';
 
-import { PayVoteRequestSchema, PayVoteResponseSchema } from "@/db/schema/payments.schema";
+import { PayVoteRequestSchema, PayVoteResponseSchema } from '@/db/schema/payments.schema';
 import {
   GetLatestVotesResponseSchema,
   GetVotesByUserIdResponseSchema,
   VoteInsertSchema,
   VoteSelectSchema,
-} from "@/db/schema/vote.schema";
-import { NotFoundResponse, ServiceUnavailableResponse, TooManyRequestResponse } from "@/lib/openapi.responses";
-import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
+} from '@/db/schema/vote.schema';
+import {
+  NotFoundResponse,
+  ServiceUnavailableResponse,
+  TooManyRequestResponse,
+} from '@/lib/openapi.responses';
+import { createPaginatedResponseSchema, PaginationQuerySchema } from '@/lib/queries/query.schema';
 
-const tags = ["Vote"];
+const tags = ['Vote'];
 
 export const freeVote = createRoute({
-  path: "/contest/vote/free",
-  method: "post",
-  summary: "Give a free vote",
+  path: '/contest/vote/free',
+  method: 'post',
+  summary: 'Give a free vote',
   description:
-    "Give a free vote in a contest for a profile. Free votes are limited to one per 24 hours per contest.",
+    'Give a free vote in a contest for a profile. Free votes are limited to one per 24 hours per contest.',
   tags,
   request: {
     body: jsonContentRequired(
       VoteInsertSchema.omit({
         type: true,
       }),
-      "The vote payload (voterId, voteeId, contestId, type)",
+      'The vote payload (voterId, voteeId, contestId, type)'
     ),
   },
   responses: {
-    [HttpStatusCodes.OK]: jsonContent(VoteSelectSchema, "The created vote record"),
+    [HttpStatusCodes.OK]: jsonContent(VoteSelectSchema, 'The created vote record'),
     [HttpStatusCodes.TOO_MANY_REQUESTS]: TooManyRequestResponse(),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(VoteInsertSchema),
-      "The validation error(s)",
+      'The validation error(s)'
     ),
   },
 });
 
 export const isFreeVoteAvailable = createRoute({
-  path: "/votes/is-free-vote-available",
-  method: "post",
-  summary: "Check free vote status",
+  path: '/votes/is-free-vote-available',
+  method: 'post',
+  summary: 'Check free vote status',
   description:
-    "Returns whether a free vote is available for the given profileId, and if not, when it will be available.",
+    'Returns whether a free vote is available for the given profileId, and if not, when it will be available.',
   tags,
   request: {
     body: jsonContentRequired(
       z.object({
-        profileId: z.string().describe("The profile ID to check free vote availability for"),
+        profileId: z.string().describe('The profile ID to check free vote availability for'),
       }),
-      "The profile ID to check free vote availability for",
+      'The profile ID to check free vote availability for'
     ),
   },
   responses: {
@@ -62,59 +66,67 @@ export const isFreeVoteAvailable = createRoute({
         available: z.boolean(),
         nextAvailableAt: z.date().optional(),
       }),
-      "Whether a free vote is available and the next available time if not.",
+      'Whether a free vote is available and the next available time if not.'
     ),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       z.object({ error: z.string() }),
-      "Missing or invalid profileId.",
+      'Missing or invalid profileId.'
     ),
-    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found."),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse('Profile not found.'),
   },
 });
 
 export const payVote = createRoute({
-  path: "/contest/vote/pay",
-  method: "post",
+  path: '/contest/vote/pay',
+  method: 'post',
   tags,
-  summary: "Give a paid vote",
-  description: "",
+  summary: 'Give a paid vote',
+  description: '',
   request: {
-    body: jsonContentRequired(PayVoteRequestSchema, "The validation error"),
+    body: jsonContentRequired(PayVoteRequestSchema, 'The validation error'),
   },
   responses: {
-    [HttpStatusCodes.OK]: jsonContent(PayVoteResponseSchema, "Payment made successfully"),
+    [HttpStatusCodes.OK]: jsonContent(PayVoteResponseSchema, 'Payment made successfully'),
     [HttpStatusCodes.SERVICE_UNAVAILABLE]: ServiceUnavailableResponse(),
     [HttpStatusCodes.NOT_FOUND]: NotFoundResponse(),
   },
 });
 
 export const getLatestVotes = createRoute({
-  path: "/votes/latest-votes",
-  method: "get",
-  summary: "Get latest votes",
-  description: "Get a list of latest votes",
+  path: '/votes/latest-votes',
+  method: 'get',
+  summary: 'Get latest votes',
+  description: 'Get a list of latest votes',
   tags,
+  request: {
+    query: PaginationQuerySchema.extend({
+      limit: z.number().default(20),
+    }),
+  },
   responses: {
-    [HttpStatusCodes.OK]: jsonContent(GetLatestVotesResponseSchema, "The latest votes"),
+    [HttpStatusCodes.OK]: jsonContent(
+      createPaginatedResponseSchema(GetLatestVotesResponseSchema.nullable()),
+      'The latest votes'
+    ),
   },
 });
 
 export const getVotesByUserId = createRoute({
-  path: "/votes/{userId}",
-  method: "get",
+  path: '/votes/{profileId}',
+  method: 'get',
   tags,
-  summary: "Get votes by user id",
-  description: "Get votes for a user by user id",
+  summary: 'Get votes by user id',
+  description: 'Get votes for a user by user id',
   request: {
     params: z.object({
-      userId: z.string(),
+      profileId: z.string().describe('The profile ID to check for votes'),
     }),
     query: PaginationQuerySchema,
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
       createPaginatedResponseSchema(GetVotesByUserIdResponseSchema),
-      "Votes fetched for the user successfully",
+      'Votes fetched for the user successfully'
     ),
     [HttpStatusCodes.NOT_FOUND]: NotFoundResponse(),
   },

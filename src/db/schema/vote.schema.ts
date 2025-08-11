@@ -1,8 +1,8 @@
-import z from "zod";
+import z from 'zod';
 
-import type { Vote } from "@/generated/prisma";
+import type { Vote } from '@/generated/prisma';
 
-import { Vote_Type } from "@/generated/prisma";
+import { Vote_Type } from '@/generated/prisma';
 
 export const VoteSchema = z.object({
   id: z.string().cuid(),
@@ -25,13 +25,26 @@ export const VoteInsertSchema = VoteSchema.omit({
 });
 export const VoteSelectSchema = VoteSchema;
 
-export const GetLatestVotesResponseSchema = z.array(
-  z.object({
-    name: z.string(),
-    profileId: z.string().cuid(),
-    createdAt: z.date(),
-  }),
-);
+export const VoteListSchema = z.object({
+  votee: z
+    .object({
+      id: z.string().describe('The votee id'),
+      name: z.string().describe('The votee name'),
+      profilePicture: z.string().describe('The profile picture of the votee'),
+    })
+    .nullable(),
+  voter: z
+    .object({
+      id: z.string().describe('The votee id'),
+      name: z.string().describe('The votee name'),
+      profilePicture: z.string().describe('The profile picture of the votee'),
+    })
+    .nullable(),
+  totalVotes: z.coerce.number(),
+  createdAt: z.string(),
+});
+
+export const GetLatestVotesResponseSchema = z.array(VoteListSchema);
 
 export const GetVotesByUserIdResponseSchema = z.object({
   userId: z.string(),

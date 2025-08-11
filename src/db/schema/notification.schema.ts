@@ -9,8 +9,7 @@ export const IconSchema = z.nativeEnum(Icon);
 export const NotificationSchema = z.object({
   id: z.string(),
   message: z.string(),
-  userId: z.string(),
-  profileId: z.string().nullable(),
+  profileId: z.string(),
   createdAt: z.date(),
   updatedAt: z.date(),
   isRead: z.boolean(),
@@ -34,7 +33,6 @@ export const NotificationUpdateSchema = NotificationSchema.partial().omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  userId: true,
 }).extend({
   isRead: z.boolean().default(false),
   archived: z.boolean().default(false),

@@ -14,6 +14,7 @@ export const auth = betterAuth({
   }),
   basePath: "/api/v1/auth",
   baseURL: env.PUBLIC_APP_URL,
+  trustedOrigins: ["http://localhost:3001", "http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "https://app.swingboudoirmag.com", env.PUBLIC_APP_URL],
   emailAndPassword: {
     requireEmailVerification: false,
     enabled: true,
@@ -34,9 +35,7 @@ export const auth = betterAuth({
     enabled: true,
   },
   databaseHooks: {
-    user: {
-
-    },
+    user: {},
   },
   user: {
     additionalFields: {
@@ -95,7 +94,6 @@ export const auth = betterAuth({
     openAPI(),
     bearer(),
   ],
-
   advanced: {
     database: {
       generateId: false,

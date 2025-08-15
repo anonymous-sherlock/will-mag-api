@@ -401,6 +401,7 @@ export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = as
     return sendErrorResponse(c, "badRequest", "No files uploaded");
   }
 
+
   // Check if profile exists
   const profile = await db.profile.findUnique({
     where: { id },

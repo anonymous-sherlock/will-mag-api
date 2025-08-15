@@ -49,10 +49,10 @@ export const searchProfiles: AppRouteHandler<SearchProfiles> = async (c) => {
 
   if (hasAvatar !== undefined) {
     if (hasAvatar) {
-      where.avatarUrl = { not: null };
+      where.coverImageId = { not: null };
     }
     else {
-      where.avatarUrl = null;
+      where.coverImageId = null;
     }
   }
 
@@ -72,6 +72,11 @@ export const searchProfiles: AppRouteHandler<SearchProfiles> = async (c) => {
       take,
       orderBy,
       include: {
+        coverImage: {
+          select: {
+            url: true,
+          },
+        },
         user: {
           select: {
             id: true,
@@ -91,7 +96,7 @@ export const searchProfiles: AppRouteHandler<SearchProfiles> = async (c) => {
     id: profile.id,
     userId: profile.userId,
     bio: profile.bio,
-    avatarUrl: profile.avatarUrl,
+    coverImage: profile.coverImage?.url || profile.user.image || null,
     city: profile.city,
     country: profile.country,
     gender: profile.gender,

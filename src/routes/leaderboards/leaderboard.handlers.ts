@@ -46,7 +46,11 @@ export const getLeaderboard: AppRouteHandler<typeof GetLeaderboardRoute> = async
           displayUsername: true,
         },
       },
-      avatarUrl: true,
+      coverImage: {
+        select: {
+          url: true,
+        },
+      },
       bio: true,
       createdAt: true,
       votesReceived: {
@@ -91,7 +95,7 @@ export const getLeaderboard: AppRouteHandler<typeof GetLeaderboardRoute> = async
       userId: profile.user.id,
       username: profile.user.username!,
       displayUsername: profile.user.displayUsername,
-      avatarUrl: profile.avatarUrl,
+      coverImage: profile.coverImage?.url || null,
       bio: profile.bio,
       totalVotes,
       freeVotes,

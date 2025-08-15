@@ -393,6 +393,11 @@ export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> 
       coverImage: true,
       profile: {
         include: {
+          coverImage: {
+            select: {
+              url: true,
+            },
+          },
           user: {
             select: {
               id: true,
@@ -441,7 +446,7 @@ export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> 
         profileId: participation.profileId,
         username: participation.profile.user.username || "",
         displayUsername: participation.profile.user.displayUsername,
-        avatarUrl: participation.profile.avatarUrl,
+        avatarUrl: participation.profile.coverImage?.url || participation.profile.user.image || null,
         bio: participation.profile.bio,
         totalVotes: freeVotes + paidVotes,
         freeVotes,

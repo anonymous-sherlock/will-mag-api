@@ -32,7 +32,6 @@ async function runSeed() {
         data: {
           userId: user.id,
           bio: faker.lorem.paragraph(),
-          avatarUrl: faker.image.avatar(),
           phone: faker.phone.number(),
           address: faker.location.streetAddress(),
           city: faker.location.city(),
@@ -58,6 +57,7 @@ async function runSeed() {
           prizePool: faker.number.float({ min: 1000, max: 10000, fractionDigits: 2 }),
           startDate: faker.date.future(),
           endDate: faker.date.future({ years: 1 }),
+          slug: faker.string.uuid(),
         },
       });
       contests.push(contest);
@@ -94,7 +94,6 @@ async function runSeed() {
             data: {
               profileId: profile.id,
               contestId: contest.id,
-              coverImage: faker.image.url(),
               isApproved: faker.datatype.boolean(),
               isParticipating: faker.datatype.boolean(),
             },

@@ -2,11 +2,12 @@ import z from "zod";
 
 import type { Profile } from "@/generated/prisma/index.js";
 
+import { MediaSelectSchema } from "./media.schema";
+
 export const ProfileSchema = z.object({
   id: z.string(),
   userId: z.string(),
   bio: z.string().nullable(),
-  avatarUrl: z.string().max(255).nullable(),
   phone: z.string().max(20).nullable().openapi({ example: "+1 210 456 2719" }),
   address: z.string(),
   city: z.string().max(100).nullable().openapi({ example: "Manhattan" }),
@@ -29,6 +30,7 @@ export const ProfileSchema = z.object({
   linkedin: z.string().max(255).nullable(),
   website: z.string().max(255).nullable(),
   other: z.string().max(255).nullable(),
+  bannerImageId: z.string().nullable(),
 }) satisfies z.ZodType<Profile>;
 
 export const ProfileInsertSchema = ProfileSchema.omit({
@@ -47,3 +49,24 @@ export const ProfileInsertSchema = ProfileSchema.omit({
 });
 
 export const ProfileSelectSchema = ProfileSchema;
+
+export const ProfileSelectSchemaWithMediaRelation = ProfileSchema.extend({
+  coverImage: MediaSelectSchema.pick({
+    id: true,
+    key: true,
+    caption: true,
+    url: true,
+  }).nullable(),
+  bannerImage: MediaSelectSchema.pick({
+    id: true,
+    key: true,
+    caption: true,
+    url: true,
+  }).nullable(),
+  profilePhotos: z.array(MediaSelectSchema.pick({
+    id: true,
+    key: true,
+    caption: true,
+    url: true,
+  })).nullable(),
+});

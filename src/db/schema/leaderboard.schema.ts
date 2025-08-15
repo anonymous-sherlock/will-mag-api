@@ -6,7 +6,7 @@ export const LeaderboardEntrySchema = z.object({
   userId: z.string().openapi({ example: "clx1234567890abcdef" }),
   username: z.string().openapi({ example: "john_doe" }),
   displayUsername: z.string().nullable().openapi({ example: "John Doe" }),
-  avatarUrl: z.string().nullable().openapi({ example: "https://example.com/avatar.jpg" }),
+  coverImage: z.string().nullable().openapi({ example: "https://example.com/avatar.jpg" }),
   bio: z.string().nullable().openapi({ example: "Model and influencer" }),
   totalVotes: z.number().openapi({ example: 150 }),
   freeVotes: z.number().openapi({ example: 100 }),

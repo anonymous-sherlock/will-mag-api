@@ -7,7 +7,7 @@ import { sendErrorResponse } from "@/helpers/send-error-response";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 import { utapi } from "@/lib/uploadthing";
 
-import type { CreateRoute, GetByUserIdRoute, GetByUsernameRoute, GetOneRoute, ListRoute, PatchRoute, RemoveProfileImageRoute, RemoveRoute, UploadCoverImageRoute, UploadProfilePhotosRoute } from "./profile.routes";
+import type { CreateRoute, GetByUserIdRoute, GetByUsernameRoute, GetOneRoute, ListRoute, PatchRoute, RemoveProfileImageRoute, RemoveRoute, UploadBannerImageRoute, UploadCoverImageRoute, UploadProfilePhotosRoute } from "./profile.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const { page, limit } = c.req.valid("query");
@@ -18,6 +18,14 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
       take: limit,
       include: {
         coverImage: {
+          select: {
+            id: true,
+            key: true,
+            caption: true,
+            url: true,
+          },
+        },
+        bannerImage: {
           select: {
             id: true,
             key: true,
@@ -68,6 +76,14 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
           url: true,
         },
       },
+      bannerImage: {
+        select: {
+          id: true,
+          key: true,
+          caption: true,
+          url: true,
+        },
+      },
       profilePhotos: {
         select: {
           id: true,
@@ -91,6 +107,14 @@ export const getByUserId: AppRouteHandler<GetByUserIdRoute> = async (c) => {
     where: { userId },
     include: {
       coverImage: {
+        select: {
+          id: true,
+          key: true,
+          caption: true,
+          url: true,
+        },
+      },
+      bannerImage: {
         select: {
           id: true,
           key: true,
@@ -125,6 +149,14 @@ export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async (c) => {
       profile: {
         include: {
           coverImage: {
+            select: {
+              id: true,
+              key: true,
+              caption: true,
+              url: true,
+            },
+          },
+          bannerImage: {
             select: {
               id: true,
               key: true,
@@ -278,11 +310,94 @@ export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async (c
   return c.json(updatedProfile, HttpStatusCodes.OK);
 };
 
+export const uploadBannerImage: AppRouteHandler<UploadBannerImageRoute> = async (c) => {
+  const { id } = c.req.valid("param");
+  const { file } = c.req.valid("form");
+
+  if (!file) {
+    return sendErrorResponse(c, "badRequest", "No file uploaded");
+  }
+
+  // Check if profile exists
+  const profile = await db.profile.findUnique({
+    where: { id },
+    include: { bannerImage: true },
+  });
+
+  if (!profile) {
+    return sendErrorResponse(c, "notFound", "Profile not found");
+  }
+
+  // Store reference to old banner image for deletion
+  const oldBannerImage = profile.bannerImage;
+
+  // Upload file using utapi
+  const uploaded = await utapi.uploadFiles([file], {
+    concurrency: 6,
+    acl: "public-read",
+    contentDisposition: "inline",
+  });
+
+  if (!uploaded || !uploaded[0]) {
+    return sendErrorResponse(c, "badRequest", "Upload failed");
+  }
+
+  const files = uploaded[0].data;
+  if (!files) {
+    return sendErrorResponse(c, "badRequest", "Upload failed");
+  }
+
+  // Create media record
+  const media = await db.media.create({
+    data: {
+      key: files.key,
+      url: files.ufsUrl,
+      size: files.size,
+      name: files.name,
+      status: "COMPLETED",
+      mediaType: "PROFILE_BANNER_IMAGE",
+      type: file.type || "image/jpeg",
+    },
+  });
+
+  // Update profile with new banner image
+  const updatedProfile = await db.profile.update({
+    where: { id },
+    data: {
+      bannerImageId: media.id,
+    },
+    include: {
+      bannerImage: true,
+    },
+  });
+
+  // Delete old banner image if it exists
+  if (oldBannerImage) {
+    try {
+      // Delete from file storage
+      await utapi.deleteFiles([oldBannerImage.key]);
+
+      // Delete from database
+      await db.media.delete({
+        where: { id: oldBannerImage.id },
+      });
+    }
+    catch (error) {
+      console.error("Error deleting old banner image:", error);
+      // Don't fail the request if deletion fails, just log it
+    }
+  }
+
+  return c.json(updatedProfile, HttpStatusCodes.OK);
+};
+
 export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = async (c) => {
   const { id } = c.req.valid("param");
   const { files } = c.req.valid("form");
 
-  if (!files || files.length === 0) {
+  const fileArray = Array.isArray(files) ? files : [files];
+
+  if (!fileArray || fileArray.length === 0) {
     return sendErrorResponse(c, "badRequest", "No files uploaded");
   }
 
@@ -297,7 +412,7 @@ export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = as
   }
 
   // Upload files using utapi
-  const uploaded = await utapi.uploadFiles(files, {
+  const uploaded = await utapi.uploadFiles(fileArray, {
     concurrency: 6,
     acl: "public-read",
     contentDisposition: "inline",
@@ -319,7 +434,7 @@ export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = as
           name: upload.data.name,
           status: "COMPLETED",
           mediaType: "PROFILE_IMAGE",
-          type: files[uploaded.indexOf(upload)]?.type || "image/jpeg",
+          type: upload.data.type || "image/jpeg",
           profileId: profile.id,
         },
       });

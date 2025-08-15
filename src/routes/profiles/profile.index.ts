@@ -11,6 +11,7 @@ const profileRouter = createRouteBuilder()
   .openapi(routes.patch, handlers.patch, "private")
   .openapi(routes.remove, handlers.remove, "private")
   .openapi(routes.uploadCoverImage, handlers.uploadCoverImage, "private")
+  .openapi(routes.uploadBannerImage, handlers.uploadBannerImage, "private")
   .openapi(routes.uploadProfilePhotos, handlers.uploadProfilePhotos, "private")
   .openapi(routes.removeProfileImage, handlers.removeProfileImage, "private");
 

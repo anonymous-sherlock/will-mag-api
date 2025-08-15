@@ -39,7 +39,7 @@ export const ProfileSearchResultSchema = z.object({
   id: z.string(),
   userId: z.string(),
   bio: z.string().nullable(),
-  avatarUrl: z.string().nullable(),
+  coverImage: z.string().nullable(),
   city: z.string().nullable(),
   country: z.string().nullable(),
   gender: z.string().nullable(),

@@ -3,8 +3,8 @@ import * as HttpStatusCodes from "stoker/http-status-codes";
 import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema } from "stoker/openapi/schemas";
 
-import { MediaSelectSchema } from "@/db/schema/media.schema";
-import { ProfileInsertSchema, ProfileSelectSchema } from "@/db/schema/profile.schema";
+import { MediaSelectPartial, MediaSelectSchema } from "@/db/schema/media.schema";
+import { ProfileInsertSchema, ProfileSelectSchema, ProfileSelectSchemaWithMediaRelation } from "@/db/schema/profile.schema";
 import { BadRequestResponse, NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
 import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
 
@@ -22,12 +22,8 @@ export const list = createRoute({
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
       createPaginatedResponseSchema(ProfileSelectSchema.extend({
-        coverImage: MediaSelectSchema.pick({
-          id: true,
-          key: true,
-          caption: true,
-          url: true,
-        }).nullable(),
+        coverImage: MediaSelectPartial,
+        bannerImage: MediaSelectPartial,
       })),
       "The profile lists",
     ),
@@ -72,20 +68,7 @@ export const getOne = createRoute({
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      ProfileSelectSchema.extend({
-        coverImage: MediaSelectSchema.pick({
-          id: true,
-          key: true,
-          caption: true,
-          url: true,
-        }).nullable(),
-        profilePhotos: z.array(MediaSelectSchema.pick({
-          id: true,
-          key: true,
-          caption: true,
-          url: true,
-        })).nullable(),
-      }),
+      ProfileSelectSchemaWithMediaRelation,
       "The profile",
     ),
     [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
@@ -105,20 +88,7 @@ export const getByUserId = createRoute({
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      ProfileSelectSchema.extend({
-        coverImage: MediaSelectSchema.pick({
-          id: true,
-          key: true,
-          caption: true,
-          url: true,
-        }).nullable(),
-        profilePhotos: z.array(MediaSelectSchema.pick({
-          id: true,
-          key: true,
-          caption: true,
-          url: true,
-        })).nullable(),
-      }),
+      ProfileSelectSchemaWithMediaRelation,
       "The profile",
     ),
     [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
@@ -138,20 +108,7 @@ export const getByUsername = createRoute({
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      ProfileSelectSchema.extend({
-        coverImage: MediaSelectSchema.pick({
-          id: true,
-          key: true,
-          caption: true,
-          url: true,
-        }).nullable(),
-        profilePhotos: z.array(MediaSelectSchema.pick({
-          id: true,
-          key: true,
-          caption: true,
-          url: true,
-        })).nullable(),
-      }),
+      ProfileSelectSchemaWithMediaRelation,
       "The profile with cover image and profile photos",
     ),
     [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
@@ -237,6 +194,37 @@ export const uploadCoverImage = createRoute({
   },
 });
 
+export const uploadBannerImage = createRoute({
+  path: "/profile/{id}/upload/banner",
+  method: "post",
+  tags,
+  summary: "Upload Profile Banner",
+  description: "Upload a banner image for a specific profile",
+  request: {
+    params: z.object({
+      id: z.string().describe("The profile ID"),
+    }),
+    body: {
+      content: {
+        "multipart/form-data": {
+          schema: z.object({
+            file: z.instanceof(File).describe("The banner image file to upload"),
+          }),
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      ProfileSelectSchema,
+      "The updated profile with banner image",
+    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
+    [HttpStatusCodes.BAD_REQUEST]: BadRequestResponse("Upload failed"),
+  },
+});
+
 export const uploadProfilePhotos = createRoute({
   path: "/profile/{id}/upload/photos",
   method: "post",
@@ -251,7 +239,10 @@ export const uploadProfilePhotos = createRoute({
       content: {
         "multipart/form-data": {
           schema: z.object({
-            files: z.array(z.instanceof(File)).describe("The profile photo files to upload"),
+            files: z.union([
+              z.instanceof(File).describe("Single profile photo image to upload"),
+              z.array(z.instanceof(File)).describe("Multiple profile image files to upload"),
+            ]).describe("Single file or array of files to upload"),
           }),
         },
       },
@@ -298,5 +289,6 @@ export type GetByUsernameRoute = typeof getByUsername;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
 export type UploadCoverImageRoute = typeof uploadCoverImage;
+export type UploadBannerImageRoute = typeof uploadBannerImage;
 export type UploadProfilePhotosRoute = typeof uploadProfilePhotos;
 export type RemoveProfileImageRoute = typeof removeProfileImage;

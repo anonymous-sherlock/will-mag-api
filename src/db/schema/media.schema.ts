@@ -26,3 +26,9 @@ export const MediaInsertSchema = MediaSchema.pick({
 });
 
 export const MediaSelectSchema = MediaSchema;
+export const MediaSelectPartial = MediaSelectSchema.pick({
+  id: true,
+  key: true,
+  caption: true,
+  url: true,
+}).nullable();

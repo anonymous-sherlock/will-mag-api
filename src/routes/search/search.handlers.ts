@@ -6,7 +6,7 @@ import type { AppRouteHandler } from "@/types/types";
 import { db } from "@/db";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 
-import type { SearchContests, SearchProfiles } from "./search.routes";
+import type { SearchContests, SearchProfiles, SearchUsers } from "./search.routes";
 
 export const searchProfiles: AppRouteHandler<SearchProfiles> = async (c) => {
   const { page, limit, query, sortBy, sortOrder, city, country, gender, hasAvatar } = c.req.valid("query");
@@ -122,8 +122,6 @@ export const searchContests: AppRouteHandler<SearchContests> = async (c) => {
   const skip = (page - 1) * limit;
   const take = limit;
 
-  console.log(minPrizePool);
-
   // Build where clause for filtering
   const where: Prisma.ContestWhereInput = {};
 
@@ -208,4 +206,79 @@ export const searchContests: AppRouteHandler<SearchContests> = async (c) => {
   const pagination = calculatePaginationMetadata(total, page, limit);
 
   return c.json({ data: formattedContests, pagination }, HttpStatusCodes.OK);
+};
+
+export const searchUsers: AppRouteHandler<SearchUsers> = async (c) => {
+  const { page, limit, query, search, sortBy, sortOrder, role, isActive, hasProfile } = c.req.valid("query");
+
+  const skip = (page - 1) * limit;
+  const take = limit;
+
+  // Build where clause for filtering
+  const where: Prisma.UserWhereInput = {};
+
+  if (query || search) {
+    where.OR = [
+      { name: { contains: query || search } },
+      { username: { contains: query || search } },
+      { displayUsername: { contains: query || search } },
+      { email: { contains: query || search } },
+    ];
+  }
+
+  if (role) {
+    where.role = role;
+  }
+
+  if (isActive !== undefined) {
+    where.isActive = isActive;
+  }
+
+  if (hasProfile !== undefined) {
+    if (hasProfile) {
+      where.profile = { isNot: null };
+    }
+    else {
+      where.profile = null;
+    }
+  }
+
+  // Build order by clause
+  const orderBy: Prisma.UserOrderByWithRelationInput = {};
+  orderBy[sortBy] = sortOrder;
+
+  const [users, total] = await Promise.all([
+    db.user.findMany({
+      where,
+      skip,
+      take,
+      orderBy,
+      include: {
+        profile: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    }),
+    db.user.count({ where }),
+  ]);
+
+  const formattedUsers = users.map(user => ({
+    id: user.id,
+    username: user.username,
+    displayUsername: user.displayUsername,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    isActive: user.isActive,
+    image: user.image,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+    hasProfile: user.profile !== null,
+  }));
+
+  const pagination = calculatePaginationMetadata(total, page, limit);
+
+  return c.json({ data: formattedUsers, pagination }, HttpStatusCodes.OK);
 };

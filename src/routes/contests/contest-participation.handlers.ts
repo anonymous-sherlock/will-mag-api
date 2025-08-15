@@ -5,11 +5,12 @@ import type { AppRouteHandler } from "@/types/types";
 import { db } from "@/db";
 import { sendErrorResponse } from "@/helpers/send-error-response";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
+import { utapi } from "@/lib/uploadthing";
 
-import type { GetContestWinnerRoute, GetParticipantsRoute, JoinRoute, LeaveRoute, SetContestWinnerRoute } from "./contest-participation.routes";
+import type { CheckParticipationRoute, GetContestWinnerRoute, GetParticipantsRoute, JoinRoute, LeaveRoute, SetContestWinnerRoute, UploadParticipationCoverImageRoute } from "./contest-participation.routes";
 
 export const join: AppRouteHandler<JoinRoute> = async (c) => {
-  const { profileId, contestId, coverImage } = c.req.valid("json");
+  const { profileId, contestId } = c.req.valid("json");
 
   const profile = await db.profile.findFirst({
     where: { id: profileId },
@@ -42,14 +43,13 @@ export const join: AppRouteHandler<JoinRoute> = async (c) => {
     data: {
       contestId: contest.id,
       profileId: profile.id,
-      coverImage,
     },
-
+    include: {
+      contest: true,
+      coverImage: true,
+    },
   });
-  return c.json({
-    ...participation,
-    contest,
-  }, HttpStatusCodes.OK);
+  return c.json(participation, HttpStatusCodes.OK);
 };
 
 export const leave: AppRouteHandler<LeaveRoute> = async (c) => {
@@ -87,6 +87,9 @@ export const leave: AppRouteHandler<LeaveRoute> = async (c) => {
     where: {
       id: existing.id,
     },
+    include: {
+      coverImage: true,
+    },
   });
 
   return c.json(deletedParticipation, HttpStatusCodes.OK);
@@ -111,12 +114,13 @@ export const getParticipants: AppRouteHandler<GetParticipantsRoute> = async (c) 
       take: limit,
       select: {
         id: true,
-        coverImage: true,
+        mediaId: true,
         isApproved: true,
         isParticipating: true,
         createdAt: true,
         updatedAt: true,
         contestId: true,
+        coverImage: true,
         profile: {
           select: {
             id: true,
@@ -200,7 +204,7 @@ export const setContestWinner: AppRouteHandler<SetContestWinnerRoute> = async (c
   const participant = await db.contestParticipation.findFirst({
     where: {
       contestId: id,
-      profileId: profileId,
+      profileId,
     },
   });
 
@@ -235,4 +239,99 @@ export const setContestWinner: AppRouteHandler<SetContestWinnerRoute> = async (c
     totalParticipants,
     totalVotes,
   }, HttpStatusCodes.OK);
+};
+
+export const checkParticipation: AppRouteHandler<CheckParticipationRoute> = async (c) => {
+  const { profileId, contestId } = c.req.valid("param");
+
+  const profile = await db.profile.findFirst({
+    where: { id: profileId },
+  });
+
+  const contest = await db.contest.findFirst({
+    where: { id: contestId },
+  });
+
+  if (!profile) {
+    return sendErrorResponse(c, "notFound", "Profile not found");
+  }
+  if (!contest) {
+    return sendErrorResponse(c, "notFound", "Contest not found");
+  }
+
+  const participation = await db.contestParticipation.findFirst({
+    where: {
+      profileId: profile.id,
+      contestId: contest.id,
+    },
+    include: {
+      coverImage: true,
+    },
+  });
+
+  return c.json({
+    hasJoined: !!participation,
+    participation,
+    contest,
+  }, HttpStatusCodes.OK);
+};
+
+export const uploadParticipationCoverImage: AppRouteHandler<UploadParticipationCoverImageRoute> = async (c) => {
+  const { participationId } = c.req.valid("param");
+  const { file } = c.req.valid("form");
+
+  if (!file) {
+    return sendErrorResponse(c, "badRequest", "No file uploaded");
+  }
+
+  // Check if contest participation exists
+  const participation = await db.contestParticipation.findUnique({
+    where: { id: participationId },
+    include: { contest: true },
+  });
+
+  if (!participation) {
+    return sendErrorResponse(c, "notFound", "Contest participation not found");
+  }
+
+  // Upload file using utapi
+  const uploaded = await utapi.uploadFiles([file], {
+    concurrency: 1,
+    acl: "public-read",
+    contentDisposition: "inline",
+  });
+
+  if (!uploaded || uploaded.length === 0 || !uploaded[0].data) {
+    return sendErrorResponse(c, "badRequest", "Upload failed");
+  }
+
+  const upload = uploaded[0];
+
+  // Create media record for the uploaded file
+  const media = await db.media.create({
+    data: {
+      key: upload.data.key,
+      url: upload.data.ufsUrl,
+      size: upload.data.size,
+      name: upload.data.name,
+      status: "COMPLETED",
+      mediaType: "CONTEST_PARTICIPATION_COVER",
+      type: file.type || "image/jpeg",
+      contestId: participation.contestId,
+    },
+  });
+
+  // Update participation with the uploaded image as cover image
+  const updatedParticipation = await db.contestParticipation.update({
+    where: { id: participationId },
+    data: {
+      mediaId: media.id,
+    },
+    include: {
+      contest: true,
+      coverImage: true,
+    },
+  });
+
+  return c.json(updatedParticipation, HttpStatusCodes.OK);
 };

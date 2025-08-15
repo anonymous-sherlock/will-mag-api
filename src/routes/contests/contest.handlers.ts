@@ -6,8 +6,9 @@ import { db } from "@/db";
 import { sendErrorResponse } from "@/helpers/send-error-response";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 import { utapi } from "@/lib/uploadthing";
+import { generateUniqueSlug } from "@/utils/slugify";
 
-import type { CreateRoute, GetAvailableContestsRoute, GetContestLeaderboardRoute, GetContestStatsRoute, GetJoinedContestsRoute, GetOneRoute, GetUpcomingContestsRoute, ListRoute, PatchRoute, RemoveContestImageRoute, RemoveRoute, UploadContestImagesRoute } from "./contest.routes";
+import type { CreateRoute, GetAvailableContestsRoute, GetBySlugRoute, GetContestLeaderboardRoute, GetContestStatsRoute, GetJoinedContestsRoute, GetOneRoute, GetUpcomingContestsRoute, ListRoute, PatchRoute, RemoveContestImageRoute, RemoveRoute, UploadContestImagesRoute } from "./contest.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const { page, limit } = c.req.valid("query");
@@ -27,6 +28,9 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
         },
         awards: true,
       },
+      orderBy: {
+        createdAt: "desc",
+      },
     }),
     db.contest.count(),
   ]);
@@ -42,9 +46,20 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
 export const create: AppRouteHandler<CreateRoute> = async (c) => {
   const { awards, ...contest } = c.req.valid("json");
 
+  const providedSlug = typeof contest.slug === "string" && contest.slug.trim().length > 0
+    ? contest.slug.trim()
+    : contest.name;
+
+  // Ensure slug uniqueness by suffixing with an incrementing number if needed
+  const uniqueSlug = await generateUniqueSlug(providedSlug, async (slug) => {
+    const existing = await db.contest.findUnique({ where: { slug } });
+    return !!existing;
+  });
+
   const insertedContest = await db.contest.create({
     data: {
       ...contest,
+      slug: uniqueSlug,
       awards: {
         createMany: {
           data: awards,
@@ -64,6 +79,22 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
   const { id } = c.req.valid("param");
   const contest = await db.contest.findUnique({
     where: { id },
+    include: {
+      images: true,
+      awards: true,
+    },
+  });
+
+  if (!contest)
+    return sendErrorResponse(c, "notFound", "Contest not found");
+
+  return c.json(contest, HttpStatusCodes.OK);
+};
+
+export const getBySlug: AppRouteHandler<GetBySlugRoute> = async (c) => {
+  const { slug } = c.req.valid("param");
+  const contest = await db.contest.findUnique({
+    where: { slug },
     include: {
       images: true,
       awards: true,
@@ -359,6 +390,7 @@ export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> 
       isParticipating: true,
     },
     include: {
+      coverImage: true,
       profile: {
         include: {
           user: {
@@ -415,7 +447,7 @@ export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> 
         freeVotes,
         paidVotes,
         isParticipating: participation.isParticipating || true,
-        coverImage: participation.coverImage,
+        coverImage: participation.coverImage?.url || null,
         isApproved: participation.isApproved,
       };
     }),
@@ -447,7 +479,10 @@ export const uploadContestImages: AppRouteHandler<UploadContestImagesRoute> = as
   const { id } = c.req.valid("param");
   const { files } = c.req.valid("form");
 
-  if (!files || files.length === 0) {
+  // Handle both single file and array of files
+  const fileArray = Array.isArray(files) ? files : [files];
+
+  if (!fileArray || fileArray.length === 0) {
     return sendErrorResponse(c, "badRequest", "No files uploaded");
   }
 
@@ -462,8 +497,8 @@ export const uploadContestImages: AppRouteHandler<UploadContestImagesRoute> = as
   }
 
   // Upload files using utapi
-  const uploaded = await utapi.uploadFiles(files, {
-    concurrency: 6,
+  const uploaded = await utapi.uploadFiles(fileArray, {
+    concurrency: 8,
     acl: "public-read",
     contentDisposition: "inline",
   });
@@ -479,12 +514,12 @@ export const uploadContestImages: AppRouteHandler<UploadContestImagesRoute> = as
       const media = await db.media.create({
         data: {
           key: upload.data.key,
-          url: upload.data.url,
+          url: upload.data.ufsUrl,
           size: upload.data.size,
           name: upload.data.name,
           status: "COMPLETED",
           mediaType: "CONTEST_IMAGE",
-          type: files[uploaded.indexOf(upload)]?.type || "image/jpeg",
+          type: upload.data.type || "image/jpeg",
           contestId: contest.id,
         },
       });

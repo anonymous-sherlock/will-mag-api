@@ -2,14 +2,19 @@ import { z } from "zod";
 
 import type { ContestParticipation } from "@/generated/prisma/index.js";
 
+import { MediaSelectSchema } from "./media.schema";
+
 export const ContestParticipationSchema = z.object({
   id: z.string().describe("Unique identifier of the contest participation record"),
   profileId: z.string().describe("ID of the profile that is participating in the contest"),
   contestId: z.string().describe("ID of the contest"),
-  coverImage: z
+  mediaId: z
     .string()
     .nullable()
-    .describe("Optional URL of the participant's cover image"),
+    .describe("ID of the cover image media record"),
+  coverImage: MediaSelectSchema
+    .nullable()
+    .describe("Cover image media record"),
   isApproved: z
     .boolean()
     .openapi({ example: false })
@@ -32,6 +37,8 @@ export const ContestParticipationInsertSchema = ContestParticipationSchema.omit(
   createdAt: true,
   updatedAt: true,
   isApproved: true,
+  coverImage: true,
+  mediaId: true,
 }).extend({
   isParticipating: z
     .boolean()
@@ -41,7 +48,7 @@ export const ContestParticipationInsertSchema = ContestParticipationSchema.omit(
 
 export const ContestParticipationLeaveSchema = ContestParticipationInsertSchema.pick({
   contestId: true,
-  profileId: true
+  profileId: true,
 });
 
 export const ContestParticipationSelectSchema = ContestParticipationSchema;

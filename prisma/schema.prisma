@@ -103,8 +103,6 @@ model Profile {
   website   String? @db.VarChar(255)
   other     String? @db.VarChar(255)
 
-  avatarUrl String? @db.VarChar(255)
-
   phone String? @db.VarChar(20)
 
   address     String
@@ -130,6 +128,10 @@ model Profile {
   // ONE cover image
   coverImageId String? @unique
   coverImage   Media?  @relation("ProfileCoverImage", fields: [coverImageId], references: [id], onDelete: Cascade)
+
+  // NEW: ONE banner image
+  bannerImageId String? @unique
+  bannerImage   Media?  @relation("ProfileBannerImage", fields: [bannerImageId], references: [id], onDelete: Cascade)
 
   // MULTIPLE profile gallery images
   profilePhotos Media[] @relation("ProfilePhotos")
@@ -168,22 +170,70 @@ enum Icon {
   INFO
 }
 
+enum Contest_Status {
+  DRAFT
+  PUBLISHED
+  ACTIVE
+  VOTING
+  JUDGING
+  COMPLETED
+  CANCELLED
+  SUSPENDED
+}
+
+enum Contest_Visibility {
+  PUBLIC
+  PRIVATE
+  INVITE_ONLY
+  RESTRICTED
+}
+
 model Contest {
-  id                    String                 @id @default(cuid())
-  name                  String                 @db.VarChar(255)
-  description           String                 @db.LongText
-  prizePool             Float
+  id          String @id @default(cuid())
+  name        String @db.VarChar(255)
+  description String @db.LongText
+  prizePool   Float  @db.Float()
+
+  // Relations
   contestParticipations ContestParticipation[] @relation("ContestParticipants")
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
   awards                Award[]
   votes                 Vote[]
-  winner                Profile?               @relation(fields: [winnerProfileId], references: [id])
-  startDate             DateTime
-  endDate               DateTime
+  winner                Profile?               @relation(fields: [winnerProfileId], references: [id], onDelete: SetNull)
   winnerProfileId       String?
+  images                Media[]                @relation("ContestImages")
 
-  images Media[] @relation("ContestImages")
+  // Dates
+  startDate            DateTime
+  endDate              DateTime
+  registrationDeadline DateTime?
+  resultAnnounceDate   DateTime?
+
+  // Metadata
+  slug            String             @unique
+  status          Contest_Status     @default(DRAFT)
+  visibility      Contest_Visibility @default(PUBLIC)
+  isFeatured      Boolean            @default(false)
+  isVerified      Boolean            @default(false)
+  isVotingEnabled Boolean            @default(false)
+
+  // Rules & Requirements
+  rules        String? @db.LongText
+  requirements String? @db.LongText
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Indexes
+  @@index([status])
+  @@index([visibility])
+  @@index([startDate, endDate])
+  @@index([isFeatured])
+  @@index([slug])
+  // Full-text search
+  @@fulltext([name])
+  @@fulltext([description])
+  @@fulltext([name, description])
 }
 
 model Award {
@@ -238,21 +288,32 @@ model VoteMultiplierPeriod {
 }
 
 model ContestParticipation {
-  id        String  @id @default(cuid())
+  id        String @id @default(cuid())
   profileId String
   contestId String
-  profile   Profile @relation("ProfileContestParticipations", fields: [profileId], references: [id], onDelete: Cascade)
-  contest   Contest @relation("ContestParticipants", fields: [contestId], references: [id], onDelete: Cascade)
 
-  coverImage String? @db.VarChar(512)
-  isApproved Boolean @default(false)
+  profile Profile @relation("ProfileContestParticipations", fields: [profileId], references: [id], onDelete: Cascade)
+  contest Contest @relation("ContestParticipants", fields: [contestId], references: [id], onDelete: Cascade)
 
+  coverImage Media?  @relation("ContestParticipationCoverImage", fields: [mediaId], references: [id], onDelete: SetNull)
+  mediaId    String? @unique
+
+  isApproved      Boolean  @default(false)
   isParticipating Boolean? @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([profileId, contestId])
+  @@index([contestId])
+  @@index([profileId])
+}
+
+enum Contest_Participation_Status {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
 }
 
 enum User_Role {
@@ -282,21 +343,26 @@ model Media {
   // Relation to Profile as cover image (reverse relation defined in Profile)
   coverOfProfile Profile? @relation("ProfileCoverImage")
 
+  // NEW: Relation to Profile as banner image
+  bannerOfProfile Profile? @relation("ProfileBannerImage")
+
   // Relation to Contest for contest images
   contestId String?
   contest   Contest? @relation("ContestImages", fields: [contestId], references: [id], onDelete: Cascade)
+
+  // Relation to ContestParticipation as cover image
+  contestParticipationCover ContestParticipation? @relation("ContestParticipationCoverImage")
 
   @@map("media")
 }
 
 enum Media_Type {
-  USER_IMAGE
-  PROFILE_IMAGE
-  PROFILE_COVER_IMAGE
-  PROFILE_AVATAR
-  VOTING_IMAGE
   COVER_IMAGE
   CONTEST_IMAGE
+  CONTEST_PARTICIPATION_COVER
+  PROFILE_IMAGE
+  PROFILE_COVER_IMAGE
+  PROFILE_BANNER_IMAGE
 }
 
 enum File_Status {

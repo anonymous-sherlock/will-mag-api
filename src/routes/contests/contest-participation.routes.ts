@@ -7,7 +7,7 @@ import { ContestParticipationInsertSchema, ContestParticipationLeaveSchema, Cont
 import { ContestSelectSchema, ContestSelectSchemaWithAwards } from "@/db/schema/contest.schema";
 import { ProfileSelectSchema } from "@/db/schema/profile.schema";
 import { UserSelectSchema } from "@/db/schema/users.schema";
-import { ConflictResponse, NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
+import { BadRequestResponse, ConflictResponse, NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
 import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
 
 const tags = ["Contest Participation"];
@@ -146,7 +146,7 @@ export const setContestWinner = createRoute({
     }),
     body: jsonContentRequired(
       ContestParticipationInsertSchema.pick({
-        profileId: true
+        profileId: true,
       }),
       "The winner profile ID",
     ),
@@ -172,8 +172,69 @@ export const setContestWinner = createRoute({
   },
 });
 
+export const checkParticipation = createRoute({
+  path: "/contest/{contestId}/check-participation/{profileId}",
+  method: "get",
+  tags,
+  summary: "Check Contest Participation",
+  description: "Check if a specific profile has joined a contest",
+  request: {
+    params: z.object({
+      contestId: z.string().describe("The contest ID"),
+      profileId: z.string().describe("The profile ID to check"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      z.object({
+        hasJoined: z.boolean(),
+        participation: ContestParticipationSelectSchema.nullable(),
+        contest: ContestSelectSchema,
+      }),
+      "The participation status for the profile in the contest",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Contest or profile not found"),
+  },
+});
+
+export const uploadParticipationCoverImage = createRoute({
+  path: "/contest/participation/{participationId}/upload/cover-image",
+  method: "post",
+  tags,
+  summary: "Upload Contest Participation Cover Image",
+  description: "Upload a single cover image for contest participation",
+  request: {
+    params: z.object({
+      participationId: z.string().describe("The contest participation ID"),
+    }),
+    body: {
+      content: {
+        "multipart/form-data": {
+          schema: z.object({
+            file: z.instanceof(File).describe("Single cover image file to upload"),
+          }),
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      ContestParticipationSelectSchema.extend({
+        contest: ContestSelectSchema,
+      }),
+      "The updated contest participation with cover image",
+    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Contest participation not found"),
+    [HttpStatusCodes.BAD_REQUEST]: BadRequestResponse("Upload failed"),
+  },
+});
+
 export type JoinRoute = typeof join;
 export type LeaveRoute = typeof leave;
 export type GetParticipantsRoute = typeof getParticipants;
 export type GetContestWinnerRoute = typeof getContestWinner;
 export type SetContestWinnerRoute = typeof setContestWinner;
+export type CheckParticipationRoute = typeof checkParticipation;
+export type UploadParticipationCoverImageRoute = typeof uploadParticipationCoverImage;

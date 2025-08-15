@@ -10,6 +10,8 @@ import {
   ContestSearchResultSchema,
   ProfileSearchQuerySchema,
   ProfileSearchResultSchema,
+  UserSearchQuerySchema,
+  UserSearchResultSchema,
 } from "../../db/schema/search.schema";
 
 const tags = ["Search"];
@@ -58,5 +60,30 @@ export const searchContests = createRoute({
   },
 });
 
+export const searchUsers = createRoute({
+  path: "/search/users",
+  method: "get",
+  tags,
+  summary: "Search users",
+  description: "Search and filter users with pagination support",
+  request: {
+    query: UserSearchQuerySchema.extend({
+      sortBy: z.enum(["name", "username", "createdAt"]).optional().default("createdAt"),
+      search: z.string().optional(),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      createPaginatedResponseSchema(UserSearchResultSchema),
+      "Users found successfully",
+    ),
+    [HttpStatusCodes.BAD_REQUEST]: jsonContent(
+      createErrorSchema(UserSearchQuerySchema),
+      "Invalid search parameters",
+    ),
+  },
+});
+
 export type SearchProfiles = typeof searchProfiles;
 export type SearchContests = typeof searchContests;
+export type SearchUsers = typeof searchUsers;

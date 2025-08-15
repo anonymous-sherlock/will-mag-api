@@ -69,6 +69,24 @@ export const getOne = createRoute({
   },
 });
 
+export const getBySlug = createRoute({
+  path: "/contest/slug/{slug}",
+  method: "get",
+  tags,
+  summary: "Get Contest by Slug",
+  description: "Get a specific contest by slug",
+  request: {
+    params: z.object({
+      slug: z.string().describe("The contest slug"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(ContestSelectSchemaWithAwardsandImages, "The contest"),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Contest not found"),
+  },
+});
+
 export const patch = createRoute({
   path: "/contest/{id}",
   method: "patch",
@@ -251,7 +269,7 @@ export const uploadContestImages = createRoute({
   method: "post",
   tags,
   summary: "Upload Contest Images",
-  description: "Upload multiple images for a specific contest",
+  description: "Upload single or multiple images for a specific contest",
   request: {
     params: z.object({
       id: z.string().describe("The contest ID"),
@@ -260,7 +278,10 @@ export const uploadContestImages = createRoute({
       content: {
         "multipart/form-data": {
           schema: z.object({
-            files: z.array(z.instanceof(File)).describe("The contest image files to upload"),
+            files: z.union([
+              z.instanceof(File).describe("Single contest image file to upload"),
+              z.array(z.instanceof(File)).describe("Multiple contest image files to upload"),
+            ]).describe("Single file or array of files to upload"),
           }),
         },
       },
@@ -302,6 +323,7 @@ export const removeContestImage = createRoute({
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
+export type GetBySlugRoute = typeof getBySlug;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
 export type GetUpcomingContestsRoute = typeof getUpcomingContests;

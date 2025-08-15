@@ -1,7 +1,9 @@
 import { Hono } from "hono";
+import { hc } from "hono/client";
 
 import configureOpenAPI from "@/lib/configure-open-api";
 import createApp from "@/lib/create-app";
+import analytics from "@/routes/analytics/analytics.index";
 import auth from "@/routes/auth/auth.index";
 import awards from "@/routes/awards/award.index";
 import contestParticipation from "@/routes/contests/contest-participation.index";
@@ -23,7 +25,7 @@ import stripeWebhookRouter from "./routes/webhooks/stripe/stripe.index";
 const app = createApp();
 configureOpenAPI(app);
 
-const routes = [index, auth, user, profile, notification, contest, awards, contestParticipation, vote, voteMultiplier, ranks, payment, leaderboard, uploadthing, search] as const;
+const routes = [index, auth, user, profile, notification, contest, awards, contestParticipation, vote, voteMultiplier, ranks, payment, leaderboard, uploadthing, search, analytics] as const;
 
 routes.forEach((route) => {
   app.route("/", route);
@@ -36,3 +38,6 @@ server.route("/", stripeWebhookRouter).route("/", app);
 export type AppType = (typeof routes)[number];
 
 export default server;
+
+// Export the client for external use
+export const client = hc<AppType>("http://localhost:8787/");

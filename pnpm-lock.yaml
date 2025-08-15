@@ -38,6 +38,9 @@ importers:
       hono-pino:
         specifier: ^0.9.1
         version: 0.9.1(hono@4.8.12)(pino@9.7.0)
+      nanoid:
+        specifier: ^5.1.5
+        version: 5.1.5
       nodemailer:
         specifier: ^7.0.5
         version: 7.0.5

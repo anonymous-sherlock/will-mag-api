@@ -26,6 +26,9 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
           },
         },
       },
+      orderBy: {
+        createdAt: "asc",
+      },
     }),
     db.profile.count(),
   ]);
@@ -227,7 +230,7 @@ export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async (c
   const media = await db.media.create({
     data: {
       key: files.key,
-      url: files.url,
+      url: files.ufsUrl,
       size: files.size,
       name: files.name,
       status: "COMPLETED",
@@ -311,7 +314,7 @@ export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = as
       const media = await db.media.create({
         data: {
           key: upload.data.key,
-          url: upload.data.url,
+          url: upload.data.ufsUrl,
           size: upload.data.size,
           name: upload.data.name,
           status: "COMPLETED",

@@ -1,5 +1,3 @@
-import { createBaseAPIRouter } from "@/lib/create-app";
-
 import { createRouteBuilder } from "../procedure.route";
 import * as handlers from "./contest.handlers";
 import * as routes from "./contest.routes";
@@ -8,6 +6,7 @@ const contestRouter = createRouteBuilder()
   .openapi(routes.list, handlers.list)
   .openapi(routes.create, handlers.create)
   .openapi(routes.getOne, handlers.getOne)
+  .openapi(routes.getBySlug, handlers.getBySlug)
   .openapi(routes.patch, handlers.patch)
   .openapi(routes.remove, handlers.remove)
   .openapi(routes.getUpcomingContests, handlers.getUpcomingContests)

@@ -179,6 +179,51 @@ export const markAllAsRead = createRoute({
   },
 });
 
+export const toggleArchive = createRoute({
+  path: "/notifications/{id}/archive",
+  method: "patch",
+  summary: "Toggle Notification Archive Status",
+  description: "Archive or unarchive a notification by ID.",
+  tags,
+  request: {
+    params: z.object({
+      id: z.string().describe("The notification ID"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      NotificationSelectSchema,
+      "The updated notification with archive status",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Notification not found"),
+  },
+});
+
+export const getArchivedNotifications = createRoute({
+  path: "/notifications/{profileId}/archived",
+  method: "get",
+  summary: "Get Archived Notifications",
+  description: "Get paginated list of archived notifications for the authenticated user.",
+  tags,
+  request: {
+    params: z.object({
+      profileId: z.string().describe("The User ID"),
+    }),
+    query: PaginationQuerySchema.extend({
+      limit: z.number().default(10),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      createPaginatedResponseSchema(NotificationSelectSchema, "archivedNotifications"),
+      "List of archived notifications",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
+  },
+});
+
 export type GetNotificationsRoute = typeof getNotifications;
 export type GetNotificationRoute = typeof getNotification;
 export type CreateNotificationRoute = typeof createNotification;
@@ -186,3 +231,5 @@ export type UpdateNotificationRoute = typeof updateNotification;
 export type DeleteNotificationRoute = typeof deleteNotification;
 export type MarkAsReadRoute = typeof markAsRead;
 export type MarkAllAsReadRoute = typeof markAllAsRead;
+export type ToggleArchiveRoute = typeof toggleArchive;
+export type GetArchivedNotificationsRoute = typeof getArchivedNotifications;

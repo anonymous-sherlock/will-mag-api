@@ -10,10 +10,12 @@ import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 import type {
   CreateNotificationRoute,
   DeleteNotificationRoute,
+  GetArchivedNotificationsRoute,
   GetNotificationRoute,
   GetNotificationsRoute,
   MarkAllAsReadRoute,
   MarkAsReadRoute,
+  ToggleArchiveRoute,
   UpdateNotificationRoute,
 } from "./notification.routes";
 
@@ -177,5 +179,64 @@ export const markAllAsRead: AppRouteHandler<MarkAllAsReadRoute> = async (c) => {
   return c.json({
     message: "All notifications marked as read",
     updatedCount: result.count,
+  }, HttpStatusCodes.OK);
+};
+
+export const toggleArchive: AppRouteHandler<ToggleArchiveRoute> = async (c) => {
+  const { id } = c.req.valid("param");
+
+  const existing = await db.notification.findFirst({
+    where: { id },
+  });
+
+  if (!existing) {
+    return sendErrorResponse(c, "notFound", "Notification not found");
+  }
+
+  const notification = await db.notification.update({
+    where: { id },
+    data: { archived: !existing.archived },
+  });
+
+  return c.json(notification, HttpStatusCodes.OK);
+};
+
+export const getArchivedNotifications: AppRouteHandler<GetArchivedNotificationsRoute> = async (c) => {
+  const { profileId } = c.req.valid("param");
+  const { page = 1, limit = 10 } = c.req.valid("query");
+
+  const profile = await db.profile.findFirst({
+    where: { id: profileId },
+  });
+
+  if (!profile) {
+    return sendErrorResponse(c, "notFound", "Profile not found");
+  }
+
+  const skip = (page - 1) * limit;
+
+  const [archivedNotifications, total] = await Promise.all([
+    db.notification.findMany({
+      where: {
+        profileId: profile.id,
+        archived: true,
+      },
+      skip,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+    }),
+    db.notification.count({
+      where: {
+        profileId: profile.id,
+        archived: true,
+      },
+    }),
+  ]);
+
+  const pagination = calculatePaginationMetadata(total, page, limit);
+
+  return c.json({
+    archivedNotifications,
+    pagination,
   }, HttpStatusCodes.OK);
 };

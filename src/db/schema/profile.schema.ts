@@ -37,6 +37,9 @@ export const ProfileInsertSchema = ProfileSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  bannerImageId: true,
+  coverImageId: true,
+  lastFreeVoteAt: true,
 }).extend({
   instagram: z.string().max(255).nullable().optional(),
   tiktok: z.string().max(255).nullable().optional(),
@@ -46,6 +49,7 @@ export const ProfileInsertSchema = ProfileSchema.omit({
   linkedin: z.string().max(255).nullable().optional(),
   website: z.string().max(255).nullable().optional(),
   other: z.string().max(255).nullable().optional(),
+  dateOfBirth: z.coerce.date().nullable().optional(),
 });
 
 export const ProfileSelectSchema = ProfileSchema;

@@ -9,6 +9,8 @@ const notificationRouter = createRouteBuilder()
   .openapi(routes.updateNotification, handlers.updateNotification)
   .openapi(routes.deleteNotification, handlers.deleteNotification)
   .openapi(routes.markAsRead, handlers.markAsRead)
-  .openapi(routes.markAllAsRead, handlers.markAllAsRead);
+  .openapi(routes.markAllAsRead, handlers.markAllAsRead)
+  .openapi(routes.toggleArchive, handlers.toggleArchive)
+  .openapi(routes.getArchivedNotifications, handlers.getArchivedNotifications);
 
 export default notificationRouter.getRouter();

@@ -56,6 +56,7 @@ export const getLeaderboard: AppRouteHandler<typeof GetLeaderboardRoute> = async
       votesReceived: {
         select: {
           type: true,
+          count: true,
         },
       },
     },
@@ -70,8 +71,12 @@ export const getLeaderboard: AppRouteHandler<typeof GetLeaderboardRoute> = async
 
   // Sort by paid votes first, then by total votes
   profilesWithVotes.sort((a, b) => {
-    const aPaidVotes = a.votesReceived.filter(vote => vote.type === "PAID").length;
-    const bPaidVotes = b.votesReceived.filter(vote => vote.type === "PAID").length;
+    const aPaidVotes = a.votesReceived
+      .filter(vote => vote.type === "PAID")
+      .reduce((sum, vote) => sum + vote.count, 0);
+    const bPaidVotes = b.votesReceived
+      .filter(vote => vote.type === "PAID")
+      .reduce((sum, vote) => sum + vote.count, 0);
 
     // First sort by paid votes (descending)
     if (aPaidVotes !== bPaidVotes) {
@@ -79,14 +84,20 @@ export const getLeaderboard: AppRouteHandler<typeof GetLeaderboardRoute> = async
     }
 
     // If paid votes are equal, sort by total votes (descending)
-    return b.votesReceived.length - a.votesReceived.length;
+    const aTotalVotes = a.votesReceived.reduce((sum, vote) => sum + vote.count, 0);
+    const bTotalVotes = b.votesReceived.reduce((sum, vote) => sum + vote.count, 0);
+    return bTotalVotes - aTotalVotes;
   });
 
   // Process the data to calculate vote counts and ranks
   const leaderboardData = profilesWithVotes.map((profile, index) => {
-    const totalVotes = profile.votesReceived.length;
-    const freeVotes = profile.votesReceived.filter(vote => vote.type === "FREE").length;
-    const paidVotes = profile.votesReceived.filter(vote => vote.type === "PAID").length;
+    const totalVotes = profile.votesReceived.reduce((sum, vote) => sum + vote.count, 0);
+    const freeVotes = profile.votesReceived
+      .filter(vote => vote.type === "FREE")
+      .reduce((sum, vote) => sum + vote.count, 0);
+    const paidVotes = profile.votesReceived
+      .filter(vote => vote.type === "PAID")
+      .reduce((sum, vote) => sum + vote.count, 0);
     const rank = offset + index + 1;
 
     return {

@@ -332,8 +332,16 @@ export const getContestAnalytics: AppRouteHandler<GetContestAnalyticsRoute> = as
     // Active contests (PUBLISHED, ACTIVE, VOTING, JUDGING)
     db.contest.count({
       where: {
-        status: {
-          in: ["PUBLISHED", "ACTIVE", "VOTING", "JUDGING"],
+        AND: {
+          status: {
+            in: ["PUBLISHED", "ACTIVE", "VOTING", "JUDGING"],
+          },
+          startDate: {
+            lte: new Date(),
+          },
+          endDate: {
+            gte: new Date(),
+          },
         },
       },
     }),
@@ -342,9 +350,6 @@ export const getContestAnalytics: AppRouteHandler<GetContestAnalyticsRoute> = as
     db.contest.count({
       where: {
         OR: [
-          {
-            status: "DRAFT",
-          },
           {
             AND: [
               {

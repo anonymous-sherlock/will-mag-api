@@ -86,6 +86,7 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
         user: {
           select: {
             name: true,
+            username: true,
           },
         },
       },
@@ -157,8 +158,8 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
     mode: "payment",
     currency: "usd",
     customer_email: voter.user.email,
-    success_url: `${env.FRONTEND_URL}/success`,
-    cancel_url: `${env.FRONTEND_URL}/cancel`,
+    success_url: `${env.FRONTEND_URL}/payments/success?callback=/profile/${votee.user.username}`,
+    cancel_url: `${env.FRONTEND_URL}/payments/failure?callback=/profile/${votee.user.username}`,
   });
 
   if (!session) {

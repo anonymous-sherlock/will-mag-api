@@ -1,17 +1,17 @@
-import z from "zod";
+import z from 'zod';
 
-import type { Profile } from "@/generated/prisma/index.js";
+import type { Profile } from '@/generated/prisma/index.js';
 
-import { MediaSelectSchema } from "./media.schema";
+import { MediaSelectSchema } from './media.schema';
 
 export const ProfileSchema = z.object({
   id: z.string(),
   userId: z.string(),
   bio: z.string().nullable(),
-  phone: z.string().max(20).nullable().openapi({ example: "+1 210 456 2719" }),
+  phone: z.string().max(20).nullable().openapi({ example: '+1 210 456 2719' }),
   address: z.string(),
-  city: z.string().max(100).nullable().openapi({ example: "Manhattan" }),
-  country: z.string().max(100).nullable().openapi({ example: "United States" }),
+  city: z.string().max(100).nullable().openapi({ example: 'Manhattan' }),
+  country: z.string().max(100).nullable().openapi({ example: 'United States' }),
   postalCode: z.string().max(20).nullable(),
   dateOfBirth: z.date().nullable(),
   gender: z.string().max(50).nullable(),
@@ -41,6 +41,8 @@ export const ProfileInsertSchema = ProfileSchema.omit({
   coverImageId: true,
   lastFreeVoteAt: true,
 }).extend({
+  dateOfBirth: z.coerce.date().nullable().optional(),
+  lastFreeVoteAt: z.coerce.date().optional().nullish(),
   instagram: z.string().max(255).nullable().optional(),
   tiktok: z.string().max(255).nullable().optional(),
   youtube: z.string().max(255).nullable().optional(),
@@ -49,7 +51,6 @@ export const ProfileInsertSchema = ProfileSchema.omit({
   linkedin: z.string().max(255).nullable().optional(),
   website: z.string().max(255).nullable().optional(),
   other: z.string().max(255).nullable().optional(),
-  dateOfBirth: z.coerce.date().nullable().optional(),
 });
 
 export const ProfileSelectSchema = ProfileSchema;
@@ -67,10 +68,14 @@ export const ProfileSelectSchemaWithMediaRelation = ProfileSchema.extend({
     caption: true,
     url: true,
   }).nullable(),
-  profilePhotos: z.array(MediaSelectSchema.pick({
-    id: true,
-    key: true,
-    caption: true,
-    url: true,
-  })).nullable(),
+  profilePhotos: z
+    .array(
+      MediaSelectSchema.pick({
+        id: true,
+        key: true,
+        caption: true,
+        url: true,
+      })
+    )
+    .nullable(),
 });

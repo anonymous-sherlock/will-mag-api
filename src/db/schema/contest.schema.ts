@@ -1,17 +1,16 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-import type { Contest } from "@/generated/prisma/index.js";
-import type { Decimal } from "@/generated/prisma/runtime/library";
+import type { Contest } from '@/generated/prisma/index.js';
 
-import { AwardInsertSchema, AwardSchema } from "@/db/schema/award.schema";
-import { Contest_Status, Contest_Visibility } from "@/generated/prisma/index.js";
+import { AwardInsertSchema, AwardSchema } from '@/db/schema/award.schema';
+import { Contest_Status, Contest_Visibility } from '@/generated/prisma/index.js';
 
-import { MediaSelectSchema } from "./media.schema";
+import { MediaSelectSchema } from './media.schema';
 
 export const ContestSchema = z.object({
   id: z.string(),
-  name: z.string({ message: "contest name is required" }).min(3).openapi({
-    example: "Big Weekend",
+  name: z.string({ message: 'contest name is required' }).min(3).openapi({
+    example: 'Big Weekend',
   }),
   description: z.string(),
   prizePool: z.number(),
@@ -39,10 +38,9 @@ export const ContestInsertSchema = ContestSchema.pick({
   slug: true,
   status: true,
   visibility: true,
-
 }).extend({
-  startDate: z.preprocess(val => val ? new Date(val as string) : new Date(), z.date()),
-  endDate: z.preprocess(val => val ? new Date(val as string) : new Date(), z.date()),
+  startDate: z.preprocess(val => (val ? new Date(val as string) : new Date()), z.date()),
+  endDate: z.preprocess(val => (val ? new Date(val as string) : new Date()), z.date()),
   slug: z.string().optional(),
   rules: z.string().optional().nullable(),
   requirements: z.string().optional().nullable(),
@@ -57,10 +55,14 @@ export const ContestSelectSchemaWithAwards = ContestSchema.extend({
 });
 
 export const ContestSelectSchemaWithAwardsandImages = ContestSelectSchemaWithAwards.extend({
-  images: z.array(MediaSelectSchema.pick({
-    id: true,
-    key: true,
-    caption: true,
-    url: true,
-  })).nullable(),
+  images: z
+    .array(
+      MediaSelectSchema.pick({
+        id: true,
+        key: true,
+        caption: true,
+        url: true,
+      })
+    )
+    .nullable(),
 });

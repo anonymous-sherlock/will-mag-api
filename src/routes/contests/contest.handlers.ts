@@ -6,7 +6,7 @@ import { db } from "@/db";
 import { sendErrorResponse } from "@/helpers/send-error-response";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 import { utapi } from "@/lib/uploadthing";
-import { generateUniqueSlug } from "@/utils/slugify";
+import { generateSlug, generateUniqueSlug } from "@/utils/slugify";
 
 import type { CreateRoute, GetAvailableContestsRoute, GetBySlugRoute, GetContestLeaderboardRoute, GetContestStatsRoute, GetJoinedContestsRoute, GetOneRoute, GetUpcomingContestsRoute, ListRoute, PatchRoute, RemoveContestImageRoute, RemoveRoute, UploadContestImagesRoute } from "./contest.routes";
 
@@ -111,6 +111,13 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
   const { id } = c.req.valid("param");
   const contestData = c.req.valid("json");
 
+  const providedSlug = typeof contestData.slug === "string" && contestData.slug.trim().length > 0
+    ? contestData.slug.trim()
+    : contestData.name;
+
+  // Ensure slug uniqueness by suffixing with an incrementing number if needed
+  const slug = generateSlug(providedSlug ?? "");
+
   const contest = await db.contest.findUnique({
     where: { id },
   });
@@ -121,7 +128,19 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
 
   const updatedContest = await db.contest.update({
     where: { id },
-    data: contestData,
+    data: {
+      ...contestData,
+      slug,
+      awards: {
+        deleteMany: {
+          contestId: id,
+        },
+        createMany: {
+          data: contestData.awards || [],
+          skipDuplicates: true,
+        },
+      },
+    },
   });
 
   return c.json(updatedContest, HttpStatusCodes.OK);

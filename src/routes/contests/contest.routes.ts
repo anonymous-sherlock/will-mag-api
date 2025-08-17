@@ -97,14 +97,14 @@ export const patch = createRoute({
     params: z.object({
       id: z.string().describe("The contest ID"),
     }),
-    body: jsonContentRequired(ContestInsertSchema.partial(), "The contest data to update"),
+    body: jsonContentRequired(ContestInsertSchemaWithAwards.partial(), "The contest data to update"),
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(ContestSelectSchema, "The updated contest"),
     [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
     [HttpStatusCodes.NOT_FOUND]: NotFoundResponse(),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
-      createErrorSchema(ContestInsertSchema.partial()),
+      createErrorSchema(ContestInsertSchemaWithAwards.partial()),
       "The validation error(s)",
     ),
   },

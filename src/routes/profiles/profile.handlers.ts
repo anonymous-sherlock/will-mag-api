@@ -1,16 +1,28 @@
-import * as HttpStatusCodes from "stoker/http-status-codes";
+import * as HttpStatusCodes from 'stoker/http-status-codes';
 
-import type { AppRouteHandler } from "@/types/types";
+import type { AppRouteHandler } from '@/types/types';
 
-import { db } from "@/db";
-import { sendErrorResponse } from "@/helpers/send-error-response";
-import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
-import { utapi } from "@/lib/uploadthing";
+import { db } from '@/db';
+import { sendErrorResponse } from '@/helpers/send-error-response';
+import { calculatePaginationMetadata } from '@/lib/queries/query.helper';
+import { utapi } from '@/lib/uploadthing';
 
-import type { CreateRoute, GetByUserIdRoute, GetByUsernameRoute, GetOneRoute, ListRoute, PatchRoute, RemoveProfileImageRoute, RemoveRoute, UploadBannerImageRoute, UploadCoverImageRoute, UploadProfilePhotosRoute } from "./profile.routes";
+import type {
+  CreateRoute,
+  GetByUserIdRoute,
+  GetByUsernameRoute,
+  GetOneRoute,
+  ListRoute,
+  PatchRoute,
+  RemoveProfileImageRoute,
+  RemoveRoute,
+  UploadBannerImageRoute,
+  UploadCoverImageRoute,
+  UploadProfilePhotosRoute,
+} from './profile.routes';
 
-export const list: AppRouteHandler<ListRoute> = async (c) => {
-  const { page, limit } = c.req.valid("query");
+export const list: AppRouteHandler<ListRoute> = async c => {
+  const { page, limit } = c.req.valid('query');
 
   const [profiles, total] = await Promise.all([
     db.profile.findMany({
@@ -33,9 +45,17 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
             url: true,
           },
         },
+        user: {
+          select: {
+            name: true,
+            displayUsername: true,
+            username: true,
+            image: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: "asc",
+        createdAt: 'asc',
       },
     }),
     db.profile.count(),
@@ -43,14 +63,17 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
 
   const pagination = calculatePaginationMetadata(total, page, limit);
 
-  return c.json({
-    data: profiles,
-    pagination,
-  }, HttpStatusCodes.OK);
+  return c.json(
+    {
+      data: profiles,
+      pagination,
+    },
+    HttpStatusCodes.OK
+  );
 };
 
-export const create: AppRouteHandler<CreateRoute> = async (c) => {
-  const profile = c.req.valid("json");
+export const create: AppRouteHandler<CreateRoute> = async c => {
+  const profile = c.req.valid('json');
   const insertedProfile = await db.profile.upsert({
     where: { userId: profile.userId },
     update: {
@@ -63,8 +86,8 @@ export const create: AppRouteHandler<CreateRoute> = async (c) => {
   return c.json(insertedProfile, HttpStatusCodes.CREATED);
 };
 
-export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
-  const { id } = c.req.valid("param");
+export const getOne: AppRouteHandler<GetOneRoute> = async c => {
+  const { id } = c.req.valid('param');
   const profile = await db.profile.findUnique({
     where: { id },
     include: {
@@ -95,14 +118,13 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
     },
   });
 
-  if (!profile)
-    return sendErrorResponse(c, "notFound", "Profile not found");
+  if (!profile) return sendErrorResponse(c, 'notFound', 'Profile not found');
 
   return c.json(profile, HttpStatusCodes.OK);
 };
 
-export const getByUserId: AppRouteHandler<GetByUserIdRoute> = async (c) => {
-  const { userId } = c.req.valid("param");
+export const getByUserId: AppRouteHandler<GetByUserIdRoute> = async c => {
+  const { userId } = c.req.valid('param');
   const profile = await db.profile.findUnique({
     where: { userId },
     include: {
@@ -133,14 +155,13 @@ export const getByUserId: AppRouteHandler<GetByUserIdRoute> = async (c) => {
     },
   });
 
-  if (!profile)
-    return sendErrorResponse(c, "notFound", "Profile not found");
+  if (!profile) return sendErrorResponse(c, 'notFound', 'Profile not found');
 
   return c.json(profile, HttpStatusCodes.OK);
 };
 
-export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async (c) => {
-  const { username } = c.req.valid("param");
+export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async c => {
+  const { username } = c.req.valid('param');
 
   // First find the user by username
   const user = await db.user.findUnique({
@@ -178,23 +199,22 @@ export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async (c) => {
   });
 
   if (!user || !user.profile) {
-    return sendErrorResponse(c, "notFound", "Profile not found");
+    return sendErrorResponse(c, 'notFound', 'Profile not found');
   }
 
   // Return the profile with included cover image and profile photos
   return c.json(user.profile, HttpStatusCodes.OK);
 };
 
-export const patch: AppRouteHandler<PatchRoute> = async (c) => {
-  const { id } = c.req.valid("param");
-  const profileData = c.req.valid("json");
+export const patch: AppRouteHandler<PatchRoute> = async c => {
+  const { id } = c.req.valid('param');
+  const profileData = c.req.valid('json');
 
   const profile = await db.profile.findUnique({
     where: { id },
   });
 
-  if (!profile)
-    return sendErrorResponse(c, "notFound", "Profile not found");
+  if (!profile) return sendErrorResponse(c, 'notFound', 'Profile not found');
 
   const updatedProfile = await db.profile.update({
     where: { id },
@@ -204,29 +224,28 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
   return c.json(updatedProfile, HttpStatusCodes.OK);
 };
 
-export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
-  const { id } = c.req.valid("param");
+export const remove: AppRouteHandler<RemoveRoute> = async c => {
+  const { id } = c.req.valid('param');
 
   const profile = await db.profile.findUnique({
     where: { id },
   });
 
-  if (!profile)
-    return sendErrorResponse(c, "notFound", "Profile not found");
+  if (!profile) return sendErrorResponse(c, 'notFound', 'Profile not found');
 
   await db.profile.delete({
     where: { id },
   });
 
-  return c.json({ message: "Profile deleted successfully" }, HttpStatusCodes.OK);
+  return c.json({ message: 'Profile deleted successfully' }, HttpStatusCodes.OK);
 };
 
-export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async (c) => {
-  const { id } = c.req.valid("param");
-  const { file } = c.req.valid("form");
+export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async c => {
+  const { id } = c.req.valid('param');
+  const { file } = c.req.valid('form');
 
   if (!file) {
-    return sendErrorResponse(c, "badRequest", "No file uploaded");
+    return sendErrorResponse(c, 'badRequest', 'No file uploaded');
   }
 
   // Check if profile exists
@@ -236,7 +255,7 @@ export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async (c
   });
 
   if (!profile) {
-    return sendErrorResponse(c, "notFound", "Profile not found");
+    return sendErrorResponse(c, 'notFound', 'Profile not found');
   }
 
   // Store reference to old cover image for deletion
@@ -245,17 +264,17 @@ export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async (c
   // Upload file using utapi
   const uploaded = await utapi.uploadFiles([file], {
     concurrency: 6,
-    acl: "public-read",
-    contentDisposition: "inline",
+    acl: 'public-read',
+    contentDisposition: 'inline',
   });
 
   if (!uploaded || !uploaded[0]) {
-    return sendErrorResponse(c, "badRequest", "Upload failed");
+    return sendErrorResponse(c, 'badRequest', 'Upload failed');
   }
 
   const files = uploaded[0].data;
   if (!files) {
-    return sendErrorResponse(c, "badRequest", "Upload failed");
+    return sendErrorResponse(c, 'badRequest', 'Upload failed');
   }
 
   // Create media record
@@ -265,9 +284,9 @@ export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async (c
       url: files.ufsUrl,
       size: files.size,
       name: files.name,
-      status: "COMPLETED",
-      mediaType: "PROFILE_COVER_IMAGE",
-      type: file.type || "image/jpeg",
+      status: 'COMPLETED',
+      mediaType: 'PROFILE_COVER_IMAGE',
+      type: file.type || 'image/jpeg',
     },
   });
 
@@ -300,9 +319,8 @@ export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async (c
       await db.media.delete({
         where: { id: oldCoverImage.id },
       });
-    }
-    catch (error) {
-      console.error("Error deleting old cover image:", error);
+    } catch (error) {
+      console.error('Error deleting old cover image:', error);
       // Don't fail the request if deletion fails, just log it
     }
   }
@@ -310,12 +328,12 @@ export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async (c
   return c.json(updatedProfile, HttpStatusCodes.OK);
 };
 
-export const uploadBannerImage: AppRouteHandler<UploadBannerImageRoute> = async (c) => {
-  const { id } = c.req.valid("param");
-  const { file } = c.req.valid("form");
+export const uploadBannerImage: AppRouteHandler<UploadBannerImageRoute> = async c => {
+  const { id } = c.req.valid('param');
+  const { file } = c.req.valid('form');
 
   if (!file) {
-    return sendErrorResponse(c, "badRequest", "No file uploaded");
+    return sendErrorResponse(c, 'badRequest', 'No file uploaded');
   }
 
   // Check if profile exists
@@ -325,7 +343,7 @@ export const uploadBannerImage: AppRouteHandler<UploadBannerImageRoute> = async 
   });
 
   if (!profile) {
-    return sendErrorResponse(c, "notFound", "Profile not found");
+    return sendErrorResponse(c, 'notFound', 'Profile not found');
   }
 
   // Store reference to old banner image for deletion
@@ -334,17 +352,17 @@ export const uploadBannerImage: AppRouteHandler<UploadBannerImageRoute> = async 
   // Upload file using utapi
   const uploaded = await utapi.uploadFiles([file], {
     concurrency: 6,
-    acl: "public-read",
-    contentDisposition: "inline",
+    acl: 'public-read',
+    contentDisposition: 'inline',
   });
 
   if (!uploaded || !uploaded[0]) {
-    return sendErrorResponse(c, "badRequest", "Upload failed");
+    return sendErrorResponse(c, 'badRequest', 'Upload failed');
   }
 
   const files = uploaded[0].data;
   if (!files) {
-    return sendErrorResponse(c, "badRequest", "Upload failed");
+    return sendErrorResponse(c, 'badRequest', 'Upload failed');
   }
 
   // Create media record
@@ -354,9 +372,9 @@ export const uploadBannerImage: AppRouteHandler<UploadBannerImageRoute> = async 
       url: files.ufsUrl,
       size: files.size,
       name: files.name,
-      status: "COMPLETED",
-      mediaType: "PROFILE_BANNER_IMAGE",
-      type: file.type || "image/jpeg",
+      status: 'COMPLETED',
+      mediaType: 'PROFILE_BANNER_IMAGE',
+      type: file.type || 'image/jpeg',
     },
   });
 
@@ -381,9 +399,8 @@ export const uploadBannerImage: AppRouteHandler<UploadBannerImageRoute> = async 
       await db.media.delete({
         where: { id: oldBannerImage.id },
       });
-    }
-    catch (error) {
-      console.error("Error deleting old banner image:", error);
+    } catch (error) {
+      console.error('Error deleting old banner image:', error);
       // Don't fail the request if deletion fails, just log it
     }
   }
@@ -391,16 +408,15 @@ export const uploadBannerImage: AppRouteHandler<UploadBannerImageRoute> = async 
   return c.json(updatedProfile, HttpStatusCodes.OK);
 };
 
-export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = async (c) => {
-  const { id } = c.req.valid("param");
-  const { files } = c.req.valid("form");
+export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = async c => {
+  const { id } = c.req.valid('param');
+  const { files } = c.req.valid('form');
 
   const fileArray = Array.isArray(files) ? files : [files];
 
   if (!fileArray || fileArray.length === 0) {
-    return sendErrorResponse(c, "badRequest", "No files uploaded");
+    return sendErrorResponse(c, 'badRequest', 'No files uploaded');
   }
-
 
   // Check if profile exists
   const profile = await db.profile.findUnique({
@@ -409,18 +425,18 @@ export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = as
   });
 
   if (!profile) {
-    return sendErrorResponse(c, "notFound", "Profile not found");
+    return sendErrorResponse(c, 'notFound', 'Profile not found');
   }
 
   // Upload files using utapi
   const uploaded = await utapi.uploadFiles(fileArray, {
     concurrency: 6,
-    acl: "public-read",
-    contentDisposition: "inline",
+    acl: 'public-read',
+    contentDisposition: 'inline',
   });
 
   if (!uploaded || uploaded.length === 0) {
-    return sendErrorResponse(c, "badRequest", "Upload failed");
+    return sendErrorResponse(c, 'badRequest', 'Upload failed');
   }
 
   // Create media records for successfully uploaded files
@@ -433,9 +449,9 @@ export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = as
           url: upload.data.ufsUrl,
           size: upload.data.size,
           name: upload.data.name,
-          status: "COMPLETED",
-          mediaType: "PROFILE_IMAGE",
-          type: upload.data.type || "image/jpeg",
+          status: 'COMPLETED',
+          mediaType: 'PROFILE_IMAGE',
+          type: upload.data.type || 'image/jpeg',
           profileId: profile.id,
         },
       });
@@ -444,7 +460,7 @@ export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = as
   }
 
   if (mediaRecords.length === 0) {
-    return sendErrorResponse(c, "badRequest", "No files were successfully uploaded");
+    return sendErrorResponse(c, 'badRequest', 'No files were successfully uploaded');
   }
 
   // Get updated profile with all photos
@@ -457,14 +473,14 @@ export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = as
   });
 
   if (!updatedProfile) {
-    return sendErrorResponse(c, "notFound", "Profile not found after update");
+    return sendErrorResponse(c, 'notFound', 'Profile not found after update');
   }
 
   return c.json(updatedProfile, HttpStatusCodes.OK);
 };
 
-export const removeProfileImage: AppRouteHandler<RemoveProfileImageRoute> = async (c) => {
-  const { id, imageId } = c.req.valid("param");
+export const removeProfileImage: AppRouteHandler<RemoveProfileImageRoute> = async c => {
+  const { id, imageId } = c.req.valid('param');
 
   // Check if profile exists
   const profile = await db.profile.findUnique({
@@ -473,7 +489,7 @@ export const removeProfileImage: AppRouteHandler<RemoveProfileImageRoute> = asyn
   });
 
   if (!profile) {
-    return sendErrorResponse(c, "notFound", "Profile not found");
+    return sendErrorResponse(c, 'notFound', 'Profile not found');
   }
 
   // Check if image exists and belongs to this profile
@@ -485,7 +501,7 @@ export const removeProfileImage: AppRouteHandler<RemoveProfileImageRoute> = asyn
   });
 
   if (!image) {
-    return sendErrorResponse(c, "notFound", "Image not found or does not belong to this profile");
+    return sendErrorResponse(c, 'notFound', 'Image not found or does not belong to this profile');
   }
 
   try {
@@ -497,10 +513,9 @@ export const removeProfileImage: AppRouteHandler<RemoveProfileImageRoute> = asyn
       where: { id: imageId },
     });
 
-    return c.json({ message: "Image removed successfully" }, HttpStatusCodes.OK);
-  }
-  catch (error) {
-    console.error("Error removing profile image:", error);
-    return sendErrorResponse(c, "badRequest", "Failed to remove image");
+    return c.json({ message: 'Image removed successfully' }, HttpStatusCodes.OK);
+  } catch (error) {
+    console.error('Error removing profile image:', error);
+    return sendErrorResponse(c, 'badRequest', 'Failed to remove image');
   }
 };

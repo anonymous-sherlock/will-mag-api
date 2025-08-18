@@ -12,6 +12,7 @@ export const VoteSchema = z.object({
   contestId: z.string(),
   count: z.number(),
   paymentId: z.string().nullable(),
+  comment: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 }) satisfies z.ZodType<Vote>;

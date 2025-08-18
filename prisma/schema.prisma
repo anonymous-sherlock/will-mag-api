@@ -251,7 +251,9 @@ model Award {
 model Vote {
   id String @id @default(cuid())
 
-  type Vote_Type @default(FREE)
+  type    Vote_Type @default(FREE)
+  
+  comment String?   @db.Text
 
   voterId String
   voter   Profile @relation("VotesCast", fields: [voterId], references: [id], onDelete: Cascade)

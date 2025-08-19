@@ -22,7 +22,9 @@ export const list = createRoute({
   summary: "Contest Lists",
   description: "Get a list of all contest",
   request: {
-    query: PaginationQuerySchema,
+    query: PaginationQuerySchema.extend({
+      status: z.enum(["all", "active", "upcoming", "ended"]).optional().default("all").describe("Filter contests by status"),
+    }),
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(

@@ -1,17 +1,18 @@
-import * as HttpStatusCodes from 'stoker/http-status-codes';
+import * as HttpStatusCodes from "stoker/http-status-codes";
 
-import type { AppRouteHandler } from '@/types/types';
+import type { AppRouteHandler } from "@/types/types";
 
-import { db } from '@/db';
-import { sendErrorResponse } from '@/helpers/send-error-response';
-import { calculatePaginationMetadata } from '@/lib/queries/query.helper';
-import { utapi } from '@/lib/uploadthing';
+import { db } from "@/db";
+import { sendErrorResponse } from "@/helpers/send-error-response";
+import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
+import { utapi } from "@/lib/uploadthing";
 
 import type {
   CreateRoute,
   GetByUserIdRoute,
   GetByUsernameRoute,
   GetOneRoute,
+  GetProfileStatsRoute,
   ListRoute,
   PatchRoute,
   RemoveProfileImageRoute,
@@ -19,10 +20,10 @@ import type {
   UploadBannerImageRoute,
   UploadCoverImageRoute,
   UploadProfilePhotosRoute,
-} from './profile.routes';
+} from "./profile.routes";
 
-export const list: AppRouteHandler<ListRoute> = async c => {
-  const { page, limit } = c.req.valid('query');
+export const list: AppRouteHandler<ListRoute> = async (c) => {
+  const { page, limit } = c.req.valid("query");
 
   const [profiles, total] = await Promise.all([
     db.profile.findMany({
@@ -55,7 +56,7 @@ export const list: AppRouteHandler<ListRoute> = async c => {
         },
       },
       orderBy: {
-        createdAt: 'asc',
+        createdAt: "asc",
       },
     }),
     db.profile.count(),
@@ -68,12 +69,12 @@ export const list: AppRouteHandler<ListRoute> = async c => {
       data: profiles,
       pagination,
     },
-    HttpStatusCodes.OK
+    HttpStatusCodes.OK,
   );
 };
 
-export const create: AppRouteHandler<CreateRoute> = async c => {
-  const profile = c.req.valid('json');
+export const create: AppRouteHandler<CreateRoute> = async (c) => {
+  const profile = c.req.valid("json");
   const insertedProfile = await db.profile.upsert({
     where: { userId: profile.userId },
     update: {
@@ -86,8 +87,8 @@ export const create: AppRouteHandler<CreateRoute> = async c => {
   return c.json(insertedProfile, HttpStatusCodes.CREATED);
 };
 
-export const getOne: AppRouteHandler<GetOneRoute> = async c => {
-  const { id } = c.req.valid('param');
+export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
+  const { id } = c.req.valid("param");
   const profile = await db.profile.findUnique({
     where: { id },
     include: {
@@ -118,13 +119,14 @@ export const getOne: AppRouteHandler<GetOneRoute> = async c => {
     },
   });
 
-  if (!profile) return sendErrorResponse(c, 'notFound', 'Profile not found');
+  if (!profile)
+    return sendErrorResponse(c, "notFound", "Profile not found");
 
   return c.json(profile, HttpStatusCodes.OK);
 };
 
-export const getByUserId: AppRouteHandler<GetByUserIdRoute> = async c => {
-  const { userId } = c.req.valid('param');
+export const getByUserId: AppRouteHandler<GetByUserIdRoute> = async (c) => {
+  const { userId } = c.req.valid("param");
   const profile = await db.profile.findUnique({
     where: { userId },
     include: {
@@ -155,13 +157,14 @@ export const getByUserId: AppRouteHandler<GetByUserIdRoute> = async c => {
     },
   });
 
-  if (!profile) return sendErrorResponse(c, 'notFound', 'Profile not found');
+  if (!profile)
+    return sendErrorResponse(c, "notFound", "Profile not found");
 
   return c.json(profile, HttpStatusCodes.OK);
 };
 
-export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async c => {
-  const { username } = c.req.valid('param');
+export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async (c) => {
+  const { username } = c.req.valid("param");
 
   // First find the user by username
   const user = await db.user.findUnique({
@@ -199,22 +202,23 @@ export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async c => {
   });
 
   if (!user || !user.profile) {
-    return sendErrorResponse(c, 'notFound', 'Profile not found');
+    return sendErrorResponse(c, "notFound", "Profile not found");
   }
 
   // Return the profile with included cover image and profile photos
   return c.json(user.profile, HttpStatusCodes.OK);
 };
 
-export const patch: AppRouteHandler<PatchRoute> = async c => {
-  const { id } = c.req.valid('param');
-  const profileData = c.req.valid('json');
+export const patch: AppRouteHandler<PatchRoute> = async (c) => {
+  const { id } = c.req.valid("param");
+  const profileData = c.req.valid("json");
 
   const profile = await db.profile.findUnique({
     where: { id },
   });
 
-  if (!profile) return sendErrorResponse(c, 'notFound', 'Profile not found');
+  if (!profile)
+    return sendErrorResponse(c, "notFound", "Profile not found");
 
   const updatedProfile = await db.profile.update({
     where: { id },
@@ -224,28 +228,29 @@ export const patch: AppRouteHandler<PatchRoute> = async c => {
   return c.json(updatedProfile, HttpStatusCodes.OK);
 };
 
-export const remove: AppRouteHandler<RemoveRoute> = async c => {
-  const { id } = c.req.valid('param');
+export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
+  const { id } = c.req.valid("param");
 
   const profile = await db.profile.findUnique({
     where: { id },
   });
 
-  if (!profile) return sendErrorResponse(c, 'notFound', 'Profile not found');
+  if (!profile)
+    return sendErrorResponse(c, "notFound", "Profile not found");
 
   await db.profile.delete({
     where: { id },
   });
 
-  return c.json({ message: 'Profile deleted successfully' }, HttpStatusCodes.OK);
+  return c.json({ message: "Profile deleted successfully" }, HttpStatusCodes.OK);
 };
 
-export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async c => {
-  const { id } = c.req.valid('param');
-  const { file } = c.req.valid('form');
+export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async (c) => {
+  const { id } = c.req.valid("param");
+  const { file } = c.req.valid("form");
 
   if (!file) {
-    return sendErrorResponse(c, 'badRequest', 'No file uploaded');
+    return sendErrorResponse(c, "badRequest", "No file uploaded");
   }
 
   // Check if profile exists
@@ -255,7 +260,7 @@ export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async c 
   });
 
   if (!profile) {
-    return sendErrorResponse(c, 'notFound', 'Profile not found');
+    return sendErrorResponse(c, "notFound", "Profile not found");
   }
 
   // Store reference to old cover image for deletion
@@ -264,17 +269,17 @@ export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async c 
   // Upload file using utapi
   const uploaded = await utapi.uploadFiles([file], {
     concurrency: 6,
-    acl: 'public-read',
-    contentDisposition: 'inline',
+    acl: "public-read",
+    contentDisposition: "inline",
   });
 
   if (!uploaded || !uploaded[0]) {
-    return sendErrorResponse(c, 'badRequest', 'Upload failed');
+    return sendErrorResponse(c, "badRequest", "Upload failed");
   }
 
   const files = uploaded[0].data;
   if (!files) {
-    return sendErrorResponse(c, 'badRequest', 'Upload failed');
+    return sendErrorResponse(c, "badRequest", "Upload failed");
   }
 
   // Create media record
@@ -284,9 +289,9 @@ export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async c 
       url: files.ufsUrl,
       size: files.size,
       name: files.name,
-      status: 'COMPLETED',
-      mediaType: 'PROFILE_COVER_IMAGE',
-      type: file.type || 'image/jpeg',
+      status: "COMPLETED",
+      mediaType: "PROFILE_COVER_IMAGE",
+      type: file.type || "image/jpeg",
     },
   });
 
@@ -319,8 +324,9 @@ export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async c 
       await db.media.delete({
         where: { id: oldCoverImage.id },
       });
-    } catch (error) {
-      console.error('Error deleting old cover image:', error);
+    }
+    catch (error) {
+      console.error("Error deleting old cover image:", error);
       // Don't fail the request if deletion fails, just log it
     }
   }
@@ -328,12 +334,12 @@ export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async c 
   return c.json(updatedProfile, HttpStatusCodes.OK);
 };
 
-export const uploadBannerImage: AppRouteHandler<UploadBannerImageRoute> = async c => {
-  const { id } = c.req.valid('param');
-  const { file } = c.req.valid('form');
+export const uploadBannerImage: AppRouteHandler<UploadBannerImageRoute> = async (c) => {
+  const { id } = c.req.valid("param");
+  const { file } = c.req.valid("form");
 
   if (!file) {
-    return sendErrorResponse(c, 'badRequest', 'No file uploaded');
+    return sendErrorResponse(c, "badRequest", "No file uploaded");
   }
 
   // Check if profile exists
@@ -343,7 +349,7 @@ export const uploadBannerImage: AppRouteHandler<UploadBannerImageRoute> = async 
   });
 
   if (!profile) {
-    return sendErrorResponse(c, 'notFound', 'Profile not found');
+    return sendErrorResponse(c, "notFound", "Profile not found");
   }
 
   // Store reference to old banner image for deletion
@@ -352,17 +358,17 @@ export const uploadBannerImage: AppRouteHandler<UploadBannerImageRoute> = async 
   // Upload file using utapi
   const uploaded = await utapi.uploadFiles([file], {
     concurrency: 6,
-    acl: 'public-read',
-    contentDisposition: 'inline',
+    acl: "public-read",
+    contentDisposition: "inline",
   });
 
   if (!uploaded || !uploaded[0]) {
-    return sendErrorResponse(c, 'badRequest', 'Upload failed');
+    return sendErrorResponse(c, "badRequest", "Upload failed");
   }
 
   const files = uploaded[0].data;
   if (!files) {
-    return sendErrorResponse(c, 'badRequest', 'Upload failed');
+    return sendErrorResponse(c, "badRequest", "Upload failed");
   }
 
   // Create media record
@@ -372,9 +378,9 @@ export const uploadBannerImage: AppRouteHandler<UploadBannerImageRoute> = async 
       url: files.ufsUrl,
       size: files.size,
       name: files.name,
-      status: 'COMPLETED',
-      mediaType: 'PROFILE_BANNER_IMAGE',
-      type: file.type || 'image/jpeg',
+      status: "COMPLETED",
+      mediaType: "PROFILE_BANNER_IMAGE",
+      type: file.type || "image/jpeg",
     },
   });
 
@@ -399,8 +405,9 @@ export const uploadBannerImage: AppRouteHandler<UploadBannerImageRoute> = async 
       await db.media.delete({
         where: { id: oldBannerImage.id },
       });
-    } catch (error) {
-      console.error('Error deleting old banner image:', error);
+    }
+    catch (error) {
+      console.error("Error deleting old banner image:", error);
       // Don't fail the request if deletion fails, just log it
     }
   }
@@ -408,14 +415,14 @@ export const uploadBannerImage: AppRouteHandler<UploadBannerImageRoute> = async 
   return c.json(updatedProfile, HttpStatusCodes.OK);
 };
 
-export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = async c => {
-  const { id } = c.req.valid('param');
-  const { files } = c.req.valid('form');
+export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = async (c) => {
+  const { id } = c.req.valid("param");
+  const { files } = c.req.valid("form");
 
   const fileArray = Array.isArray(files) ? files : [files];
 
   if (!fileArray || fileArray.length === 0) {
-    return sendErrorResponse(c, 'badRequest', 'No files uploaded');
+    return sendErrorResponse(c, "badRequest", "No files uploaded");
   }
 
   // Check if profile exists
@@ -425,18 +432,18 @@ export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = as
   });
 
   if (!profile) {
-    return sendErrorResponse(c, 'notFound', 'Profile not found');
+    return sendErrorResponse(c, "notFound", "Profile not found");
   }
 
   // Upload files using utapi
   const uploaded = await utapi.uploadFiles(fileArray, {
     concurrency: 6,
-    acl: 'public-read',
-    contentDisposition: 'inline',
+    acl: "public-read",
+    contentDisposition: "inline",
   });
 
   if (!uploaded || uploaded.length === 0) {
-    return sendErrorResponse(c, 'badRequest', 'Upload failed');
+    return sendErrorResponse(c, "badRequest", "Upload failed");
   }
 
   // Create media records for successfully uploaded files
@@ -449,9 +456,9 @@ export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = as
           url: upload.data.ufsUrl,
           size: upload.data.size,
           name: upload.data.name,
-          status: 'COMPLETED',
-          mediaType: 'PROFILE_IMAGE',
-          type: upload.data.type || 'image/jpeg',
+          status: "COMPLETED",
+          mediaType: "PROFILE_IMAGE",
+          type: upload.data.type || "image/jpeg",
           profileId: profile.id,
         },
       });
@@ -460,7 +467,7 @@ export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = as
   }
 
   if (mediaRecords.length === 0) {
-    return sendErrorResponse(c, 'badRequest', 'No files were successfully uploaded');
+    return sendErrorResponse(c, "badRequest", "No files were successfully uploaded");
   }
 
   // Get updated profile with all photos
@@ -473,14 +480,14 @@ export const uploadProfilePhotos: AppRouteHandler<UploadProfilePhotosRoute> = as
   });
 
   if (!updatedProfile) {
-    return sendErrorResponse(c, 'notFound', 'Profile not found after update');
+    return sendErrorResponse(c, "notFound", "Profile not found after update");
   }
 
   return c.json(updatedProfile, HttpStatusCodes.OK);
 };
 
-export const removeProfileImage: AppRouteHandler<RemoveProfileImageRoute> = async c => {
-  const { id, imageId } = c.req.valid('param');
+export const removeProfileImage: AppRouteHandler<RemoveProfileImageRoute> = async (c) => {
+  const { id, imageId } = c.req.valid("param");
 
   // Check if profile exists
   const profile = await db.profile.findUnique({
@@ -489,7 +496,7 @@ export const removeProfileImage: AppRouteHandler<RemoveProfileImageRoute> = asyn
   });
 
   if (!profile) {
-    return sendErrorResponse(c, 'notFound', 'Profile not found');
+    return sendErrorResponse(c, "notFound", "Profile not found");
   }
 
   // Check if image exists and belongs to this profile
@@ -501,7 +508,7 @@ export const removeProfileImage: AppRouteHandler<RemoveProfileImageRoute> = asyn
   });
 
   if (!image) {
-    return sendErrorResponse(c, 'notFound', 'Image not found or does not belong to this profile');
+    return sendErrorResponse(c, "notFound", "Image not found or does not belong to this profile");
   }
 
   try {
@@ -513,9 +520,127 @@ export const removeProfileImage: AppRouteHandler<RemoveProfileImageRoute> = asyn
       where: { id: imageId },
     });
 
-    return c.json({ message: 'Image removed successfully' }, HttpStatusCodes.OK);
-  } catch (error) {
-    console.error('Error removing profile image:', error);
-    return sendErrorResponse(c, 'badRequest', 'Failed to remove image');
+    return c.json({ message: "Image removed successfully" }, HttpStatusCodes.OK);
   }
+  catch (error) {
+    console.error("Error removing profile image:", error);
+    return sendErrorResponse(c, "badRequest", "Failed to remove image");
+  }
+};
+
+export const getProfileStats: AppRouteHandler<GetProfileStatsRoute> = async (c) => {
+  const { id } = c.req.valid("param");
+
+  const profile = await db.profile.findFirst({
+    where: { id },
+  });
+
+  if (!profile) {
+    return sendErrorResponse(c, "notFound", "Profile not found");
+  }
+
+  const now = new Date();
+
+  // Get all contest participations for this profile
+  const participations = await db.contestParticipation.findMany({
+    where: { profileId: profile.id },
+    include: {
+      contest: true,
+    },
+  });
+
+  // Get all votes received by this profile
+  const votesReceived = await db.vote.findMany({
+    where: { voteeId: profile.id },
+  });
+
+  // Get all votes given by this profile
+  const votesGiven = await db.vote.findMany({
+    where: { voterId: profile.id },
+  });
+
+  // Calculate statistics
+  const totalCompetitions = participations.length;
+  const activeContests = participations.filter(p =>
+    p.contest.startDate <= now && p.contest.endDate >= now,
+  ).length;
+
+  const totalVotesReceived = votesReceived.reduce((sum, vote) => sum + vote.count, 0);
+  const totalVotes = votesGiven.reduce((sum, vote) => sum + vote.count, 0);
+
+  // Calculate earnings based on contests won
+  const wonContests = await db.contest.findMany({
+    where: {
+      winnerProfileId: profile.id,
+      endDate: { lt: now }, // Only completed contests
+    },
+  });
+
+  const totalEarnings = wonContests.reduce((sum, contest) => sum + contest.prizePool, 0);
+
+  // Calculate rank statistics
+  const contestRanks = [];
+  for (const participation of participations) {
+    if (participation.contest.endDate < now) {
+      // Contest has ended, calculate rank
+      const allParticipants = await db.contestParticipation.findMany({
+        where: {
+          contestId: participation.contest.id,
+          isParticipating: true,
+        },
+      });
+
+      const participantVotes = await Promise.all(
+        allParticipants.map(async (p) => {
+          const votes = await db.vote.aggregate({
+            where: {
+              contestId: participation.contest.id,
+              voteeId: p.profileId,
+            },
+            _sum: { count: true },
+          });
+          return {
+            profileId: p.profileId,
+            totalVotes: votes._sum.count || 0,
+          };
+        }),
+      );
+
+      participantVotes.sort((a, b) => b.totalVotes - a.totalVotes);
+      const rank = participantVotes.findIndex(p => p.profileId === profile.id) + 1;
+      if (rank > 0) {
+        contestRanks.push(rank);
+      }
+    }
+  }
+
+  const averageRank = contestRanks.length > 0
+    ? contestRanks.reduce((sum, rank) => sum + rank, 0) / contestRanks.length
+    : 0;
+  const bestRank = contestRanks.length > 0 ? Math.min(...contestRanks) : 0;
+  const currentRank = contestRanks.length > 0 ? contestRanks[contestRanks.length - 1] : 0;
+
+  // Calculate win rate (contests where rank is 1)
+  const wins = contestRanks.filter(rank => rank === 1).length;
+  const winRate = contestRanks.length > 0 ? (wins / contestRanks.length) * 100 : 0;
+
+  // Get total participants across all contests
+  const totalParticipants = await db.contestParticipation.count({
+    where: { profileId: profile.id },
+  });
+
+  const stats = {
+    currentRank,
+    totalCompetitions,
+    totalEarnings,
+    activeContests,
+    totalVotes,
+    totalVotesReceived,
+    winRate: Math.round(winRate * 100) / 100, // Round to 2 decimal places
+    averageRank: Math.round(averageRank * 100) / 100,
+    bestRank,
+    totalParticipants,
+  };
+
+  return c.json(stats, HttpStatusCodes.OK);
 };

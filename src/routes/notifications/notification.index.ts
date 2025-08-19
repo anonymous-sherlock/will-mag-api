@@ -11,6 +11,7 @@ const notificationRouter = createRouteBuilder()
   .openapi(routes.markAsRead, handlers.markAsRead)
   .openapi(routes.markAllAsRead, handlers.markAllAsRead)
   .openapi(routes.toggleArchive, handlers.toggleArchive)
-  .openapi(routes.getArchivedNotifications, handlers.getArchivedNotifications);
+  .openapi(routes.getArchivedNotifications, handlers.getArchivedNotifications)
+  .openapi(routes.getNotificationStats, handlers.getNotificationStats);
 
 export default notificationRouter.getRouter();

@@ -13,6 +13,7 @@ import { getActiveVoteMultiplier } from "@/lib/vote-multiplier";
 import type {
   FreeVote,
   GetLatestVotes,
+  GetTopVotersForVotee,
   GetVotesByProfileId,
   IsFreeVoteAvailable,
   PayVote,
@@ -182,71 +183,66 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
 export const getLatestVotes: AppRouteHandler<GetLatestVotes> = async (c) => {
   const { page, limit } = c.req.valid("query");
 
+  const skip = (page - 1) * limit;
+  const take = limit;
+
   const [votes, totalVotes] = await Promise.all([
-    await db.vote.findMany({
+    db.vote.findMany({
+      skip,
+      take,
       orderBy: {
         createdAt: "desc",
       },
       select: {
         votee: {
           select: {
+            id: true,
             user: {
               select: {
                 name: true,
-                id: true,
                 image: true,
-                profile: {
-                  select: {
-                    id: true,
-                  },
-                },
               },
             },
           },
         },
         voter: {
           select: {
+            id: true,
             user: {
               select: {
                 name: true,
-                id: true,
                 image: true,
-                profile: {
-                  select: {
-                    id: true,
-                  },
-                },
               },
             },
           },
         },
         count: true,
+        comment: true,
         createdAt: true,
       },
     }),
-    await db.vote.count(),
+    db.vote.count(),
   ]);
 
-  const formattedVotes = votes.map(vote => [
-    {
-      votee: vote.votee?.user
-        ? {
-            name: vote.votee.user.name,
-            id: vote.votee.user.profile?.id ?? "",
-            profilePicture: vote.votee.user.image ?? "",
-          }
-        : null,
-      voter: vote.voter?.user
-        ? {
-            name: vote.voter.user.name,
-            id: vote.voter.user.profile?.id ?? "",
-            profilePicture: vote.voter.user.image ?? "",
-          }
-        : null,
-      createdAt: vote.createdAt.toISOString(),
-      totalVotes: vote.count,
-    },
-  ]);
+  const formattedVotes = votes.map(vote => ({
+    votee: vote.votee?.user
+      ? {
+          name: vote.votee.user.name,
+          id: vote.votee.id,
+          profilePicture: vote.votee.user.image ?? "",
+        }
+      : null,
+    voter: vote.voter?.user
+      ? {
+          name: vote.voter.user.name,
+          id: vote.voter.id,
+          profilePicture: vote.voter.user.image ?? "",
+        }
+      : null,
+    totalVotes: vote.count,
+    comment: vote.comment,
+    createdAt: vote.createdAt.toISOString(),
+  }));
 
   const pagination = calculatePaginationMetadata(totalVotes, page, limit);
 
@@ -313,4 +309,82 @@ export const getVotesByProfileId: AppRouteHandler<GetVotesByProfileId> = async (
   const pagination = calculatePaginationMetadata(total, page, limit);
 
   return c.json({ data: formattedVotesReceived, pagination }, HttpStatusCodes.OK);
+};
+
+export const getTopVotersForVotee: AppRouteHandler<GetTopVotersForVotee> = async (c) => {
+  const { profileId } = c.req.valid("param");
+
+  // First check if the votee profile exists
+  const voteeProfile = await db.profile.findUnique({
+    where: { id: profileId },
+    select: { id: true },
+  });
+
+  if (!voteeProfile) {
+    return sendErrorResponse(c, "notFound", "Votee profile not found");
+  }
+
+  // Get top 10 voters for this votee with aggregated vote counts and latest vote info
+  const topVoters = await db.vote.groupBy({
+    by: ["voterId"],
+    where: {
+      voteeId: profileId,
+    },
+    _sum: {
+      count: true,
+    },
+    _max: {
+      createdAt: true,
+    },
+    orderBy: {
+      _sum: {
+        count: "desc",
+      },
+    },
+    take: 10,
+  });
+
+  // Get detailed information for each top voter
+  const topVotersWithDetails = await Promise.all(
+    topVoters.map(async (voter, index) => {
+      const voterProfile = await db.profile.findUnique({
+        where: { id: voter.voterId },
+        select: {
+          user: {
+            select: {
+              name: true,
+              image: true,
+            },
+          },
+        },
+      });
+
+      // Get the latest vote with comment for this voter
+      const latestVote = await db.vote.findFirst({
+        where: {
+          voterId: voter.voterId,
+          voteeId: profileId,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        select: {
+          comment: true,
+          createdAt: true,
+        },
+      });
+
+      return {
+        rank: index + 1,
+        profileId: voter.voterId,
+        userName: voterProfile?.user.name ?? "Anonymous User",
+        profilePicture: voterProfile?.user.image ?? "",
+        totalVotesGiven: voter._sum.count ?? 0,
+        comment: latestVote?.comment ?? null,
+        lastVoteAt: latestVote?.createdAt.toISOString() ?? "",
+      };
+    }),
+  );
+
+  return c.json(topVotersWithDetails, HttpStatusCodes.OK);
 };

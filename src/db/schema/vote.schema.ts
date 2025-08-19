@@ -36,12 +36,13 @@ export const VoteListSchema = z.object({
     .nullable(),
   voter: z
     .object({
-      id: z.string().describe("The votee id"),
-      name: z.string().describe("The votee name"),
-      profilePicture: z.string().describe("The profile picture of the votee"),
+      id: z.string().describe("The voter id"),
+      name: z.string().describe("The voter name"),
+      profilePicture: z.string().describe("The profile picture of the voter"),
     })
     .nullable(),
   totalVotes: z.coerce.number(),
+  comment: z.string().nullable().describe("The comment left by the voter"),
   createdAt: z.string(),
 });
 
@@ -54,3 +55,15 @@ export const GetVotesByProfileIdResponseSchema = z.object({
   votedOn: z.string(),
   count: z.number(),
 });
+
+export const TopVoterForVoteeSchema = z.object({
+  rank: z.number().describe("The rank of this voter (1-10)"),
+  profileId: z.string().describe("The voter's profile ID"),
+  userName: z.string().describe("The voter's name"),
+  profilePicture: z.string().describe("The voter's profile picture"),
+  totalVotesGiven: z.number().describe("Total number of votes given to this votee"),
+  comment: z.string().nullable().describe("The comment left by the voter"),
+  lastVoteAt: z.string().describe("The timestamp of the last vote given by this voter"),
+});
+
+export const GetTopVotersForVoteeResponseSchema = z.array(TopVoterForVoteeSchema);

@@ -7,8 +7,10 @@ import { z } from "zod";
 import { PayVoteRequestSchema, PayVoteResponseSchema } from "@/db/schema/payments.schema";
 import {
   GetLatestVotesResponseSchema,
+  GetTopVotersForVoteeResponseSchema,
   GetVotesByProfileIdResponseSchema,
   VoteInsertSchema,
+  VoteListSchema,
   VoteSelectSchema,
 } from "@/db/schema/vote.schema";
 import {
@@ -105,7 +107,7 @@ export const getLatestVotes = createRoute({
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      createPaginatedResponseSchema(GetLatestVotesResponseSchema.nullable()),
+      createPaginatedResponseSchema(VoteListSchema),
       "The latest votes",
     ),
   },
@@ -132,8 +134,29 @@ export const getVotesByProfileId = createRoute({
   },
 });
 
+export const getTopVotersForVotee = createRoute({
+  path: "/votes/{profileId}/top-voters",
+  method: "get",
+  summary: "Get top 10 voters for a votee",
+  description: "Get the top 10 voters who have given the highest number of votes to a specific votee profile",
+  tags,
+  request: {
+    params: z.object({
+      profileId: z.string().describe("The votee profile ID to get top voters for"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      GetTopVotersForVoteeResponseSchema,
+      "The top 10 voters for this votee profile",
+    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse(),
+  },
+});
+
 export type FreeVote = typeof freeVote;
 export type IsFreeVoteAvailable = typeof isFreeVoteAvailable;
 export type PayVote = typeof payVote;
 export type GetLatestVotes = typeof getLatestVotes;
 export type GetVotesByProfileId = typeof getVotesByProfileId;
+export type GetTopVotersForVotee = typeof getTopVotersForVotee;

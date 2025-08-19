@@ -7,6 +7,7 @@ const votesRoutes = createRouteBuilder()
   .openapi(routes.payVote, handlers.payVote)
   .openapi(routes.isFreeVoteAvailable, handlers.isFreeVoteAvailable)
   .openapi(routes.getLatestVotes, handlers.getLatestVotes, "admin")
-  .openapi(routes.getVotesByProfileId, handlers.getVotesByProfileId);
+  .openapi(routes.getVotesByProfileId, handlers.getVotesByProfileId)
+  .openapi(routes.getTopVotersForVotee, handlers.getTopVotersForVotee);
 
 export default votesRoutes.getRouter();

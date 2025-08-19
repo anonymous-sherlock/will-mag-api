@@ -95,6 +95,38 @@ export const getByUserId = createRoute({
   },
 });
 
+export const getProfileStats = createRoute({
+  path: "/profile/{id}/stats",
+  method: "get",
+  tags,
+  summary: "Get Profile Statistics",
+  description: "Get comprehensive statistics for a specific profile including rank, competitions, earnings, and active contests.",
+  request: {
+    params: z.object({
+      id: z.string().describe("The profile ID"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      z.object({
+        currentRank: z.number(),
+        totalCompetitions: z.number(),
+        totalEarnings: z.number(),
+        activeContests: z.number(),
+        totalVotes: z.number(),
+        totalVotesReceived: z.number(),
+        winRate: z.number(),
+        averageRank: z.number(),
+        bestRank: z.number(),
+        totalParticipants: z.number(),
+      }),
+      "Profile statistics",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
+  },
+});
+
 export const getByUsername = createRoute({
   path: "/profile/username/{username}",
   method: "get",
@@ -286,6 +318,7 @@ export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
 export type GetByUserIdRoute = typeof getByUserId;
 export type GetByUsernameRoute = typeof getByUsername;
+export type GetProfileStatsRoute = typeof getProfileStats;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
 export type UploadCoverImageRoute = typeof uploadCoverImage;

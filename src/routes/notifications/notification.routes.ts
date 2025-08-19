@@ -224,6 +224,31 @@ export const getArchivedNotifications = createRoute({
   },
 });
 
+export const getNotificationStats = createRoute({
+  path: "/notifications/{profileId}/stats",
+  method: "get",
+  summary: "Get Notification Statistics",
+  description: "Get notification statistics for a specific profile including total, unread, and archived counts.",
+  tags,
+  request: {
+    params: z.object({
+      profileId: z.string().describe("The User ID"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      z.object({
+        totalNotifications: z.number(),
+        unreadCount: z.number(),
+        archivedCount: z.number(),
+      }),
+      "Notification statistics",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
+  },
+});
+
 export type GetNotificationsRoute = typeof getNotifications;
 export type GetNotificationRoute = typeof getNotification;
 export type CreateNotificationRoute = typeof createNotification;
@@ -233,3 +258,4 @@ export type MarkAsReadRoute = typeof markAsRead;
 export type MarkAllAsReadRoute = typeof markAllAsRead;
 export type ToggleArchiveRoute = typeof toggleArchive;
 export type GetArchivedNotificationsRoute = typeof getArchivedNotifications;
+export type GetNotificationStatsRoute = typeof getNotificationStats;

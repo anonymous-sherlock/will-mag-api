@@ -11,10 +11,47 @@ import { generateSlug, generateUniqueSlug } from "@/utils/slugify";
 import type { CreateRoute, GetAvailableContestsRoute, GetBySlugRoute, GetContestLeaderboardRoute, GetContestStatsRoute, GetJoinedContestsRoute, GetOneRoute, GetUpcomingContestsRoute, ListRoute, PatchRoute, RemoveContestImageRoute, RemoveRoute, UploadContestImagesRoute } from "./contest.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
-  const { page, limit } = c.req.valid("query");
+  const { page, limit, status } = c.req.valid("query");
+
+  const now = new Date();
+  let whereClause = {};
+
+  // Apply status filtering
+  switch (status) {
+    case "active":
+      whereClause = {
+        startDate: {
+          lte: now,
+        },
+        endDate: {
+          gte: now,
+        },
+      };
+      break;
+    case "upcoming":
+      whereClause = {
+        startDate: {
+          gte: now,
+        },
+      };
+      break;
+    case "ended":
+      whereClause = {
+        endDate: {
+          lt: now,
+        },
+      };
+      break;
+    case "all":
+    default:
+      // No filtering - return all contests
+      whereClause = {};
+      break;
+  }
 
   const [contests, total] = await Promise.all([
     db.contest.findMany({
+      where: whereClause,
       skip: (page - 1) * limit,
       take: limit,
       include: {
@@ -32,7 +69,9 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
         createdAt: "desc",
       },
     }),
-    db.contest.count(),
+    db.contest.count({
+      where: whereClause,
+    }),
   ]);
 
   const pagination = calculatePaginationMetadata(total, page, limit);

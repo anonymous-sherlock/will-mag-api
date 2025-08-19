@@ -13,6 +13,7 @@ import type {
   GetArchivedNotificationsRoute,
   GetNotificationRoute,
   GetNotificationsRoute,
+  GetNotificationStatsRoute,
   MarkAllAsReadRoute,
   MarkAsReadRoute,
   ToggleArchiveRoute,
@@ -238,5 +239,41 @@ export const getArchivedNotifications: AppRouteHandler<GetArchivedNotificationsR
   return c.json({
     archivedNotifications,
     pagination,
+  }, HttpStatusCodes.OK);
+};
+
+export const getNotificationStats: AppRouteHandler<GetNotificationStatsRoute> = async (c) => {
+  const { profileId } = c.req.valid("param");
+
+  const profile = await db.profile.findFirst({
+    where: { id: profileId },
+  });
+
+  if (!profile) {
+    return sendErrorResponse(c, "notFound", "Profile not found");
+  }
+
+  const [totalNotifications, unreadCount, archivedCount] = await Promise.all([
+    db.notification.count({
+      where: { profileId: profile.id },
+    }),
+    db.notification.count({
+      where: {
+        profileId: profile.id,
+        isRead: false,
+      },
+    }),
+    db.notification.count({
+      where: {
+        profileId: profile.id,
+        archived: true,
+      },
+    }),
+  ]);
+
+  return c.json({
+    totalNotifications,
+    unreadCount,
+    archivedCount,
   }, HttpStatusCodes.OK);
 };

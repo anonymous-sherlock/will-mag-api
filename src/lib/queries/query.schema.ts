@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const PaginationQuerySchema = z.object({
+  search: z.string().optional().nullable().describe("Search query"),
   page: z.coerce.number().optional().default(1),
   limit: z.coerce.number().optional().default(20),
 });

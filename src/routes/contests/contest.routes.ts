@@ -160,7 +160,7 @@ export const getAvailableContests = createRoute({
   request: {
     query: PaginationQuerySchema,
     params: z.object({
-      profileId: z.string().describe("The User ID"),
+      profileId: z.string().describe("The Profile ID"),
     }),
   },
   responses: {
@@ -182,7 +182,7 @@ export const getJoinedContests = createRoute({
   request: {
     query: PaginationQuerySchema,
     params: z.object({
-      profileId: z.string().describe("The User ID"),
+      profileId: z.string().describe("The Profile ID"),
     }),
   },
   responses: {

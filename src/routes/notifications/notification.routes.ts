@@ -21,9 +21,9 @@ export const getNotifications = createRoute({
   tags,
   request: {
     query: PaginationQuerySchema.extend({
-      limit: z.number().default(10),
+      limit: z.coerce.number().default(10),
       isRead: z.boolean().optional(),
-      archived: z.boolean().optional(),
+      isArchived: z.boolean().optional(),
       profileId: z.string().min(4),
     }),
   },
@@ -163,7 +163,7 @@ export const markAllAsRead = createRoute({
   tags,
   request: {
     params: z.object({
-      profileId: z.string().describe("The User ID"),
+      profileId: z.string().describe("The Profile ID"),
     }),
   },
   responses: {
@@ -208,10 +208,10 @@ export const getArchivedNotifications = createRoute({
   tags,
   request: {
     params: z.object({
-      profileId: z.string().describe("The User ID"),
+      profileId: z.string().describe("The Profile ID"),
     }),
     query: PaginationQuerySchema.extend({
-      limit: z.number().default(10),
+      limit: z.coerce.number().default(10),
     }),
   },
   responses: {
@@ -232,13 +232,13 @@ export const getNotificationStats = createRoute({
   tags,
   request: {
     params: z.object({
-      profileId: z.string().describe("The User ID"),
+      profileId: z.string().describe("The Profile ID"),
     }),
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
       z.object({
-        totalNotifications: z.number(),
+        totalCount: z.number(),
         unreadCount: z.number(),
         archivedCount: z.number(),
       }),

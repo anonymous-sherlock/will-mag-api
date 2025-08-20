@@ -287,12 +287,18 @@ export const uploadParticipationCoverImage: AppRouteHandler<UploadParticipationC
   // Check if contest participation exists
   const participation = await db.contestParticipation.findUnique({
     where: { id: participationId },
-    include: { contest: true },
+    include: {
+      contest: true,
+      coverImage: true, // Include the current cover image
+    },
   });
 
   if (!participation) {
     return sendErrorResponse(c, "notFound", "Contest participation not found");
   }
+
+  // Store reference to old cover image for deletion
+  const oldCoverImage = participation.coverImage;
 
   // Upload file using utapi
   const uploaded = await utapi.uploadFiles([file], {
@@ -317,7 +323,11 @@ export const uploadParticipationCoverImage: AppRouteHandler<UploadParticipationC
       status: "COMPLETED",
       mediaType: "CONTEST_PARTICIPATION_COVER",
       type: file.type || "image/jpeg",
-      contestId: participation.contestId,
+      contestParticipationCover: {
+        connect: {
+          id: participationId,
+        },
+      },
     },
   });
 
@@ -332,6 +342,23 @@ export const uploadParticipationCoverImage: AppRouteHandler<UploadParticipationC
       coverImage: true,
     },
   });
+
+  // Delete old cover image if it exists
+  if (oldCoverImage) {
+    try {
+      // Delete from file storage
+      await utapi.deleteFiles([oldCoverImage.key]);
+
+      // Delete from database
+      await db.media.delete({
+        where: { id: oldCoverImage.id },
+      });
+    }
+    catch (error) {
+      console.error("Error deleting old cover image:", error);
+      // Don't fail the request if deletion fails, just log it
+    }
+  }
 
   return c.json(updatedParticipation, HttpStatusCodes.OK);
 };

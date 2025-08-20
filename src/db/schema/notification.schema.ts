@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import type { Notification } from "@/generated/prisma/index.js";
 
-import { Icon } from "@/generated/prisma/index.js";
+import { Icon, Notification_Type } from "@/generated/prisma/index.js";
 
 export const IconSchema = z.nativeEnum(Icon);
 
@@ -13,9 +13,10 @@ export const NotificationSchema = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
   isRead: z.boolean(),
-  archived: z.boolean(),
+  isArchived: z.boolean(),
   icon: IconSchema.nullable(),
   action: z.string().nullable(),
+  type: z.nativeEnum(Notification_Type),
 }) satisfies z.ZodType<Notification>;
 
 export const NotificationInsertSchema = NotificationSchema.omit({
@@ -23,10 +24,11 @@ export const NotificationInsertSchema = NotificationSchema.omit({
   createdAt: true,
   updatedAt: true,
   isRead: true,
-  archived: true,
+  isArchived: true,
 }).extend({
   icon: IconSchema.optional(),
   action: z.string().optional(),
+  type: z.nativeEnum(Notification_Type).optional(),
 });
 
 export const NotificationUpdateSchema = NotificationSchema.partial().omit({
@@ -35,7 +37,8 @@ export const NotificationUpdateSchema = NotificationSchema.partial().omit({
   updatedAt: true,
 }).extend({
   isRead: z.boolean().default(false),
-  archived: z.boolean().default(false),
+  isArchived: z.boolean().default(false),
+  type: z.nativeEnum(Notification_Type).optional(),
 });
 
 export const NotificationSelectSchema = NotificationSchema;

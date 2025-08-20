@@ -259,7 +259,7 @@ export const getVotesByProfileId: AppRouteHandler<GetVotesByProfileId> = async (
   });
 
   if (!profile) {
-    return sendErrorResponse(c, "notFound", "Profile with the user id not found");
+    return sendErrorResponse(c, "notFound", "Profile not found");
   }
 
   const skip = (page - 1) * limit;

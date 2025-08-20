@@ -212,7 +212,7 @@ export const uploadParticipationCoverImage = createRoute({
       content: {
         "multipart/form-data": {
           schema: z.object({
-            file: z.instanceof(File).describe("Single cover image file to upload"),
+            file: z.instanceof(File).describe("Single Participation cover image file to upload"),
           }),
         },
       },

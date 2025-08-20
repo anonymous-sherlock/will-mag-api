@@ -21,7 +21,7 @@ import type {
 } from "./notification.routes";
 
 export const getNotifications: AppRouteHandler<GetNotificationsRoute> = async (c) => {
-  const { page = 1, limit = 10, isRead, archived, profileId } = c.req.valid("query");
+  const { page = 1, limit = 10, isRead, isArchived, profileId } = c.req.valid("query");
 
   const profile = await db.profile.findFirst({
     where: { id: profileId },
@@ -38,8 +38,8 @@ export const getNotifications: AppRouteHandler<GetNotificationsRoute> = async (c
   };
   if (isRead !== undefined)
     where.isRead = isRead;
-  if (archived !== undefined)
-    where.archived = archived;
+  if (isArchived !== undefined)
+    where.isArchived = isArchived;
 
   const [notifications, total] = await Promise.all([
     db.notification.findMany({
@@ -100,7 +100,7 @@ export const updateNotification: AppRouteHandler<UpdateNotificationRoute> = asyn
   const { id } = c.req.valid("param");
   const data = c.req.valid("json");
 
-  const existing = await db.notification.findFirst({
+  const existing = await db.notification.findUnique({
     where: {
       id,
     },
@@ -121,7 +121,7 @@ export const updateNotification: AppRouteHandler<UpdateNotificationRoute> = asyn
 export const deleteNotification: AppRouteHandler<DeleteNotificationRoute> = async (c) => {
   const { id } = c.req.valid("param");
 
-  const existing = await db.notification.findFirst({
+  const existing = await db.notification.findUnique({
     where: {
       id,
     },
@@ -141,7 +141,7 @@ export const deleteNotification: AppRouteHandler<DeleteNotificationRoute> = asyn
 export const markAsRead: AppRouteHandler<MarkAsReadRoute> = async (c) => {
   const { id } = c.req.valid("param");
 
-  const existing = await db.notification.findFirst({
+  const existing = await db.notification.findUnique({
     where: {
       id,
     },
@@ -186,7 +186,7 @@ export const markAllAsRead: AppRouteHandler<MarkAllAsReadRoute> = async (c) => {
 export const toggleArchive: AppRouteHandler<ToggleArchiveRoute> = async (c) => {
   const { id } = c.req.valid("param");
 
-  const existing = await db.notification.findFirst({
+  const existing = await db.notification.findUnique({
     where: { id },
   });
 
@@ -196,7 +196,7 @@ export const toggleArchive: AppRouteHandler<ToggleArchiveRoute> = async (c) => {
 
   const notification = await db.notification.update({
     where: { id },
-    data: { archived: !existing.archived },
+    data: { isArchived: !existing.isArchived },
   });
 
   return c.json(notification, HttpStatusCodes.OK);
@@ -206,7 +206,7 @@ export const getArchivedNotifications: AppRouteHandler<GetArchivedNotificationsR
   const { profileId } = c.req.valid("param");
   const { page = 1, limit = 10 } = c.req.valid("query");
 
-  const profile = await db.profile.findFirst({
+  const profile = await db.profile.findUnique({
     where: { id: profileId },
   });
 
@@ -220,7 +220,7 @@ export const getArchivedNotifications: AppRouteHandler<GetArchivedNotificationsR
     db.notification.findMany({
       where: {
         profileId: profile.id,
-        archived: true,
+        isArchived: true,
       },
       skip,
       take: limit,
@@ -229,7 +229,7 @@ export const getArchivedNotifications: AppRouteHandler<GetArchivedNotificationsR
     db.notification.count({
       where: {
         profileId: profile.id,
-        archived: true,
+        isArchived: true,
       },
     }),
   ]);
@@ -245,7 +245,7 @@ export const getArchivedNotifications: AppRouteHandler<GetArchivedNotificationsR
 export const getNotificationStats: AppRouteHandler<GetNotificationStatsRoute> = async (c) => {
   const { profileId } = c.req.valid("param");
 
-  const profile = await db.profile.findFirst({
+  const profile = await db.profile.findUnique({
     where: { id: profileId },
   });
 
@@ -253,7 +253,7 @@ export const getNotificationStats: AppRouteHandler<GetNotificationStatsRoute> = 
     return sendErrorResponse(c, "notFound", "Profile not found");
   }
 
-  const [totalNotifications, unreadCount, archivedCount] = await Promise.all([
+  const [totalCount, unreadCount, archivedCount] = await Promise.all([
     db.notification.count({
       where: { profileId: profile.id },
     }),
@@ -266,13 +266,13 @@ export const getNotificationStats: AppRouteHandler<GetNotificationStatsRoute> = 
     db.notification.count({
       where: {
         profileId: profile.id,
-        archived: true,
+        isArchived: true,
       },
     }),
   ]);
 
   return c.json({
-    totalNotifications,
+    totalCount,
     unreadCount,
     archivedCount,
   }, HttpStatusCodes.OK);

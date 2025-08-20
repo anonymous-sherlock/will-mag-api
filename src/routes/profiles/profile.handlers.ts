@@ -115,6 +115,9 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
           caption: true,
           url: true,
         },
+        orderBy: {
+          createdAt: "asc",
+        },
       },
     },
   });
@@ -153,6 +156,9 @@ export const getByUserId: AppRouteHandler<GetByUserIdRoute> = async (c) => {
           caption: true,
           url: true,
         },
+        orderBy: {
+          createdAt: "asc",
+        },
       },
     },
   });
@@ -172,6 +178,13 @@ export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async (c) => {
     select: {
       profile: {
         include: {
+          user: {
+            select: {
+              name: true,
+              displayUsername: true,
+              username: true,
+            },
+          },
           coverImage: {
             select: {
               id: true,
@@ -195,6 +208,9 @@ export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async (c) => {
               caption: true,
               url: true,
             },
+            orderBy: {
+              createdAt: "asc",
+            },
           },
         },
       },
@@ -211,7 +227,7 @@ export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async (c) => {
 
 export const patch: AppRouteHandler<PatchRoute> = async (c) => {
   const { id } = c.req.valid("param");
-  const profileData = c.req.valid("json");
+  const { user, ...profileData } = c.req.valid("json");
 
   const profile = await db.profile.findUnique({
     where: { id },
@@ -220,10 +236,21 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
   if (!profile)
     return sendErrorResponse(c, "notFound", "Profile not found");
 
-  const updatedProfile = await db.profile.update({
-    where: { id },
-    data: profileData,
-  });
+  // Update profile and user separately
+  const [updatedProfile] = await Promise.all([
+    db.profile.update({
+      where: { id },
+      data: profileData,
+    }),
+    db.user.update({
+      where: { id: profile.userId },
+      data: {
+        displayUsername: user.displayUsername,
+        username: user.username,
+        name: user.name,
+      },
+    }),
+  ]);
 
   return c.json(updatedProfile, HttpStatusCodes.OK);
 };

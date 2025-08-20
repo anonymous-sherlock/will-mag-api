@@ -158,7 +158,13 @@ export const patch = createRoute({
       id: z.string().describe("The profile ID"),
     }),
     body: jsonContentRequired(
-      ProfileInsertSchema.partial(),
+      ProfileInsertSchema.partial().extend({
+        user: z.object({
+          name: z.string().optional(),
+          displayUsername: z.string().optional(),
+          username: z.string().optional(),
+        }).partial(),
+      }),
       "The profile data to update",
     ),
   },

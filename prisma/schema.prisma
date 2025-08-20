@@ -151,17 +151,33 @@ model Profile {
 
 model Notification {
   id        String   @id @default(uuid())
+  title     String?
   message   String
   profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
   profileId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   isRead    Boolean  @default(false)
-  archived  Boolean  @default(false)
+  isArchived  Boolean  @default(false)
   icon      Icon?    @default(INFO)
   action    String?
+  type      Notification_Type @default(SYSTEM)
 
   @@index([profileId])
+}
+
+enum Notification_Type {
+  COMPETITION_JOINED
+  COMPETITION_LEFT
+  COMPETITION_CREATED
+  COMPETITION_UPCOMING
+  VOTE_RECEIVED
+  VOTE_PREMIUM
+  SETTINGS_CHANGED
+  REMINDER
+  TIP
+  MOTIVATION
+  SYSTEM
 }
 
 enum Icon {

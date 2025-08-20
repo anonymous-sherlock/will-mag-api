@@ -1,5 +1,6 @@
 import * as HttpStatusCodes from "stoker/http-status-codes";
 
+import type { Prisma } from "@/generated/prisma";
 import type { AppRouteHandler } from "@/types/types";
 
 import { db } from "@/db";
@@ -11,10 +12,10 @@ import { generateSlug, generateUniqueSlug } from "@/utils/slugify";
 import type { CreateRoute, GetAvailableContestsRoute, GetBySlugRoute, GetContestLeaderboardRoute, GetContestStatsRoute, GetJoinedContestsRoute, GetOneRoute, GetUpcomingContestsRoute, ListRoute, PatchRoute, RemoveContestImageRoute, RemoveRoute, UploadContestImagesRoute } from "./contest.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
-  const { page, limit, status } = c.req.valid("query");
+  const { page, limit, status, search } = c.req.valid("query");
 
   const now = new Date();
-  let whereClause = {};
+  let whereClause: Prisma.ContestWhereInput = {};
 
   // Apply status filtering
   switch (status) {
@@ -47,6 +48,14 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
       // No filtering - return all contests
       whereClause = {};
       break;
+  }
+
+  if (search) {
+    whereClause.OR = [
+      { name: { contains: search } },
+      { description: { contains: search } },
+      { slug: { contains: search } },
+    ];
   }
 
   const [contests, total] = await Promise.all([

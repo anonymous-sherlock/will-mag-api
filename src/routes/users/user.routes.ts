@@ -16,7 +16,10 @@ export const list = createRoute({
   tags,
   summary: "User Lists",
   request: {
-    query: PaginationQuerySchema,
+    query: PaginationQuerySchema.extend({
+      sortBy: z.enum(["name", "createdAt", "email", "username"]).optional().default("createdAt"),
+      sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+    }),
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(

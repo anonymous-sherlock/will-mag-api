@@ -1,5 +1,6 @@
 import * as HttpStatusCodes from "stoker/http-status-codes";
 
+import type { Prisma } from "@/generated/prisma";
 import type { AppRouteHandler } from "@/types/types";
 
 import { db } from "@/db";
@@ -10,13 +11,30 @@ import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 import type { CreateRoute, GetByEmailRoute, GetByUsernameRoute, GetOneRoute, GetUserProfileRoute, ListRoute, PatchRoute, RemoveRoute } from "./user.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
-  const { page, limit } = c.req.valid("query");
+  const { page, limit, search, sortBy, sortOrder } = c.req.valid("query");
+
+  const where: Prisma.UserWhereInput = {};
+  if (search) {
+    where.OR = [
+      { name: { contains: search } },
+      { email: { contains: search, search } },
+      { username: { contains: search, search } },
+
+    ];
+  }
+
+  const orderBy: Prisma.UserOrderByWithRelationInput = {
+    [sortBy]: sortOrder,
+  };
+
   const [users, total] = await Promise.all([
     db.user.findMany({
       skip: (page - 1) * limit,
       take: limit,
+      where,
+      orderBy,
     }),
-    db.user.count(),
+    db.user.count({ where }),
   ]);
   const pagination = calculatePaginationMetadata(total, page, limit);
 

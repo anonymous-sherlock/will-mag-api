@@ -250,7 +250,17 @@ export const searchUsers: AppRouteHandler<SearchUsers> = async (c) => {
 
   // Build order by clause
   const orderBy: Prisma.UserOrderByWithRelationInput = {};
-  orderBy[sortBy] = sortOrder;
+  switch (sortBy) {
+    case "hasProfile":
+      orderBy.profile = {
+        userId: sortOrder,
+      };
+      break;
+
+    default:
+      orderBy[sortBy] = sortOrder;
+      break;
+  }
 
   const [users, total] = await Promise.all([
     db.user.findMany({

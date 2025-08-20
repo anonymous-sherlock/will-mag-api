@@ -190,6 +190,7 @@ enum Contest_Status {
   DRAFT
   PUBLISHED
   ACTIVE
+  BOOKED
   VOTING
   JUDGING
   COMPLETED
@@ -336,8 +337,8 @@ enum Contest_Participation_Status {
 
 enum User_Role {
   USER
-  ADMIN
   MODERATOR
+  ADMIN
 }
 
 model Media {

@@ -68,7 +68,7 @@ export const searchUsers = createRoute({
   description: "Search and filter users with pagination support",
   request: {
     query: UserSearchQuerySchema.extend({
-      sortBy: z.enum(["name", "username", "createdAt"]).optional().default("createdAt"),
+      sortBy: z.enum(["name", "createdAt", "email", "username", "emailVerified", "hasProfile", "role"]).optional().default("createdAt"),
       search: z.string().optional(),
     }),
   },

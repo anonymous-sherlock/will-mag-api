@@ -9,7 +9,7 @@ import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 import { utapi } from "@/lib/uploadthing";
 import { generateSlug, generateUniqueSlug } from "@/utils/slugify";
 
-import type { CreateRoute, GetAvailableContestsRoute, GetBySlugRoute, GetContestLeaderboardRoute, GetContestStatsRoute, GetJoinedContestsRoute, GetOneRoute, GetUpcomingContestsRoute, ListRoute, PatchRoute, RemoveContestImageRoute, RemoveRoute, UploadContestImagesRoute } from "./contest.routes";
+import type { CreateRoute, GetAvailableContestsRoute, GetBySlugRoute, GetContestLeaderboardRoute, GetContestStatsRoute, GetJoinedContestsRoute, GetOneRoute, GetUpcomingContestsRoute, ListRoute, PatchRoute, RemoveContestImageRoute, RemoveRoute, ToggleVotingRoute, UploadContestImagesRoute } from "./contest.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const { page, limit, status, search } = c.req.valid("query");
@@ -674,4 +674,35 @@ export const removeContestImage: AppRouteHandler<RemoveContestImageRoute> = asyn
     console.error("Error removing contest image:", error);
     return sendErrorResponse(c, "badRequest", "Failed to remove image");
   }
+};
+
+export const toggleVoting: AppRouteHandler<ToggleVotingRoute> = async (c) => {
+  const { id } = c.req.valid("param");
+
+  // Check if contest exists
+  const contest = await db.contest.findUnique({
+    where: { id },
+  });
+
+  if (!contest) {
+    return sendErrorResponse(c, "notFound", "Contest not found");
+  }
+
+  // Toggle the voting status
+  const newVotingStatus = !contest.isVotingEnabled;
+
+  // Update the contest with the new voting status
+  const updatedContest = await db.contest.update({
+    where: { id },
+    data: {
+      isVotingEnabled: newVotingStatus,
+    },
+  });
+
+  const statusMessage = newVotingStatus ? "Voting enabled" : "Voting disabled";
+
+  return c.json({
+    message: `${statusMessage} for contest "${contest.name}"`,
+    isVotingEnabled: updatedContest.isVotingEnabled,
+  }, HttpStatusCodes.OK);
 };

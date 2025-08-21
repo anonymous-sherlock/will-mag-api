@@ -15,6 +15,7 @@ const contestRouter = createRouteBuilder()
   .openapi(routes.uploadContestImages, handlers.uploadContestImages)
   .openapi(routes.removeContestImage, handlers.removeContestImage)
   .openapi(routes.getContestStats, handlers.getContestStats)
-  .openapi(routes.getContestLeaderboard, handlers.getContestLeaderboard);
+  .openapi(routes.getContestLeaderboard, handlers.getContestLeaderboard)
+  .openapi(routes.toggleVoting, handlers.toggleVoting);
 
 export default contestRouter.getRouter();

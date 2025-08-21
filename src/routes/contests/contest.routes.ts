@@ -322,6 +322,30 @@ export const removeContestImage = createRoute({
   },
 });
 
+export const toggleVoting = createRoute({
+  path: "/contest/{id}/toggle-voting",
+  method: "patch",
+  tags,
+  summary: "Toggle Contest Voting",
+  description: "Enable or disable voting for a specific contest",
+  request: {
+    params: z.object({
+      id: z.string().describe("The contest ID"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      z.object({
+        message: z.string(),
+        isVotingEnabled: z.boolean(),
+      }),
+      "Voting status toggled successfully",
+    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Contest not found"),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
@@ -335,3 +359,4 @@ export type GetContestStatsRoute = typeof getContestStats;
 export type GetContestLeaderboardRoute = typeof getContestLeaderboard;
 export type UploadContestImagesRoute = typeof uploadContestImages;
 export type RemoveContestImageRoute = typeof removeContestImage;
+export type ToggleVotingRoute = typeof toggleVoting;

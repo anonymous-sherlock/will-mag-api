@@ -3,6 +3,8 @@ import * as HttpStatusCodes from "stoker/http-status-codes";
 import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema } from "stoker/openapi/schemas";
 
+import { ContestParticipationSelectSchema } from "@/db/schema/contest-participation.schema";
+import { ContestSelectSchemaWithAwards, ContestSelectSchemaWithAwardsandImages } from "@/db/schema/contest.schema";
 import { MediaSelectPartial, MediaSelectSchema } from "@/db/schema/media.schema";
 import { ProfileInsertSchema, ProfileSelectSchema, ProfileSelectSchemaWithMediaRelation } from "@/db/schema/profile.schema";
 import { BadRequestResponse, NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
@@ -319,6 +321,37 @@ export const removeProfileImage = createRoute({
   },
 });
 
+export const getActiveParticipationByProfile = createRoute({
+  path: "/profile/{profileId}/active-participation",
+  method: "get",
+  tags,
+  summary: "Get Active Participation by Profile",
+  description: "Get all active contest participations for a specific profile",
+  request: {
+    params: z.object({
+      profileId: z.string().describe("The profile ID"),
+    }),
+    query: PaginationQuerySchema,
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      createPaginatedResponseSchema(
+        ContestParticipationSelectSchema.extend({
+          contest: ContestSelectSchemaWithAwardsandImages,
+          coverImage: z.object({
+            id: z.string(),
+            url: z.string(),
+            key: z.string(),
+          }).nullable(),
+        }),
+      ),
+      "The active contest participations for the profile",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
@@ -331,3 +364,4 @@ export type UploadCoverImageRoute = typeof uploadCoverImage;
 export type UploadBannerImageRoute = typeof uploadBannerImage;
 export type UploadProfilePhotosRoute = typeof uploadProfilePhotos;
 export type RemoveProfileImageRoute = typeof removeProfileImage;
+export type GetActiveParticipationByProfileRoute = typeof getActiveParticipationByProfile;

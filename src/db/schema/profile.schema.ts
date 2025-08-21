@@ -1,17 +1,18 @@
-import z from 'zod';
+import z from "zod";
 
-import type { Profile } from '@/generated/prisma/index.js';
+import type { Profile } from "@/generated/prisma/index.js";
 
-import { MediaSelectSchema } from './media.schema';
+import { MediaSelectSchema } from "./media.schema";
+import { UserSelectSchema } from "./users.schema";
 
 export const ProfileSchema = z.object({
   id: z.string(),
   userId: z.string(),
   bio: z.string().nullable(),
-  phone: z.string().max(20).nullable().openapi({ example: '+1 210 456 2719' }),
+  phone: z.string().max(20).nullable().openapi({ example: "+1 210 456 2719" }),
   address: z.string(),
-  city: z.string().max(100).nullable().openapi({ example: 'Manhattan' }),
-  country: z.string().max(100).nullable().openapi({ example: 'United States' }),
+  city: z.string().max(100).nullable().openapi({ example: "Manhattan" }),
+  country: z.string().max(100).nullable().openapi({ example: "United States" }),
   postalCode: z.string().max(20).nullable(),
   dateOfBirth: z.date().nullable(),
   gender: z.string().max(50).nullable(),
@@ -56,6 +57,13 @@ export const ProfileInsertSchema = ProfileSchema.omit({
 export const ProfileSelectSchema = ProfileSchema;
 
 export const ProfileSelectSchemaWithMediaRelation = ProfileSchema.extend({
+  user: UserSelectSchema.pick({
+    id: true,
+    name: true,
+    username: true,
+    displayUsername: true,
+    email: true,
+  }),
   coverImage: MediaSelectSchema.pick({
     id: true,
     key: true,
@@ -75,7 +83,7 @@ export const ProfileSelectSchemaWithMediaRelation = ProfileSchema.extend({
         key: true,
         caption: true,
         url: true,
-      })
+      }),
     )
     .nullable(),
 });

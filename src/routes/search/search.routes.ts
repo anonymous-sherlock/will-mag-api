@@ -3,11 +3,11 @@ import * as HttpStatusCodes from "stoker/http-status-codes";
 import { jsonContent } from "stoker/openapi/helpers";
 import { createErrorSchema } from "stoker/openapi/schemas";
 
+import { ContestSelectSchema } from "@/db/schema/contest.schema";
 import { createPaginatedResponseSchema } from "@/lib/queries/query.schema";
 
 import {
   ContestSearchQuerySchema,
-  ContestSearchResultSchema,
   ProfileSearchQuerySchema,
   ProfileSearchResultSchema,
   UserSearchQuerySchema,
@@ -46,11 +46,13 @@ export const searchContests = createRoute({
   summary: "Search contests",
   description: "Search and filter contests with pagination support",
   request: {
-    query: ContestSearchQuerySchema,
+    query: ContestSearchQuerySchema.extend({
+      sortBy: z.enum(["name", "startDate", "endDate", "prizePool", "createdAt"]).optional().default("createdAt"),
+    }),
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      createPaginatedResponseSchema(ContestSearchResultSchema),
+      createPaginatedResponseSchema(ContestSelectSchema),
       "Contests found successfully",
     ),
     [HttpStatusCodes.BAD_REQUEST]: jsonContent(

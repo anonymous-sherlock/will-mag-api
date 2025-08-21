@@ -150,18 +150,18 @@ model Profile {
 }
 
 model Notification {
-  id        String   @id @default(uuid())
-  title     String?
-  message   String
-  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  profileId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isRead    Boolean  @default(false)
-  isArchived  Boolean  @default(false)
-  icon      Icon?    @default(INFO)
-  action    String?
-  type      Notification_Type @default(SYSTEM)
+  id         String            @id @default(uuid())
+  title      String?
+  message    String
+  profile    Profile           @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId  String
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  isRead     Boolean           @default(false)
+  isArchived Boolean           @default(false)
+  icon       Icon?             @default(INFO)
+  action     String?
+  type       Notification_Type @default(SYSTEM)
 
   @@index([profileId])
 }
@@ -268,9 +268,9 @@ model Award {
 model Vote {
   id String @id @default(cuid())
 
-  type    Vote_Type @default(FREE)
-  
-  comment String?   @db.Text
+  type Vote_Type @default(FREE)
+
+  comment String? @db.Text
 
   voterId String
   voter   Profile @relation("VotesCast", fields: [voterId], references: [id], onDelete: Cascade)

@@ -23,7 +23,7 @@ export const list = createRoute({
   description: "Get a list of all contest",
   request: {
     query: PaginationQuerySchema.extend({
-      status: z.enum(["all", "active", "upcoming", "ended"]).optional().default("all").describe("Filter contests by status"),
+      status: z.enum(["all", "active", "upcoming", "ended", "booked"]).optional().default("all").describe("Filter contests by status"),
     }),
   },
   responses: {

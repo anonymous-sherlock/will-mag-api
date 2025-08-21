@@ -20,6 +20,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
   // Apply status filtering
   switch (status) {
     case "active":
+    case "booked":
       whereClause = {
         startDate: {
           lte: now,
@@ -159,14 +160,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
   const { id } = c.req.valid("param");
   const contestData = c.req.valid("json");
 
-  const providedSlug = typeof contestData.slug === "string" && contestData.slug.trim().length > 0
-    ? contestData.slug.trim()
-    : contestData.name;
-
-  // Ensure slug uniqueness by suffixing with an incrementing number if needed
-  const slug = generateSlug(providedSlug ?? "");
-
-  const contest = await db.contest.findUnique({
+  const contest = await db.contest.findFirst({
     where: { id },
   });
 
@@ -174,11 +168,32 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
     return sendErrorResponse(c, "notFound", "Contest not found");
   }
 
+  const trimmedSlug = contestData.slug?.trim();
+
+  // Generate unique slug if slug is being updated
+  let finalSlug = contest.slug; // Keep existing slug by default
+  if (contestData.slug && trimmedSlug !== contest.slug) {
+    const providedSlug = typeof contestData.slug === "string" && contestData.slug.trim().length > 0
+      ? contestData.slug.trim()
+      : contestData.name ?? contest.name;
+
+    // Only generate new slug if it's different from current
+    finalSlug = await generateUniqueSlug(providedSlug, async (slug) => {
+      const existing = await db.contest.findFirst({
+        where: {
+          slug,
+          id: { not: id }, // Exclude the current contest
+        },
+      });
+      return !!existing;
+    });
+  }
+
   const updatedContest = await db.contest.update({
     where: { id },
     data: {
       ...contestData,
-      slug,
+      slug: finalSlug,
       awards: {
         deleteMany: {
           contestId: id,

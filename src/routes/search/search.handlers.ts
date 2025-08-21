@@ -122,6 +122,7 @@ export const searchContests: AppRouteHandler<SearchContests> = async (c) => {
     maxPrizePool,
     startDate,
     endDate,
+    search,
   } = c.req.valid("query");
 
   const skip = (page - 1) * limit;
@@ -130,24 +131,30 @@ export const searchContests: AppRouteHandler<SearchContests> = async (c) => {
   // Build where clause for filtering
   const where: Prisma.ContestWhereInput = {};
 
-  if (query) {
+  if (query || search) {
     where.OR = [
-      { name: { contains: query } },
-      { description: { contains: query } },
+      { name: { contains: query || search || "" } },
+      { description: { contains: query || search || "" } },
     ];
   }
 
   if (status) {
-    const now = new Date();
-    if (status === "active") {
-      where.startDate = { lte: now };
-      where.endDate = { gte: now };
-    }
-    else if (status === "upcoming") {
-      where.startDate = { gt: now };
-    }
-    else if (status === "ended") {
-      where.endDate = { lt: now };
+    switch (status) {
+      case "active":
+        where.startDate = { lte: new Date() };
+        where.endDate = { gte: new Date() };
+        break;
+      case "upcoming":
+        where.startDate = { gt: new Date() };
+        break;
+      case "ended":
+        where.endDate = { lt: new Date() };
+        break;
+      case "booked":
+        where.status = "BOOKED";
+        break;
+      case "all":
+        break;
     }
   }
 
@@ -176,41 +183,44 @@ export const searchContests: AppRouteHandler<SearchContests> = async (c) => {
       skip,
       take,
       orderBy,
+      include: {
+
+      },
     }),
     db.contest.count({ where }),
   ]);
 
-  const formattedContests = contests.map((contest) => {
-    const now = new Date();
-    let status: "active" | "upcoming" | "ended";
+  // const formattedContests = contests.map((contest) => {
+  //   const now = new Date();
+  //   let status: "active" | "upcoming" | "ended";
 
-    if (contest.startDate > now) {
-      status = "upcoming";
-    }
-    else if (contest.endDate < now) {
-      status = "ended";
-    }
-    else {
-      status = "active";
-    }
+  //   if (contest.startDate > now) {
+  //     status = "upcoming";
+  //   }
+  //   else if (contest.endDate < now) {
+  //     status = "ended";
+  //   }
+  //   else {
+  //     status = "active";
+  //   }
 
-    return {
-      id: contest.id,
-      name: contest.name,
-      description: contest.description,
-      startDate: contest.startDate,
-      endDate: contest.endDate,
-      prizePool: contest.prizePool,
-      winnerProfileId: contest.winnerProfileId,
-      createdAt: contest.createdAt,
-      updatedAt: contest.updatedAt,
-      status,
-    };
-  });
+  //   return {
+  //     id: contest.id,
+  //     name: contest.name,
+  //     description: contest.description,
+  //     startDate: contest.startDate,
+  //     endDate: contest.endDate,
+  //     prizePool: contest.prizePool,
+  //     winnerProfileId: contest.winnerProfileId,
+  //     createdAt: contest.createdAt,
+  //     updatedAt: contest.updatedAt,
+  //     status,
+  //   };
+  // });
 
   const pagination = calculatePaginationMetadata(total, page, limit);
 
-  return c.json({ data: formattedContests, pagination }, HttpStatusCodes.OK);
+  return c.json({ data: contests, pagination }, HttpStatusCodes.OK);
 };
 
 export const searchUsers: AppRouteHandler<SearchUsers> = async (c) => {

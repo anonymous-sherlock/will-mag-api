@@ -14,6 +14,7 @@ const profileRouter = createRouteBuilder()
   .openapi(routes.uploadCoverImage, handlers.uploadCoverImage, "private")
   .openapi(routes.uploadBannerImage, handlers.uploadBannerImage, "private")
   .openapi(routes.uploadProfilePhotos, handlers.uploadProfilePhotos, "private")
-  .openapi(routes.removeProfileImage, handlers.removeProfileImage, "private");
+  .openapi(routes.removeProfileImage, handlers.removeProfileImage, "private")
+  .openapi(routes.getActiveParticipationByProfile, handlers.getActiveParticipationByProfile);
 
 export default profileRouter.getRouter();

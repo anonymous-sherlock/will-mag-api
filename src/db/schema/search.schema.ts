@@ -20,7 +20,7 @@ export const ProfileSearchQuerySchema = BaseSearchQuerySchema.extend({
 
 // Contest search specific schema
 export const ContestSearchQuerySchema = BaseSearchQuerySchema.extend({
-  status: z.enum(["active", "upcoming", "ended"]).optional().describe("Filter by contest status"),
+  status: z.enum(["active", "upcoming", "ended", "all", "booked"]).optional().describe("Filter by contest status"),
   minPrizePool: z.coerce.number().optional().describe("Minimum prize pool amount"),
   maxPrizePool: z.coerce.number().optional().describe("Maximum prize pool amount"),
   startDate: z.coerce.date().optional().describe("Filter contests starting from this date"),

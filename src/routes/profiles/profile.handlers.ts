@@ -9,6 +9,7 @@ import { utapi } from "@/lib/uploadthing";
 
 import type {
   CreateRoute,
+  GetActiveParticipationByProfileRoute,
   GetByUserIdRoute,
   GetByUsernameRoute,
   GetOneRoute,
@@ -92,6 +93,15 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
   const profile = await db.profile.findUnique({
     where: { id },
     include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          displayUsername: true,
+          email: true,
+        },
+      },
       coverImage: {
         select: {
           id: true,
@@ -133,6 +143,15 @@ export const getByUserId: AppRouteHandler<GetByUserIdRoute> = async (c) => {
   const profile = await db.profile.findUnique({
     where: { userId },
     include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          displayUsername: true,
+          email: true,
+        },
+      },
       coverImage: {
         select: {
           id: true,
@@ -180,9 +199,11 @@ export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async (c) => {
         include: {
           user: {
             select: {
+              id: true,
               name: true,
-              displayUsername: true,
               username: true,
+              displayUsername: true,
+              email: true,
             },
           },
           coverImage: {
@@ -670,4 +691,80 @@ export const getProfileStats: AppRouteHandler<GetProfileStatsRoute> = async (c) 
   };
 
   return c.json(stats, HttpStatusCodes.OK);
+};
+
+export const getActiveParticipationByProfile: AppRouteHandler<GetActiveParticipationByProfileRoute> = async (c) => {
+  const { profileId } = c.req.valid("param");
+  const { page, limit } = c.req.valid("query");
+
+  // Check if profile exists
+  const profile = await db.profile.findUnique({
+    where: { id: profileId },
+  });
+
+  if (!profile) {
+    return sendErrorResponse(c, "notFound", "Profile not found");
+  }
+
+  const now = new Date();
+
+  // Get active participations (contests that are currently running)
+  const [participations, total] = await Promise.all([
+    db.contestParticipation.findMany({
+      where: {
+        profileId,
+        contest: {
+          startDate: { lte: now },
+          endDate: { gte: now },
+          status: { in: ["ACTIVE", "VOTING", "JUDGING", "PUBLISHED", "BOOKED"] },
+
+        },
+        isParticipating: true,
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      include: {
+        contest: {
+          include: {
+            awards: true,
+            images: {
+              select: {
+                id: true,
+                url: true,
+                key: true,
+              },
+            },
+          },
+        },
+        coverImage: {
+          select: {
+            id: true,
+            url: true,
+            key: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    }),
+    db.contestParticipation.count({
+      where: {
+        profileId,
+        contest: {
+          startDate: { lte: now },
+          endDate: { gte: now },
+          status: { in: ["ACTIVE", "VOTING", "JUDGING", "PUBLISHED", "BOOKED"] },
+        },
+        isParticipating: true,
+      },
+    }),
+  ]);
+
+  const pagination = calculatePaginationMetadata(total, page, limit);
+
+  return c.json({
+    data: participations,
+    pagination,
+  }, HttpStatusCodes.OK);
 };

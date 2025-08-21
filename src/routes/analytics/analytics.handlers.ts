@@ -334,7 +334,7 @@ export const getContestAnalytics: AppRouteHandler<GetContestAnalyticsRoute> = as
       where: {
         AND: {
           status: {
-            in: ["PUBLISHED", "ACTIVE", "VOTING", "JUDGING"],
+            in: ["PUBLISHED", "ACTIVE", "VOTING", "JUDGING", "BOOKED"],
           },
           startDate: {
             lte: new Date(),

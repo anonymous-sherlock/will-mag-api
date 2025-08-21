@@ -3,6 +3,8 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { adminClient } from "better-auth/client/plugins";
 import { bearer, customSession, openAPI, username } from "better-auth/plugins";
 
+import type { User_Type } from "@/generated/prisma";
+
 import { db } from "@/db";
 import env from "@/env";
 import { sendEmailAction } from "@/helpers/send-email-action";
@@ -19,7 +21,7 @@ export const auth = betterAuth({
     requireEmailVerification: false,
     enabled: true,
     minPasswordLength: 6,
-    autoSignIn: false,
+    autoSignIn: true,
     sendResetPassword: async ({ user, url }) => {
       await sendEmailAction({
         to: user.email,
@@ -35,13 +37,31 @@ export const auth = betterAuth({
     enabled: true,
   },
   databaseHooks: {
-    user: {},
+    user: {
+      create: {
+        after: async (user) => {
+          if ((user as any).type === "VOTER") {
+            await db.profile.create({
+              data: {
+                userId: user.id,
+                address: "",
+              },
+            });
+          }
+        },
+      },
+    },
   },
   user: {
     additionalFields: {
       role: {
         type: ["USER", "ADMIN", "MODERATOR"],
         input: false,
+      },
+      type: {
+        type: ["MODEL", "VOTER"],
+        input: true,
+        required: true,
       },
       emailVerified: {
         type: "date",
@@ -59,6 +79,7 @@ export const auth = betterAuth({
     },
     additionalFields: {
       role: { type: ["USER", "ADMIN", "MODERATOR"], input: false },
+      type: { type: ["MODEL", "VOTER"], input: false },
       profileId: { type: "string", required: false, input: false },
     },
   },
@@ -73,10 +94,12 @@ export const auth = betterAuth({
         user: {
           ...user,
           profileId: profile?.id || null,
+          type: (user as any).type as User_Type,
         },
         session: {
           ...session,
           profileId: profile?.id || null,
+          type: (user as any).type as User_Type,
         },
       };
     }),

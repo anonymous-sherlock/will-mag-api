@@ -93,7 +93,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
 };
 
 export const create: AppRouteHandler<CreateRoute> = async (c) => {
-  const { awards, ...contest } = c.req.valid("json");
+  const { awards, isFeatured, isVerified, isVotingEnabled, ...contest } = c.req.valid("json");
 
   const providedSlug = typeof contest.slug === "string" && contest.slug.trim().length > 0
     ? contest.slug.trim()
@@ -108,6 +108,9 @@ export const create: AppRouteHandler<CreateRoute> = async (c) => {
   const insertedContest = await db.contest.create({
     data: {
       ...contest,
+      isFeatured: isFeatured ?? undefined,
+      isVerified: isVerified ?? undefined,
+      isVotingEnabled: isVotingEnabled ?? undefined,
       slug: uniqueSlug,
       awards: {
         createMany: {
@@ -194,6 +197,9 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
     data: {
       ...contestData,
       slug: finalSlug,
+      isFeatured: contestData.isFeatured ?? undefined,
+      isVerified: contestData.isVerified ?? undefined,
+      isVotingEnabled: contestData.isVotingEnabled ?? undefined,
       awards: {
         deleteMany: {
           contestId: id,

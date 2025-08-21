@@ -38,15 +38,16 @@ export const ContestInsertSchema = ContestSchema.pick({
   slug: true,
   status: true,
   visibility: true,
-  isFeatured: true,
-  isVerified: true,
-  isVotingEnabled: true,
+
 }).extend({
   startDate: z.preprocess(val => (val ? new Date(val as string) : new Date()), z.date()),
   endDate: z.preprocess(val => (val ? new Date(val as string) : new Date()), z.date()),
   slug: z.string().optional(),
   rules: z.string().optional().nullable(),
   requirements: z.string().optional().nullable(),
+  isFeatured: z.boolean().optional().nullable(),
+  isVerified: z.boolean().optional().nullable(),
+  isVotingEnabled: z.boolean().optional().nullable(),
 });
 
 export const ContestInsertSchemaWithAwards = ContestInsertSchema.extend({

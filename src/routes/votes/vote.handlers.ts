@@ -32,6 +32,7 @@ export const freeVote: AppRouteHandler<FreeVote> = async (c) => {
     );
   }
 
+  console.log("data", data);
   const vote = await db.vote.create({ data });
 
   await updateLastFreeVote(data.voterId);

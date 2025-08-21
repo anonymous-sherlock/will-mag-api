@@ -53,6 +53,7 @@ export const create: AppRouteHandler<CreateRoute> = async (c) => {
       password: userData.password,
       username: userData.username,
       image: userData.image ?? undefined,
+      type: userData.type,
     },
   });
   const user = await db.user.findFirst({

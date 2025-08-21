@@ -76,7 +76,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
         awards: true,
       },
       orderBy: {
-        createdAt: "desc",
+        startDate: "asc",
       },
     }),
     db.contest.count({

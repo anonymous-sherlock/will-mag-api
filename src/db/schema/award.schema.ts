@@ -11,11 +11,15 @@ export const AwardSchema = z.object({
     example: "🏆",
   }),
   contestId: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 }) satisfies z.ZodType<Award>;
 
 export const AwardInsertSchema = AwardSchema.omit({
   id: true,
   contestId: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const AwardSelectSchema = AwardSchema;

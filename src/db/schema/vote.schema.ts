@@ -50,10 +50,13 @@ export const GetLatestVotesResponseSchema = z.array(VoteListSchema);
 
 export const GetVotesByProfileIdResponseSchema = z.object({
   profileId: z.string(),
-  userName: z.string(),
+  name: z.string(),
+  username: z.string(),
   contestName: z.string(),
   votedOn: z.string(),
   count: z.number(),
+  amount: z.number().nullable().describe("The amount paid for the vote"),
+  comment: z.string().nullable().describe("The comment left by the voter"),
 });
 
 export const TopVoterForVoteeSchema = z.object({

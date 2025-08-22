@@ -24,6 +24,33 @@ import { updateLastFreeVote, validateFreeVote } from "./vote.action";
 export const freeVote: AppRouteHandler<FreeVote> = async (c) => {
   const data = c.req.valid("json");
 
+  // Prevent users from voting for themselves
+  if (data.voterId === data.voteeId) {
+    return sendErrorResponse(
+      c,
+      "badRequest",
+      "You cannot vote for yourself",
+    );
+  }
+
+  // Check if voting is enabled for the contest
+  const contest = await db.contest.findUnique({
+    where: { id: data.contestId },
+    select: { isVotingEnabled: true },
+  });
+
+  if (!contest) {
+    return sendErrorResponse(c, "notFound", "Contest not found");
+  }
+
+  if (!contest.isVotingEnabled) {
+    return sendErrorResponse(
+      c,
+      "badRequest",
+      "Voting is not enabled for this contest yet",
+    );
+  }
+
   if (!(await validateFreeVote(data.voterId))) {
     return sendErrorResponse(
       c,
@@ -32,7 +59,6 @@ export const freeVote: AppRouteHandler<FreeVote> = async (c) => {
     );
   }
 
-  console.log("data", data);
   const vote = await db.vote.create({ data });
 
   await updateLastFreeVote(data.voterId);
@@ -65,6 +91,25 @@ export const isFreeVoteAvailable: AppRouteHandler<IsFreeVoteAvailable> = async (
 
 export const payVote: AppRouteHandler<PayVote> = async (c) => {
   const { voteeId, voterId, voteCount, contestId } = c.req.valid("json");
+
+  // Prevent users from voting for themselves
+  if (voterId === voteeId) {
+    return sendErrorResponse(
+      c,
+      "badRequest",
+      "You cannot vote for yourself",
+    );
+  }
+
+  // Validate vote count is supported
+  const supportedVoteCounts = [5, 25, 50];
+  if (!supportedVoteCounts.includes(voteCount)) {
+    return sendErrorResponse(
+      c,
+      "badRequest",
+      "Invalid vote count. Supported counts are: 5, 25, 50",
+    );
+  }
 
   const [voter, votee, contest] = await Promise.all([
     db.profile.findUnique({
@@ -110,6 +155,15 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
     return sendErrorResponse(c, "notFound", "Contest with the shared contest id was not found");
   }
 
+  // Check if voting is enabled for the contest
+  if (!contest.isVotingEnabled) {
+    return sendErrorResponse(
+      c,
+      "badRequest",
+      "Voting is not enabled for this contest yet",
+    );
+  }
+
   const isVoteePresent = await db.contestParticipation.findFirst({
     where: {
       contestId,
@@ -121,15 +175,68 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
     return sendErrorResponse(c, "notFound", "Votee is not a participant in the contest");
   }
 
+  // Calculate price based on vote count (pricing tiers)
+  const getPriceForVoteCount = (count: number): number => {
+    switch (count) {
+      case 5:
+        return 1; // $1 for 5 votes
+      case 25:
+        return 5; // $5 for 25 votes
+      case 50:
+        return 10; // $10 for 50 votes
+      default:
+        return count; // $1 per vote for any other count
+    }
+  };
+
+  const totalPrice = getPriceForVoteCount(voteCount);
+  const unitPrice = Math.round((totalPrice / voteCount) * 100); // Convert to cents
+
   const payment = await db.payment.create({
     data: {
-      amount: voteCount,
+      amount: totalPrice,
       status: "PENDING",
       payerId: voter.id,
       stripeSessionId: "",
     },
   });
   const activeMultiplier = await getActiveVoteMultiplier();
+
+  // Alternative: For embedded checkout with custom styling
+  // const session = await stripe.checkout.sessions.create({
+  //   metadata: {
+  //     paymentId: payment.id,
+  //     voteeId: votee.id,
+  //     contestId: contest.id,
+  //     voterId: voter.id,
+  //     voteCount,
+  //     votesMultipleBy: activeMultiplier,
+  //   },
+  //   line_items: [
+  //     {
+  //       price_data: {
+  //         currency: "usd",
+  //         unit_amount: unitPrice,
+  //         product_data: {
+  //           name: activeMultiplier > 1 ? `Votes Boost Pack` : "Back Your Favorite",
+  //           ...(votee.coverImage?.url ? { images: [votee.coverImage?.url] } : null),
+  //           description:
+  //             activeMultiplier > 1
+  //               ? `${voteCount} votes boosted by ${activeMultiplier}x = ${voteCount * activeMultiplier} votes for ${votee.user.name}`
+  //               : `${voteCount} votes for ${votee.user.name}`,
+  //         },
+  //       },
+  //       quantity: voteCount,
+  //     },
+  //   ],
+  //   mode: "payment",
+  //   currency: "usd",
+  //   customer_email: voter.user.email,
+  //   success_url: `${env.FRONTEND_URL}/payments/success?callback=/profile/${votee.user.username}`,
+  //   cancel_url: `${env.FRONTEND_URL}/payments/failure?callback=/profile/${votee.user.username}`,
+  //   ui_mode: "embedded",
+  //   return_url: `${env.FRONTEND_URL}/payments/return?session_id={CHECKOUT_SESSION_ID}`,
+  // });
 
   const session = await stripe.checkout.sessions.create({
     metadata: {
@@ -144,7 +251,7 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
       {
         price_data: {
           currency: "usd",
-          unit_amount: 100,
+          unit_amount: unitPrice,
           product_data: {
             name: activeMultiplier > 1 ? `Votes Boost Pack` : "Back Your Favorite",
             ...(votee.coverImage?.url ? { images: [votee.coverImage?.url] } : null),
@@ -162,6 +269,22 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
     customer_email: voter.user.email,
     success_url: `${env.FRONTEND_URL}/payments/success?callback=/profile/${votee.user.username}`,
     cancel_url: `${env.FRONTEND_URL}/payments/failure?callback=/profile/${votee.user.username}`,
+    // Custom styling options
+    custom_fields: [
+      {
+        key: "comment",
+        label: {
+          type: "custom",
+          custom: `Message for ${votee.user.name} (Optional)`,
+        },
+        type: "text",
+        optional: true,
+      },
+    ],
+    billing_address_collection: "auto",
+    // Custom branding
+    // payment_method_types: ["card", "cashapp", "afterpay_clearpay", "paypal"],
+    allow_promotion_codes: true,
   });
 
   if (!session) {
@@ -252,7 +375,7 @@ export const getLatestVotes: AppRouteHandler<GetLatestVotes> = async (c) => {
 
 export const getVotesByProfileId: AppRouteHandler<GetVotesByProfileId> = async (c) => {
   const { profileId } = c.req.valid("param");
-  const { page, limit } = c.req.valid("query");
+  const { page, limit, onlyPaid } = c.req.valid("query");
 
   const profile = await db.profile.findUnique({
     where: { id: profileId },
@@ -268,16 +391,25 @@ export const getVotesByProfileId: AppRouteHandler<GetVotesByProfileId> = async (
 
   const [votes, total] = await Promise.all([
     db.vote.findMany({
-      where: { voteeId: profile.id },
+      where: {
+        voteeId: profile.id,
+        ...(onlyPaid ? { paymentId: { not: null } } : {}),
+      },
       skip,
       take,
       orderBy: { createdAt: "desc" },
       include: {
+        payment: {
+          select: {
+            amount: true,
+          },
+        },
         voter: {
           select: {
             user: {
               select: {
                 name: true,
+                username: true,
                 profile: {
                   select: {
                     id: true,
@@ -295,15 +427,21 @@ export const getVotesByProfileId: AppRouteHandler<GetVotesByProfileId> = async (
       },
     }),
     db.vote.count({
-      where: { voteeId: profile.id },
+      where: {
+        voteeId: profile.id,
+        ...(onlyPaid ? { paymentId: { not: null } } : {}),
+      },
     }),
   ]);
 
   const formattedVotesReceived = votes.map(vote => ({
     profileId: vote.voter.user.profile?.id ?? "",
-    userName: vote.voter.user.name,
+    name: vote.voter.user.name,
+    username: vote.voter.user.username ?? "Anonymous User",
     contestName: vote.contest.name,
     votedOn: vote.createdAt.toISOString(),
+    amount: vote.payment?.amount ?? null,
+    comment: vote.comment,
     count: vote.count,
   }));
 

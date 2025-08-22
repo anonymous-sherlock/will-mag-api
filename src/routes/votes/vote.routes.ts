@@ -14,6 +14,7 @@ import {
   VoteSelectSchema,
 } from "@/db/schema/vote.schema";
 import {
+  BadRequestResponse,
   NotFoundResponse,
   ServiceUnavailableResponse,
   TooManyRequestResponse,
@@ -39,7 +40,9 @@ export const freeVote = createRoute({
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(VoteSelectSchema, "The created vote record"),
+    [HttpStatusCodes.BAD_REQUEST]: BadRequestResponse("You cannot vote for yourself"),
     [HttpStatusCodes.TOO_MANY_REQUESTS]: TooManyRequestResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Contest not found"),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(VoteInsertSchema),
       "The validation error(s)",
@@ -89,6 +92,7 @@ export const payVote = createRoute({
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(PayVoteResponseSchema, "Payment made successfully"),
+    [HttpStatusCodes.BAD_REQUEST]: BadRequestResponse("You cannot vote for yourself"),
     [HttpStatusCodes.SERVICE_UNAVAILABLE]: ServiceUnavailableResponse(),
     [HttpStatusCodes.NOT_FOUND]: NotFoundResponse(),
   },
@@ -123,7 +127,11 @@ export const getVotesByProfileId = createRoute({
     params: z.object({
       profileId: z.string().describe("The profile ID to check for votes"),
     }),
-    query: PaginationQuerySchema,
+    query: PaginationQuerySchema.extend({
+      onlyPaid: z.coerce.boolean().optional().default(false).openapi({
+        default: false,
+      }).describe("Whether to include paid votes"),
+    }),
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(

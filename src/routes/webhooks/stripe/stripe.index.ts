@@ -84,6 +84,9 @@ async function sessionCompleted(event: Stripe.Event) {
   });
   // console.log("metadata", metadata);
 
+  // Extract comment from custom fields if available
+  const comment = eventObject.custom_fields?.find(field => field.key === "comment")?.text?.value || null;
+
   await db.$transaction(async (tx) => {
     const originalVoteCount = metadata.voteCount;
     const totalVoteCount = originalVoteCount * metadata.votesMultipleBy;
@@ -95,7 +98,7 @@ async function sessionCompleted(event: Stripe.Event) {
     if (!existingPayment)
       return;
 
-    if (existingPayment.status === "COMPLETED")
+    if (existingPayment.status === "COMPLETED" || existingPayment.status === "FAILED")
       return;
 
     // update payment status
@@ -115,6 +118,7 @@ async function sessionCompleted(event: Stripe.Event) {
         type: "PAID",
         paymentId: metadata.paymentId,
         count: totalVoteCount,
+        comment,
       },
     });
   });

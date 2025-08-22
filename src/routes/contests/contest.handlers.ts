@@ -71,9 +71,14 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
             url: true,
             key: true,
             caption: true,
+
           },
         },
-        awards: true,
+        awards: {
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
       },
       orderBy: {
         startDate: "asc",

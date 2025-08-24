@@ -242,7 +242,16 @@ export const searchUsers: AppRouteHandler<SearchUsers> = async (c) => {
   }
 
   if (type) {
-    where.type = type;
+    switch (type) {
+      case "all":
+        break;
+      case "model":
+        where.type = "MODEL";
+        break;
+      case "voter":
+        where.type = "VOTER";
+        break;
+    }
   }
 
   if (role) {

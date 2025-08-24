@@ -4,6 +4,7 @@ import { jsonContent } from "stoker/openapi/helpers";
 import { createErrorSchema } from "stoker/openapi/schemas";
 
 import { RankSchema } from "@/db/schema/rank.schema";
+import { ConflictResponse, NotFoundResponse } from "@/lib/openapi.responses";
 import { createPaginatedResponseSchema } from "@/lib/queries/query.schema";
 
 const tags = ["Rank"];
@@ -61,24 +62,53 @@ export const assignManualRank = createRoute({
       }),
       "Rank assigned successfully",
     ),
-    [HttpStatusCodes.BAD_REQUEST]: jsonContent(
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
+    [HttpStatusCodes.CONFLICT]: ConflictResponse("Rank already assigned to another profile"),
+
+  },
+});
+
+export const updateComputedRanks = createRoute({
+  path: "/ranks/update-computed",
+  method: "post",
+  tags,
+  summary: "Update Computed Ranks",
+  description: "Cron job endpoint to update computed ranks for all profiles based on vote counts. Designed for large-scale operations.",
+  request: {
+    body: jsonContent(
+      z.object({
+        batchSize: z.number().min(100).max(10000).optional().default(1000).describe("Number of profiles to process in each batch"),
+        forceUpdate: z.boolean().optional().default(false).describe("Force update even if no vote changes detected"),
+      }),
+      "Rank update configuration",
+    ),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      z.object({
+        success: z.boolean(),
+        message: z.string(),
+        summary: z.object({
+          totalProfiles: z.number(),
+          profilesUpdated: z.number(),
+          profilesCreated: z.number(),
+          processingTime: z.number(),
+          batchesProcessed: z.number(),
+        }),
+      }),
+      "Ranks updated successfully",
+    ),
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
       createErrorSchema(
         z.object({
           error: z.string().describe("Error message"),
         }),
       ),
-      "Invalid request data",
-    ),
-    [HttpStatusCodes.CONFLICT]: jsonContent(
-      createErrorSchema(
-        z.object({
-          error: z.string().describe("Rank already assigned to another profile"),
-        }),
-      ),
-      "Rank conflict",
+      "Internal server error",
     ),
   },
 });
 
 export type ListRoute = typeof list;
 export type AssignManualRankRoute = typeof assignManualRank;
+export type UpdateComputedRanksRoute = typeof updateComputedRanks;

@@ -72,6 +72,10 @@ export const searchUsers = createRoute({
     query: UserSearchQuerySchema.extend({
       sortBy: z.enum(["name", "createdAt", "email", "username", "emailVerified", "hasProfile", "role"]).optional().default("createdAt"),
       search: z.string().optional(),
+      type: z.enum(["MODEL", "VOTER"]).optional().openapi({
+        description: "Filter by user type",
+        example: "MODEL",
+      }),
     }),
   },
   responses: {

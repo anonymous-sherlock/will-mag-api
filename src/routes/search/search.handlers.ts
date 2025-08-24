@@ -224,7 +224,7 @@ export const searchContests: AppRouteHandler<SearchContests> = async (c) => {
 };
 
 export const searchUsers: AppRouteHandler<SearchUsers> = async (c) => {
-  const { page, limit, query, search, sortBy, sortOrder, role, isActive, hasProfile } = c.req.valid("query");
+  const { page, limit, query, search, sortBy, sortOrder, role, isActive, hasProfile, type } = c.req.valid("query");
 
   const skip = (page - 1) * limit;
   const take = limit;
@@ -239,6 +239,10 @@ export const searchUsers: AppRouteHandler<SearchUsers> = async (c) => {
       { displayUsername: { contains: query || search } },
       { email: { contains: query || search } },
     ];
+  }
+
+  if (type) {
+    where.type = type;
   }
 
   if (role) {
@@ -296,6 +300,7 @@ export const searchUsers: AppRouteHandler<SearchUsers> = async (c) => {
     name: user.name,
     email: user.email,
     role: user.role,
+    type: user.type,
     isActive: user.isActive,
     image: user.image,
     createdAt: user.createdAt,

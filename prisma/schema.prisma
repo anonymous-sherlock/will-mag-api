@@ -138,6 +138,8 @@ model Profile {
   // MULTIPLE profile gallery images
   profilePhotos Media[] @relation("ProfilePhotos")
 
+  rank Rank? @relation("ProfileRank")
+
   notification Notification[]
 
   payments Payment[]
@@ -149,6 +151,24 @@ model Profile {
   @@fulltext([city])
   @@fulltext([country])
   @@fulltext([bio, city, country, hobbiesAndPassions, paidVoterMessage, freeVoterMessage])
+}
+
+model Rank {
+  id String @id @default(cuid())
+
+  manualRank   Int? @unique
+  computedRank Int? @unique
+
+  profileId    String  @unique
+  profile      Profile @relation("ProfileRank", fields: [profileId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+
+  @@unique([manualRank, computedRank])
+  @@index([computedRank])
+  @@map("rank")
 }
 
 model Notification {
@@ -264,7 +284,7 @@ model Award {
   contest   Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([name, icon, contestId])
   @@map("contest_awards")

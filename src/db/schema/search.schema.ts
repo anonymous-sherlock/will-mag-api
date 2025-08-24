@@ -75,6 +75,7 @@ export const UserSearchResultSchema = z.object({
   name: z.string(),
   email: z.string(),
   role: z.enum(["USER", "ADMIN", "MODERATOR"]),
+  type: z.enum(["MODEL", "VOTER"]),
   isActive: z.boolean(),
   image: z.string().nullable(),
   createdAt: z.date(),

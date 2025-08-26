@@ -30,9 +30,12 @@ export function createBaseAPIRouter() {
 
 export default function createApp() {
   const app = createRouter();
+
+  const developmentOrigins = ["http://localhost:3001", "https://client.scalar.com", "http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "https://app.swingboudoirmag.com", "http://localhost:3002"];
+  const productionOrigins = ["http://localhost:3001", "https://client.scalar.com", "http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "https://app.swingboudoirmag.com", "http://localhost:3002"];
   app
     .use(cors({
-      origin: env.NODE_ENV === "development" ? "*" : ["http://localhost:3001", "http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "https://app.swingboudoirmag.com"],
+      origin: env.NODE_ENV === "production" ? productionOrigins : developmentOrigins,
       allowHeaders: ["Content-Type", "Authorization", "x-uploadthing-package", "traceparent", "x-uploadthing-package", "x-uploadthing-version", "b3", "field"],
       allowMethods: ["POST", "GET", "PATCH", "PUT", "DELETE", "OPTIONS"],
       exposeHeaders: ["Content-Length"],

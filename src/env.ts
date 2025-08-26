@@ -25,6 +25,8 @@ const EnvSchema = z
     FRONTEND_URL: z.string().url(),
     NODEMAILER_USER: z.string(),
     NODEMAILER_APP_PASSWORD: z.string(),
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
   });
 
 export type env = z.infer<typeof EnvSchema>;

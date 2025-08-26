@@ -81,6 +81,16 @@ export const UserSearchResultSchema = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
   hasProfile: z.boolean(),
+  phone: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  country: z.string().optional().nullable(),
+  gender: z.string().optional().nullable(),
+  totalContestsWon: z.number().optional().nullable(),
+  totalContestsParticipated: z.number().optional().nullable(),
+  dateOfBirth: z.date().optional().nullable(),
+  postalCode: z.string().optional().nullable(),
+  emailVerified: z.boolean().optional().nullable(),
 });
 
 export type ProfileSearchQuery = z.infer<typeof ProfileSearchQuerySchema>;

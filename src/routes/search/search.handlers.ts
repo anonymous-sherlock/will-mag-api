@@ -274,6 +274,9 @@ export const searchUsers: AppRouteHandler<SearchUsers> = async (c) => {
   // Build order by clause
   const orderBy: Prisma.UserOrderByWithRelationInput = {};
   switch (sortBy) {
+    case "type":
+      orderBy.type = sortOrder;
+      break;
     case "hasProfile":
       orderBy.profile = {
         userId: sortOrder,
@@ -295,6 +298,30 @@ export const searchUsers: AppRouteHandler<SearchUsers> = async (c) => {
         profile: {
           select: {
             id: true,
+            phone: true,
+            address: true,
+            city: true,
+            country: true,
+            gender: true,
+            dateOfBirth: true,
+            postalCode: true,
+            contestParticipations: {
+              select: {
+                id: true,
+                isParticipating: true,
+                contest: {
+                  select: {
+                    id: true,
+                    status: true,
+                  },
+                },
+              },
+            },
+            contestWon: {
+              select: {
+                id: true,
+              },
+            },
           },
         },
       },
@@ -302,20 +329,37 @@ export const searchUsers: AppRouteHandler<SearchUsers> = async (c) => {
     db.user.count({ where }),
   ]);
 
-  const formattedUsers = users.map(user => ({
-    id: user.id,
-    username: user.username,
-    displayUsername: user.displayUsername,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    type: user.type,
-    isActive: user.isActive,
-    image: user.image,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-    hasProfile: user.profile !== null,
-  }));
+  const formattedUsers = users.map((user) => {
+    // Calculate contest statistics
+    const totalContestsWon = user.profile?.contestWon?.length || 0;
+    const totalContestsParticipated = user.profile?.contestParticipations?.length || 0;
+
+    return {
+      id: user.id,
+      username: user.username,
+      displayUsername: user.displayUsername,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      type: user.type,
+      isActive: user.isActive,
+      image: user.image,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      hasProfile: user.profile !== null,
+      phone: user.profile?.phone,
+      address: user.profile?.address,
+      city: user.profile?.city,
+      country: user.profile?.country,
+      gender: user.profile?.gender,
+      dateOfBirth: user.profile?.dateOfBirth,
+      postalCode: user.profile?.postalCode,
+      emailVerified: user.emailVerified,
+      // Contest statistics
+      totalContestsWon,
+      totalContestsParticipated,
+    };
+  });
 
   const pagination = calculatePaginationMetadata(total, page, limit);
 

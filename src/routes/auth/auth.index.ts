@@ -6,6 +6,8 @@ const router = createBaseAPIRouter()
     const openAPISchema = await auth.api.generateOpenAPISchema();
     const postRequest = openAPISchema.paths["/sign-up/email"]?.post;
     const reqBody = postRequest?.requestBody?.content["application/json"]?.schema;
+    const postSocialRequest = openAPISchema.paths["/sign-in/social"]?.post;
+    const reqBodySocial = postSocialRequest?.requestBody?.content["application/json"]?.schema;
 
     if (reqBody && reqBody.properties) {
       // Add username property if it doesn't exist
@@ -34,6 +36,17 @@ const router = createBaseAPIRouter()
         reqBody.required.push("username");
       }
     }
+
+    if (reqBodySocial && reqBodySocial.properties) {
+      if (!reqBodySocial.properties.type) {
+        reqBodySocial.properties.type = {
+          type: "string",
+          enum: ["MODEL", "VOTER"],
+          description: "User type is required",
+        };
+      }
+    }
+
     return c.json(openAPISchema);
   })
   .on(["POST", "GET", "PUT", "PATCH", "OPTIONS"], "/auth/*", (c) => {

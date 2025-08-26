@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { adminClient } from "better-auth/client/plugins";
-import { bearer, customSession, openAPI, username } from "better-auth/plugins";
+import { bearer, createAuthMiddleware, customSession, openAPI, username } from "better-auth/plugins";
 
 import type { User_Type } from "@/generated/prisma";
 
@@ -33,12 +33,51 @@ export const auth = betterAuth({
       });
     },
   },
+  socialProviders: {
+    google: {
+      clientId: env.GOOGLE_CLIENT_ID!,
+      clientSecret: env.GOOGLE_CLIENT_SECRET!,
+      accessType: "offline",
+      prompt: "select_account+consent",
+
+    },
+  },
   username: {
     enabled: true,
+  },
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      const type = ctx?.body?.type || ctx?.query?.type;
+
+      if (type && ctx?.body?.provider === "google") {
+        console.log("after hook from query/body:", ctx.setHeader("x-user-type", type));
+      }
+    }),
   },
   databaseHooks: {
     user: {
       create: {
+        before: async (user, ctx) => {
+          const cookie = ctx?.getCookie("bu_type");
+
+          if (cookie) {
+            const type = JSON.parse(cookie);
+            if (type === "VOTER") {
+              return {
+                data: {
+                  ...user,
+                  type: "VOTER",
+                },
+              };
+            }
+          }
+          return {
+            data: {
+              ...user,
+              type: "MODEL",
+            },
+          };
+        },
         after: async (user) => {
           if ((user as any).type === "VOTER") {
             await db.profile.create({

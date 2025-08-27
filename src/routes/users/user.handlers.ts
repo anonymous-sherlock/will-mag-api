@@ -8,7 +8,7 @@ import { sendErrorResponse } from "@/helpers/send-error-response";
 import { auth } from "@/lib/auth";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 
-import type { CreateRoute, GetByEmailRoute, GetByUsernameRoute, GetOneRoute, GetUserProfileRoute, ListRoute, PatchRoute, RemoveRoute } from "./user.routes";
+import type { ChangeUserTypeRoute, CreateRoute, GetByEmailRoute, GetByUsernameRoute, GetOneRoute, GetUserProfileRoute, ListRoute, PatchRoute, RemoveRoute } from "./user.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const { page, limit, search, sortBy, sortOrder } = c.req.valid("query");
@@ -53,15 +53,30 @@ export const create: AppRouteHandler<CreateRoute> = async (c) => {
       password: userData.password,
       username: userData.username,
       image: userData.image ?? undefined,
-      type: userData.type,
+      type: userData.type ?? "VOTER",
     },
   });
   const user = await db.user.findFirst({
     where: { id: newUser.user.id },
   });
+
   if (!user) {
     return sendErrorResponse(c, "notFound", "User not found");
   }
+
+  if (userData.type === "VOTER") {
+    await db.profile.upsert({
+      where: { userId: user.id },
+      update: {
+        address: "",
+      },
+      create: {
+        userId: user.id,
+        address: "",
+      },
+    });
+  }
+
   return c.json(user, HttpStatusCodes.CREATED);
 };
 
@@ -179,4 +194,47 @@ export const getUserProfile: AppRouteHandler<GetUserProfileRoute> = async (c) =>
   }
 
   return c.json(user.profile, HttpStatusCodes.OK);
+};
+
+export const changeUserType: AppRouteHandler<ChangeUserTypeRoute> = async (c) => {
+  const { id } = c.req.valid("param");
+  const { type } = c.req.valid("json");
+  const currentUser = c.get("user");
+
+  if (!currentUser) {
+    return sendErrorResponse(c, "unauthorized");
+  }
+
+  // Only admins can change user types
+  if (currentUser.role !== "ADMIN") {
+    return sendErrorResponse(c, "forbidden");
+  }
+
+  const existingUser = await db.user.findUnique({
+    where: { id },
+  });
+
+  if (!existingUser) {
+    return sendErrorResponse(c, "notFound", "User not found");
+  }
+
+  if (type === "VOTER") {
+    await db.profile.upsert({
+      where: { userId: id },
+      update: {
+        address: "",
+      },
+      create: {
+        userId: id,
+        address: "",
+      },
+    });
+  }
+
+  const updatedUser = await db.user.update({
+    where: { id },
+    data: { type },
+  });
+
+  return c.json(updatedUser, HttpStatusCodes.OK);
 };

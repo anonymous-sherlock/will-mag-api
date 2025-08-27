@@ -100,6 +100,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
           username: true,
           displayUsername: true,
           email: true,
+          type: true,
         },
       },
       coverImage: {
@@ -150,6 +151,7 @@ export const getByUserId: AppRouteHandler<GetByUserIdRoute> = async (c) => {
           username: true,
           displayUsername: true,
           email: true,
+          type: true,
         },
       },
       coverImage: {
@@ -204,6 +206,7 @@ export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async (c) => {
               username: true,
               displayUsername: true,
               email: true,
+              type: true,
             },
           },
           coverImage: {

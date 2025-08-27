@@ -33,6 +33,7 @@ export const UserInsertSchema = UserSchema.omit({
 }).extend({
   password: z.string().min(6),
   username: z.string().min(3).max(100),
+  image: z.string().nullable().optional(),
 });
 
 export type User = z.infer<typeof UserSchema>;

@@ -196,6 +196,45 @@ export const getUserProfile = createRoute({
   },
 });
 
+export const changeUserType = createRoute({
+  path: "/users/{id}/type",
+  method: "patch",
+  tags,
+  summary: "Change User Type",
+  description: "Change a specific user's type (admin only)",
+  security: [
+    {
+      BearerAuth: [],
+    },
+  ],
+  request: {
+    params: z.object({
+      id: z.string().describe("The user ID"),
+    }),
+    body: jsonContentRequired(
+      z.object({
+        type: z.enum(["MODEL", "VOTER"]).describe("The new user type"),
+      }),
+      "The user type to change to",
+    ),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      UserSelectSchema,
+      "The updated user",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.FORBIDDEN]: ForbiddenResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("User not found"),
+    [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
+      createErrorSchema(z.object({
+        type: z.enum(["MODEL", "VOTER"]),
+      })),
+      "The validation error(s)",
+    ),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
@@ -204,3 +243,4 @@ export type GetByUsernameRoute = typeof getByUsername;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
 export type GetUserProfileRoute = typeof getUserProfile;
+export type ChangeUserTypeRoute = typeof changeUserType;

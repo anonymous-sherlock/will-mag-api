@@ -63,6 +63,7 @@ export const ProfileSelectSchemaWithMediaRelation = ProfileSchema.extend({
     username: true,
     displayUsername: true,
     email: true,
+    type: true,
   }),
   coverImage: MediaSelectSchema.pick({
     id: true,

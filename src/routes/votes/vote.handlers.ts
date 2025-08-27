@@ -102,12 +102,20 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
   }
 
   // Validate vote count is supported
-  const supportedVoteCounts = [5, 25, 50];
-  if (!supportedVoteCounts.includes(voteCount)) {
+  if (voteCount <= 0) {
     return sendErrorResponse(
       c,
       "badRequest",
-      "Invalid vote count. Supported counts are: 5, 25, 50",
+      "Vote count must be greater than 0",
+    );
+  }
+
+  // For custom votes, validate reasonable limits
+  if (voteCount > 1000) {
+    return sendErrorResponse(
+      c,
+      "badRequest",
+      "Vote count cannot exceed 1000",
     );
   }
 
@@ -185,11 +193,12 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
       case 50:
         return 10; // $10 for 50 votes
       default:
-        return count; // $1 per vote for any other count
+        return count * 0.2; // $0.20 per vote for custom votes
     }
   };
 
   const totalPrice = getPriceForVoteCount(voteCount);
+  const activeMultiplier = await getActiveVoteMultiplier();
   const unitPrice = Math.round((totalPrice / voteCount) * 100); // Convert to cents
 
   const payment = await db.payment.create({
@@ -200,7 +209,6 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
       stripeSessionId: "",
     },
   });
-  const activeMultiplier = await getActiveVoteMultiplier();
 
   // Alternative: For embedded checkout with custom styling
   // const session = await stripe.checkout.sessions.create({

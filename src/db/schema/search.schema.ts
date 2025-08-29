@@ -91,6 +91,18 @@ export const UserSearchResultSchema = z.object({
   dateOfBirth: z.date().optional().nullable(),
   postalCode: z.string().optional().nullable(),
   emailVerified: z.boolean().optional().nullable(),
+  profileId: z.string().optional().nullable(),
+
+  profile: z.object({
+    id: z.string().optional().nullable(),
+    socialMedia: z.object({
+      instagram: z.string().optional().nullable(),
+      tiktok: z.string().optional().nullable(),
+      youtube: z.string().optional().nullable(),
+      twitter: z.string().optional().nullable(),
+      facebook: z.string().optional().nullable(),
+    }),
+  }),
 });
 
 export type ProfileSearchQuery = z.infer<typeof ProfileSearchQuerySchema>;

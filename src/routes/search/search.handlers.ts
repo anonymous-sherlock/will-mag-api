@@ -282,7 +282,11 @@ export const searchUsers: AppRouteHandler<SearchUsers> = async (c) => {
         userId: sortOrder,
       };
       break;
-
+    case "gender":
+      orderBy.profile = {
+        gender: sortOrder,
+      };
+      break;
     default:
       orderBy[sortBy] = sortOrder;
       break;
@@ -305,6 +309,18 @@ export const searchUsers: AppRouteHandler<SearchUsers> = async (c) => {
             gender: true,
             dateOfBirth: true,
             postalCode: true,
+            bio: true,
+
+            // social media
+            instagram: true,
+            tiktok: true,
+            youtube: true,
+            facebook: true,
+            twitter: true,
+            linkedin: true,
+            website: true,
+            other: true,
+
             contestParticipations: {
               select: {
                 id: true,
@@ -355,9 +371,23 @@ export const searchUsers: AppRouteHandler<SearchUsers> = async (c) => {
       dateOfBirth: user.profile?.dateOfBirth,
       postalCode: user.profile?.postalCode,
       emailVerified: user.emailVerified,
+      profileId: user.profile?.id,
       // Contest statistics
       totalContestsWon,
       totalContestsParticipated,
+      profile: {
+        id: user.profile?.id,
+        socialMedia: {
+          instagram: user.profile?.instagram,
+          tiktok: user.profile?.tiktok,
+          youtube: user.profile?.youtube,
+          twitter: user.profile?.twitter,
+          facebook: user.profile?.facebook,
+          linkedin: user.profile?.linkedin,
+          website: user.profile?.website,
+          other: user.profile?.other,
+        },
+      },
     };
   });
 

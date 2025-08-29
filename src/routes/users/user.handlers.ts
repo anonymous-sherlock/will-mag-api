@@ -7,8 +7,9 @@ import { db } from "@/db";
 import { sendErrorResponse } from "@/helpers/send-error-response";
 import { auth } from "@/lib/auth";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
+import { generateUniqueUsernameFromEmail } from "@/utils/username";
 
-import type { ChangeUserTypeRoute, CreateRoute, GetByEmailRoute, GetByUsernameRoute, GetOneRoute, GetUserProfileRoute, ListRoute, PatchRoute, RemoveRoute } from "./user.routes";
+import type { ChangeUserTypeRoute, CreateRoute, GetByEmailRoute, GetByUsernameRoute, GetOneRoute, GetUserProfileRoute, ListRoute, PatchRoute, RemoveRoute, UpdateNullUsernamesRoute } from "./user.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const { page, limit, search, sortBy, sortOrder } = c.req.valid("query");
@@ -237,4 +238,91 @@ export const changeUserType: AppRouteHandler<ChangeUserTypeRoute> = async (c) =>
   });
 
   return c.json(updatedUser, HttpStatusCodes.OK);
+};
+
+export const updateNullUsernames: AppRouteHandler<UpdateNullUsernamesRoute> = async (c) => {
+  const currentUser = c.get("user");
+
+  if (!currentUser) {
+    return sendErrorResponse(c, "unauthorized");
+  }
+
+  // Only admins can update usernames in bulk
+  if (currentUser.role !== "ADMIN") {
+    return sendErrorResponse(c, "forbidden");
+  }
+
+  try {
+    // Find all users with null usernames
+    const usersWithNullUsernames = await db.user.findMany({
+      where: {
+        username: null,
+      },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+      },
+    });
+
+    if (usersWithNullUsernames.length === 0) {
+      return c.json({
+        message: "No users with null usernames found",
+        updatedCount: 0,
+        users: [],
+      }, HttpStatusCodes.OK);
+    }
+
+    const updatedUsers = [];
+    let updatedCount = 0;
+
+    // Update each user's username
+    for (const user of usersWithNullUsernames) {
+      try {
+        // Generate unique username using the utility function
+        const finalUsername = await generateUniqueUsernameFromEmail(
+          user.email,
+          async (username) => {
+            const existingUser = await db.user.findFirst({
+              where: {
+                username,
+                id: { not: user.id },
+              },
+            });
+            return !!existingUser;
+          },
+        );
+
+        // Update the user
+        await db.user.update({
+          where: { id: user.id },
+          data: { username: finalUsername, displayUsername: user.name },
+        });
+
+        updatedUsers.push({
+          id: user.id,
+          email: user.email,
+          oldUsername: user.username,
+          newUsername: finalUsername,
+        });
+
+        updatedCount++;
+      }
+      catch (error) {
+        console.error(`Failed to update username for user ${user.id}:`, error);
+        // Continue with other users even if one fails
+      }
+    }
+
+    return c.json({
+      message: `Successfully updated ${updatedCount} usernames`,
+      updatedCount,
+      users: updatedUsers,
+    }, HttpStatusCodes.OK);
+  }
+  catch (error) {
+    console.error("Error updating null usernames:", error);
+    return sendErrorResponse(c, "internalServerError", "Failed to update usernames");
+  }
 };

@@ -11,6 +11,7 @@ const userRoutes = createRouteBuilder()
   .openapi(routes.patch, handlers.patch, "private")
   .openapi(routes.getUserProfile, handlers.getUserProfile, "private")
   .openapi(routes.changeUserType, handlers.changeUserType, "admin")
-  .openapi(routes.remove, handlers.remove, "admin");
+  .openapi(routes.remove, handlers.remove, "admin")
+  .openapi(routes.updateNullUsernames, handlers.updateNullUsernames, "admin");
 
 export default userRoutes.getRouter();

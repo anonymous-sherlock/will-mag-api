@@ -5,7 +5,7 @@ import { createErrorSchema } from "stoker/openapi/schemas";
 
 import { ProfileSelectSchema } from "@/db/schema/profile.schema";
 import { UserInsertSchema, UserSelectSchema } from "@/db/schema/users.schema";
-import { ForbiddenResponse, NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
+import { ForbiddenResponse, InternalServerErrorResponse, NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
 import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
 
 const tags = ["Users"];
@@ -235,6 +235,37 @@ export const changeUserType = createRoute({
   },
 });
 
+export const updateNullUsernames = createRoute({
+  path: "/users/update-null-usernames",
+  method: "post",
+  tags,
+  summary: "Update Null Usernames",
+  description: "Update usernames for all users who have null usernames (admin only)",
+  security: [
+    {
+      BearerAuth: [],
+    },
+  ],
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      z.object({
+        message: z.string(),
+        updatedCount: z.number(),
+        users: z.array(z.object({
+          id: z.string(),
+          email: z.string(),
+          oldUsername: z.string().nullable(),
+          newUsername: z.string(),
+        })),
+      }),
+      "Username update results",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.FORBIDDEN]: ForbiddenResponse(),
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: InternalServerErrorResponse(),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
@@ -244,3 +275,4 @@ export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
 export type GetUserProfileRoute = typeof getUserProfile;
 export type ChangeUserTypeRoute = typeof changeUserType;
+export type UpdateNullUsernamesRoute = typeof updateNullUsernames;

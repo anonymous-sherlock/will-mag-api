@@ -8,6 +8,7 @@ import type { User_Type } from "@/generated/prisma";
 import { db } from "@/db";
 import env from "@/env";
 import { sendEmailAction } from "@/helpers/send-email-action";
+import { generateUsernameFromEmail } from "@/utils/username";
 
 export const auth = betterAuth({
   appName: "Swing Magazine",
@@ -39,6 +40,15 @@ export const auth = betterAuth({
       clientSecret: env.GOOGLE_CLIENT_SECRET!,
       accessType: "offline",
       prompt: "select_account+consent",
+      mapProfileToUser(profile) {
+        return {
+          email: profile.email,
+          name: profile.name,
+          image: profile.picture,
+          username: generateUsernameFromEmail(profile.email),
+          displayUsername: profile.name,
+        };
+      },
 
     },
   },

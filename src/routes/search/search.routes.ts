@@ -76,6 +76,8 @@ export const searchUsers = createRoute({
         description: "Filter by user type",
         example: "all",
       }),
+      fromDate: z.string().optional().or(z.literal("")).describe("Filter users from this date (ISO string or YYYY-MM-DD)"),
+      toDate: z.string().optional().or(z.literal("")).describe("Filter users until this date (ISO string or YYYY-MM-DD)"),
     }),
   },
   responses: {

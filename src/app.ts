@@ -3,6 +3,7 @@ import { hc } from "hono/client";
 
 import configureOpenAPI from "@/lib/configure-open-api";
 import createApp from "@/lib/create-app";
+import adminVotes from "@/routes/admin/admin-votes.index";
 import analytics from "@/routes/analytics/analytics.index";
 import auth from "@/routes/auth/auth.index";
 import awards from "@/routes/awards/award.index";
@@ -25,7 +26,7 @@ import stripeWebhookRouter from "./routes/webhooks/stripe/stripe.index";
 const app = createApp();
 configureOpenAPI(app);
 
-const routes = [index, auth, user, profile, notification, contest, awards, contestParticipation, vote, voteMultiplier, ranks, payment, leaderboard, uploadthing, search, analytics] as const;
+const routes = [index, auth, user, profile, notification, contest, awards, contestParticipation, vote, voteMultiplier, ranks, payment, leaderboard, uploadthing, search, analytics, adminVotes] as const;
 
 routes.forEach((route) => {
   app.route("/", route);

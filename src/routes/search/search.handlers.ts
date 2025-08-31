@@ -224,7 +224,7 @@ export const searchContests: AppRouteHandler<SearchContests> = async (c) => {
 };
 
 export const searchUsers: AppRouteHandler<SearchUsers> = async (c) => {
-  const { page, limit, query, search, sortBy, sortOrder, role, isActive, hasProfile, type } = c.req.valid("query");
+  const { page, limit, query, search, sortBy, sortOrder, role, isActive, hasProfile, type, fromDate, toDate } = c.req.valid("query");
 
   const skip = (page - 1) * limit;
   const take = limit;
@@ -268,6 +268,20 @@ export const searchUsers: AppRouteHandler<SearchUsers> = async (c) => {
     }
     else {
       where.profile = null;
+    }
+  }
+
+  if (fromDate || toDate) {
+    where.createdAt = {};
+    if (fromDate && fromDate !== "") {
+      // If it's just a date (YYYY-MM-DD), set it to start of day
+      const startDateTime = fromDate.includes("T") ? fromDate : `${fromDate}T00:00:00.000Z`;
+      where.createdAt.gte = new Date(startDateTime);
+    }
+    if (toDate && toDate !== "") {
+      // If it's just a date (YYYY-MM-DD), set it to end of day
+      const endDateTime = toDate.includes("T") ? toDate : `${toDate}T23:59:59.999Z`;
+      where.createdAt.lte = new Date(endDateTime);
     }
   }
 

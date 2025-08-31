@@ -4,7 +4,7 @@ import type { AppRouteHandler } from "@/types/types";
 
 import { db } from "@/db";
 
-import type { GetContestAnalyticsRoute, GetDashboardStatsRoute, GetDetailedAnalyticsRoute } from "./analytics.routes";
+import type { GetContestAnalyticsRoute, GetDashboardStatsRoute, GetDetailedAnalyticsRoute, GetVotesAnalyticsRoute } from "./analytics.routes";
 
 export const getDashboardStats: AppRouteHandler<GetDashboardStatsRoute> = async (c) => {
   // Get all statistics in parallel for better performance
@@ -379,6 +379,128 @@ export const getContestAnalytics: AppRouteHandler<GetContestAnalyticsRoute> = as
     active,
     upcoming,
     prizePool: prizePool._sum.prizePool || 0,
+  };
+
+  return c.json(analytics, HttpStatusCodes.OK);
+};
+
+export const getVotesAnalytics: AppRouteHandler<GetVotesAnalyticsRoute> = async (c) => {
+  // Get vote statistics in parallel for better performance
+  const [totalVotes, freeVotes, paidVotes, topVoters, topVoteRecipients] = await Promise.all([
+    // Total votes count (sum of all vote counts)
+    db.vote.aggregate({
+      _sum: {
+        count: true,
+      },
+    }),
+
+    // Free votes count (sum of free vote counts)
+    db.vote.aggregate({
+      _sum: {
+        count: true,
+      },
+      where: {
+        type: "FREE",
+      },
+    }),
+
+    // Paid votes count (sum of paid vote counts)
+    db.vote.aggregate({
+      _sum: {
+        count: true,
+      },
+      where: {
+        type: "PAID",
+      },
+    }),
+
+    // Top 5 voters (users who have given the most votes)
+    db.vote.groupBy({
+      by: ["voterId"],
+      _sum: {
+        count: true,
+      },
+      orderBy: {
+        _sum: {
+          count: "desc",
+        },
+      },
+      take: 5,
+    }),
+
+    // Top 5 vote recipients (users who have received the most votes)
+    db.vote.groupBy({
+      by: ["voteeId"],
+      _sum: {
+        count: true,
+      },
+      orderBy: {
+        _sum: {
+          count: "desc",
+        },
+      },
+      take: 5,
+    }),
+  ]);
+
+  // Get user details for top voters
+  const topVotersWithDetails = await Promise.all(
+    topVoters.map(async (voter) => {
+      const profile = await db.profile.findUnique({
+        where: { id: voter.voterId },
+        select: {
+          user: {
+            select: {
+              username: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+      });
+
+      return {
+        profileId: voter.voterId,
+        username: profile?.user.username || "",
+        name: profile?.user.name || "",
+        profileImage: profile?.user.image || "",
+        totalVotesGiven: voter._sum.count || 0,
+      };
+    }),
+  );
+
+  // Get user details for top vote recipients
+  const topVoteRecipientsWithDetails = await Promise.all(
+    topVoteRecipients.map(async (recipient) => {
+      const profile = await db.profile.findUnique({
+        where: { id: recipient.voteeId },
+        select: {
+          user: {
+            select: {
+              username: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+      });
+
+      return {
+        profileId: recipient.voteeId,
+        username: profile?.user.username || "",
+        name: profile?.user.name || "",
+        profileImage: profile?.user.image || "",
+        totalVotesReceived: recipient._sum.count || 0,
+      };
+    }),
+  );
+
+  const analytics = {
+    totalVotes: totalVotes._sum.count || 0,
+    freeVotes: freeVotes._sum.count || 0,
+    paidVotes: paidVotes._sum.count || 0,
+    topVoters: topVotersWithDetails,
+    topVoteRecipients: topVoteRecipientsWithDetails,
   };
 
   return c.json(analytics, HttpStatusCodes.OK);

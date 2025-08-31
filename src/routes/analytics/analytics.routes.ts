@@ -1,52 +1,52 @@
-import { createRoute, z } from '@hono/zod-openapi';
-import * as HttpStatusCodes from 'stoker/http-status-codes';
-import { jsonContent } from 'stoker/openapi/helpers';
+import { createRoute, z } from "@hono/zod-openapi";
+import * as HttpStatusCodes from "stoker/http-status-codes";
+import { jsonContent } from "stoker/openapi/helpers";
 
-import { UnauthorizedResponse } from '@/lib/openapi.responses';
+import { UnauthorizedResponse } from "@/lib/openapi.responses";
 
-const tags = ['Analytics'];
+const tags = ["Analytics"];
 
 export const getDashboardStats = createRoute({
-  path: '/analytics/dashboard',
-  method: 'get',
+  path: "/analytics/dashboard",
+  method: "get",
   tags,
-  summary: 'Get Dashboard Statistics',
+  summary: "Get Dashboard Statistics",
   description:
-    'Get comprehensive statistics for admin dashboard including total competitions, users, votes, prize pool, and onboarded users',
+    "Get comprehensive statistics for admin dashboard including total competitions, users, votes, prize pool, and onboarded users",
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
       z.object({
-        totalCompetitions: z.number().describe('Total number of competitions'),
-        totalUsers: z.number().describe('Total number of users'),
-        totalVotes: z.number().describe('Total number of votes cast'),
-        totalPrizePool: z.number().describe('Total prize pool across all competitions'),
-        totalOnboardedUsers: z.number().describe('Total number of users with profiles (onboarded)'),
-        freeVotes: z.number().describe('Total number of free votes'),
-        paidVotes: z.number().describe('Total number of paid votes'),
-        activeCompetitions: z.number().describe('Number of active competitions'),
-        completedCompetitions: z.number().describe('Number of completed competitions'),
-        totalParticipants: z.number().describe('Total number of contest participants'),
-        totalRevenue: z.number().describe('Total revenue from paid votes'),
+        totalCompetitions: z.number().describe("Total number of competitions"),
+        totalUsers: z.number().describe("Total number of users"),
+        totalVotes: z.number().describe("Total number of votes cast"),
+        totalPrizePool: z.number().describe("Total prize pool across all competitions"),
+        totalOnboardedUsers: z.number().describe("Total number of users with profiles (onboarded)"),
+        freeVotes: z.number().describe("Total number of free votes"),
+        paidVotes: z.number().describe("Total number of paid votes"),
+        activeCompetitions: z.number().describe("Number of active competitions"),
+        completedCompetitions: z.number().describe("Number of completed competitions"),
+        totalParticipants: z.number().describe("Total number of contest participants"),
+        totalRevenue: z.number().describe("Total revenue from paid votes"),
       }),
-      'Admin dashboard statistics'
+      "Admin dashboard statistics",
     ),
     [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
   },
 });
 
 export const getDetailedAnalytics = createRoute({
-  path: '/analytics/detailed',
-  method: 'get',
+  path: "/analytics/detailed",
+  method: "get",
   tags,
-  summary: 'Get Detailed Analytics',
-  description: 'Get detailed analytics with time-based data and breakdowns',
+  summary: "Get Detailed Analytics",
+  description: "Get detailed analytics with time-based data and breakdowns",
   request: {
     query: z.object({
       period: z
-        .enum(['7d', '30d', '90d', '1y', 'all'])
+        .enum(["7d", "30d", "90d", "1y", "all"])
         .optional()
-        .default('30d')
-        .describe('Time period for analytics'),
+        .default("30d")
+        .describe("Time period for analytics"),
     }),
   },
   responses: {
@@ -84,28 +84,65 @@ export const getDetailedAnalytics = createRoute({
           averageParticipationRate: z.number(),
         }),
       }),
-      'Detailed analytics data'
+      "Detailed analytics data",
     ),
     [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
   },
 });
 
 export const getContestAnalytics = createRoute({
-  path: '/analytics/contests',
-  method: 'get',
+  path: "/analytics/contests",
+  method: "get",
   tags,
-  summary: 'Get Contest Analytics',
+  summary: "Get Contest Analytics",
   description:
-    'Get contest-specific analytics including total, active, upcoming contests and prize pool',
+    "Get contest-specific analytics including total, active, upcoming contests and prize pool",
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
       z.object({
-        total: z.number().describe('Total number of contests'),
-        active: z.number().describe('Number of active contests'),
-        upcoming: z.number().describe('Number of upcoming contests'),
-        prizePool: z.number().describe('Total prize pool across all contests'),
+        total: z.number().describe("Total number of contests"),
+        active: z.number().describe("Number of active contests"),
+        upcoming: z.number().describe("Number of upcoming contests"),
+        prizePool: z.number().describe("Total prize pool across all contests"),
       }),
-      'Contest analytics data'
+      "Contest analytics data",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+  },
+});
+
+export const getVotesAnalytics = createRoute({
+  path: "/analytics/votes",
+  method: "get",
+  tags,
+  summary: "Get Votes Analytics",
+  description: "Get vote statistics including total votes, free votes, paid votes, top voters, and top vote recipients",
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      z.object({
+        totalVotes: z.number().describe("Total number of votes cast"),
+        freeVotes: z.number().describe("Total number of free votes"),
+        paidVotes: z.number().describe("Total number of paid votes"),
+        topVoters: z.array(
+          z.object({
+            profileId: z.string().describe("The voter's profile ID"),
+            username: z.string().describe("The voter's username"),
+            name: z.string().describe("The voter's name"),
+            profileImage: z.string().describe("The voter's profile image"),
+            totalVotesGiven: z.number().describe("Total number of votes given by this user"),
+          }),
+        ).describe("Top 5 users who have given the most votes"),
+        topVoteRecipients: z.array(
+          z.object({
+            profileId: z.string().describe("The vote recipient's profile ID"),
+            username: z.string().describe("The vote recipient's username"),
+            name: z.string().describe("The vote recipient's name"),
+            profileImage: z.string().describe("The vote recipient's profile image"),
+            totalVotesReceived: z.number().describe("Total number of votes received by this user"),
+          }),
+        ).describe("Top 5 users who have received the most votes"),
+      }),
+      "Votes analytics data",
     ),
     [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
   },
@@ -114,3 +151,4 @@ export const getContestAnalytics = createRoute({
 export type GetDashboardStatsRoute = typeof getDashboardStats;
 export type GetDetailedAnalyticsRoute = typeof getDetailedAnalytics;
 export type GetContestAnalyticsRoute = typeof getContestAnalytics;
+export type GetVotesAnalyticsRoute = typeof getVotesAnalytics;

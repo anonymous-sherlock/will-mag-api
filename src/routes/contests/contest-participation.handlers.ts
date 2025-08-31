@@ -134,6 +134,7 @@ export const getParticipants: AppRouteHandler<GetParticipantsRoute> = async (c) 
                 email: true,
                 name: true,
                 image: true,
+                username: true,
               },
             },
           },

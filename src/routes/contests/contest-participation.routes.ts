@@ -97,6 +97,7 @@ export const getParticipants = createRoute({
               email: true,
               name: true,
               image: true,
+              username: true,
             }).nullable(),
           }).nullable(),
 

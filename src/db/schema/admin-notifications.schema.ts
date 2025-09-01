@@ -31,6 +31,7 @@ export const AdminNotificationSchema = z.object({
     instagram: z.string().nullable(),
     tiktok: z.string().nullable(),
   }),
+  profileId: z.string(),
 });
 
 export const AdminNotificationsResponseSchema = z.object({

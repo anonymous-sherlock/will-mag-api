@@ -161,6 +161,7 @@ export const getAllNotifications: AppRouteHandler<GetAllNotifications> = async (
         instagram: notification.profile.instagram,
         tiktok: notification.profile.tiktok,
       },
+      profileId: notification.profileId,
     };
   });
 

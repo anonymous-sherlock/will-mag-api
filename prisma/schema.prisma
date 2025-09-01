@@ -204,7 +204,7 @@ enum Notification_Type {
 
 enum Icon {
   WARNING
-  SUCESS
+  SUCCESS
   INFO
 }
 

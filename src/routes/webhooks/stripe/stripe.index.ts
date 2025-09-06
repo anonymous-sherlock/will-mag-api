@@ -1,4 +1,4 @@
-import type z from "zod";
+// import type z from "zod";
 
 import { Hono } from "hono";
 import Stripe from "stripe";
@@ -6,8 +6,8 @@ import Stripe from "stripe";
 import { db } from "@/db";
 import { PaymentMetadataSchema } from "@/db/schema/payments.schema";
 import env from "@/env";
+import { updateProfileStatsOnVote } from "@/lib/profile-stats";
 import { stripe } from "@/lib/stripe";
-import { getActiveVoteMultiplier } from "@/lib/vote-multiplier";
 
 const webhookSecret = env.STRIPE_WEBHOOK_SECRET!;
 
@@ -122,6 +122,9 @@ async function sessionCompleted(event: Stripe.Event) {
       },
     });
   });
+
+  // Update ProfileStats for the votee (outside transaction to avoid conflicts)
+  await updateProfileStatsOnVote(metadata.voteeId, "PAID", metadata.voteCount);
 }
 
 async function sessionExpired(event: Stripe.Event) {

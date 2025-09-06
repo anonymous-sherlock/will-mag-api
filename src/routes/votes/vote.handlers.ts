@@ -6,6 +6,7 @@ import { FREE_VOTE_INTERVAL } from "@/constants";
 import { db } from "@/db";
 import env from "@/env";
 import { sendErrorResponse } from "@/helpers/send-error-response";
+import { updateProfileStatsOnVote } from "@/lib/profile-stats";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 import { stripe } from "@/lib/stripe";
 import { getActiveVoteMultiplier } from "@/lib/vote-multiplier";
@@ -62,6 +63,9 @@ export const freeVote: AppRouteHandler<FreeVote> = async (c) => {
   const vote = await db.vote.create({ data });
 
   await updateLastFreeVote(data.voterId);
+
+  // Update ProfileStats for the votee
+  await updateProfileStatsOnVote(data.voteeId, "FREE", 1);
 
   return c.json(vote, HttpStatusCodes.OK);
 };
@@ -210,42 +214,6 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
     },
   });
 
-  // Alternative: For embedded checkout with custom styling
-  // const session = await stripe.checkout.sessions.create({
-  //   metadata: {
-  //     paymentId: payment.id,
-  //     voteeId: votee.id,
-  //     contestId: contest.id,
-  //     voterId: voter.id,
-  //     voteCount,
-  //     votesMultipleBy: activeMultiplier,
-  //   },
-  //   line_items: [
-  //     {
-  //       price_data: {
-  //         currency: "usd",
-  //         unit_amount: unitPrice,
-  //         product_data: {
-  //           name: activeMultiplier > 1 ? `Votes Boost Pack` : "Back Your Favorite",
-  //           ...(votee.coverImage?.url ? { images: [votee.coverImage?.url] } : null),
-  //           description:
-  //             activeMultiplier > 1
-  //               ? `${voteCount} votes boosted by ${activeMultiplier}x = ${voteCount * activeMultiplier} votes for ${votee.user.name}`
-  //               : `${voteCount} votes for ${votee.user.name}`,
-  //         },
-  //       },
-  //       quantity: voteCount,
-  //     },
-  //   ],
-  //   mode: "payment",
-  //   currency: "usd",
-  //   customer_email: voter.user.email,
-  //   success_url: `${env.FRONTEND_URL}/payments/success?callback=/profile/${votee.user.username}`,
-  //   cancel_url: `${env.FRONTEND_URL}/payments/failure?callback=/profile/${votee.user.username}`,
-  //   ui_mode: "embedded",
-  //   return_url: `${env.FRONTEND_URL}/payments/return?session_id={CHECKOUT_SESSION_ID}`,
-  // });
-
   const session = await stripe.checkout.sessions.create({
     metadata: {
       paymentId: payment.id,
@@ -307,7 +275,7 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
     url: session.url,
   };
 
-  console.log(session.url);
+  // console.log(session.url);
 
   return c.json(formattedStripeSession, HttpStatusCodes.OK);
 };

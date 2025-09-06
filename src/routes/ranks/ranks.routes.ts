@@ -4,8 +4,8 @@ import { jsonContent } from "stoker/openapi/helpers";
 import { createErrorSchema } from "stoker/openapi/schemas";
 
 import { RankSchema } from "@/db/schema/rank.schema";
-import { ConflictResponse, NotFoundResponse } from "@/lib/openapi.responses";
-import { createPaginatedResponseSchema } from "@/lib/queries/query.schema";
+import { BadRequestResponse, ConflictResponse, NotFoundResponse } from "@/lib/openapi.responses";
+import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";
 
 const tags = ["Rank"];
 
@@ -16,9 +16,8 @@ export const list = createRoute({
   summary: "Rank List",
   decscription: "",
   request: {
-    query: z.object({
+    query: PaginationQuerySchema.extend({
       limit: z.coerce.number().optional().default(50),
-      page: z.coerce.number().optional().default(1),
     }),
   },
   responses: {
@@ -43,12 +42,12 @@ export const assignManualRank = createRoute({
   method: "post",
   tags,
   summary: "Assign Manual Rank",
-  description: "Admin endpoint to assign manual ranks to profiles (top 20)",
+  description: "Admin endpoint to assign manual ranks to profiles (ranks 1-5 only)",
   request: {
     body: jsonContent(
       z.object({
         profileId: z.string().describe("Profile ID to assign rank to"),
-        manualRank: z.number().min(1).max(20).describe("Manual rank (1-20)"),
+        manualRank: z.number().min(1).max(5).describe("Manual rank (1-5 only)"),
       }),
       "Rank assignment data",
     ),
@@ -63,6 +62,7 @@ export const assignManualRank = createRoute({
       "Rank assigned successfully",
     ),
     [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
+    [HttpStatusCodes.BAD_REQUEST]: BadRequestResponse("Manual ranks can only be assigned to MODEL users"),
     [HttpStatusCodes.CONFLICT]: ConflictResponse("Rank already assigned to another profile"),
 
   },
@@ -73,11 +73,10 @@ export const updateComputedRanks = createRoute({
   method: "post",
   tags,
   summary: "Update Computed Ranks",
-  description: "Cron job endpoint to update computed ranks for all profiles based on vote counts. Designed for large-scale operations.",
+  description: "Cron job endpoint to update computed ranks for all profiles using weighted scoring (paid votes > free votes). Manual ranks restricted to 1-5, computed ranks start from 6+. Designed for large-scale operations.",
   request: {
     body: jsonContent(
       z.object({
-        batchSize: z.number().min(100).max(10000).optional().default(1000).describe("Number of profiles to process in each batch"),
         forceUpdate: z.boolean().optional().default(false).describe("Force update even if no vote changes detected"),
       }),
       "Rank update configuration",
@@ -93,7 +92,11 @@ export const updateComputedRanks = createRoute({
           profilesUpdated: z.number(),
           profilesCreated: z.number(),
           processingTime: z.number(),
-          batchesProcessed: z.number(),
+          availableRanks: z.number().optional().describe("Number of available rank positions (1-5)"),
+          scoringWeights: z.object({
+            paidVoteWeight: z.number(),
+            freeVoteWeight: z.number(),
+          }).optional().describe("Vote scoring weights"),
         }),
       }),
       "Ranks updated successfully",
@@ -109,6 +112,56 @@ export const updateComputedRanks = createRoute({
   },
 });
 
+export const getProfileRank = createRoute({
+  path: "/ranks/profile/{profileId}",
+  method: "get",
+  tags,
+  summary: "Get Profile Rank",
+  description: "Get the rank information for a specific profile by profile ID",
+  request: {
+    params: z.object({
+      profileId: z.string().describe("Profile ID to get rank for"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      RankSchema,
+      "Profile rank retrieved successfully",
+    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
+  },
+});
+
+export const removeManualRank = createRoute({
+  path: "/ranks/remove",
+  method: "post",
+  tags,
+  summary: "Remove Manual Rank",
+  description: "Admin endpoint to assign manual ranks to profiles (ranks 1-5 only)",
+  request: {
+    body: jsonContent(
+      z.object({
+        profileId: z.string().describe("Profile ID to remove rank"),
+      }),
+      "Rank assignment data",
+    ),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      z.object({
+        success: z.boolean(),
+        message: z.string(),
+        rank: RankSchema,
+      }),
+      "Rank removed successfully",
+    ),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("Profile not found"),
+    [HttpStatusCodes.BAD_REQUEST]: BadRequestResponse("Manual ranks can only be removed from MODEL users"),
+  },
+});
+
 export type ListRoute = typeof list;
 export type AssignManualRankRoute = typeof assignManualRank;
+export type RemoveManualRankRoute = typeof removeManualRank;
 export type UpdateComputedRanksRoute = typeof updateComputedRanks;
+export type GetProfileRankRoute = typeof getProfileRank;

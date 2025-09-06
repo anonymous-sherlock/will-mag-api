@@ -3,6 +3,8 @@ import { z } from "zod";
 import { User_Role } from "@/generated/prisma/index.js";
 import { PaginationQuerySchema } from "@/lib/queries/query.schema";
 
+import { MediaSchema } from "./media.schema";
+
 // Base search query schema with common search parameters
 export const BaseSearchQuerySchema = PaginationQuerySchema.extend({
   query: z.string().optional().describe("Search query string"),
@@ -66,6 +68,7 @@ export const ContestSearchResultSchema = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
   status: z.enum(["active", "upcoming", "ended"]),
+  images: z.array(MediaSchema.pick({ id: true, key: true, caption: true, url: true })),
 });
 
 export const UserSearchResultSchema = z.object({

@@ -6,6 +6,7 @@ import * as routes from "./ranks.routes";
 const router = createBaseAPIRouter()
   .openapi(routes.list, handlers.list)
   .openapi(routes.assignManualRank, handlers.assignManualRank)
+  .openapi(routes.removeManualRank, handlers.removeManualRank)
   .openapi(routes.updateComputedRanks, handlers.updateComputedRanks);
 
 export default router;

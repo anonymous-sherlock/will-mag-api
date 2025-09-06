@@ -184,39 +184,18 @@ export const searchContests: AppRouteHandler<SearchContests> = async (c) => {
       take,
       orderBy,
       include: {
-
+        images: {
+          select: {
+            id: true,
+            url: true,
+            key: true,
+            caption: true,
+          },
+        },
       },
     }),
     db.contest.count({ where }),
   ]);
-
-  // const formattedContests = contests.map((contest) => {
-  //   const now = new Date();
-  //   let status: "active" | "upcoming" | "ended";
-
-  //   if (contest.startDate > now) {
-  //     status = "upcoming";
-  //   }
-  //   else if (contest.endDate < now) {
-  //     status = "ended";
-  //   }
-  //   else {
-  //     status = "active";
-  //   }
-
-  //   return {
-  //     id: contest.id,
-  //     name: contest.name,
-  //     description: contest.description,
-  //     startDate: contest.startDate,
-  //     endDate: contest.endDate,
-  //     prizePool: contest.prizePool,
-  //     winnerProfileId: contest.winnerProfileId,
-  //     createdAt: contest.createdAt,
-  //     updatedAt: contest.updatedAt,
-  //     status,
-  //   };
-  // });
 
   const pagination = calculatePaginationMetadata(total, page, limit);
 

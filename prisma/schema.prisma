@@ -143,6 +143,7 @@ model Profile {
   notification Notification[]
 
   payments Payment[]
+  stats    ProfileStats?
 
   @@fulltext([bio])
   @@fulltext([hobbiesAndPassions])
@@ -153,20 +154,34 @@ model Profile {
   @@fulltext([bio, city, country, hobbiesAndPassions, paidVoterMessage, freeVoterMessage])
 }
 
+model ProfileStats {
+  profileId String  @id
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  /// Count of free votes
+  freeVotes Int @default(0)
+
+  /// Count of paid votes
+  paidVotes Int @default(0)
+
+  /// Weighted score (paidVoteWeight * paidVotes + freeVoteWeight * freeVotes)
+  weightedScore Int @default(0)
+
+  lastUpdated DateTime @default(now()) @updatedAt
+}
+
 model Rank {
   id String @id @default(cuid())
 
   manualRank   Int? @unique
   computedRank Int? @unique
 
-  profileId    String  @unique
-  profile      Profile @relation("ProfileRank", fields: [profileId], references: [id], onDelete: Cascade)
+  profileId String  @unique
+  profile   Profile @relation("ProfileRank", fields: [profileId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-
-  @@unique([manualRank, computedRank])
   @@index([computedRank])
   @@map("rank")
 }

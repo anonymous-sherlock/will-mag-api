@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const PayVoteRequestSchema = z.object({
   voteeId: z.string(),
@@ -19,7 +19,7 @@ export const PaymentMetadataSchema = PayVoteRequestSchema.extend({
 export const PaymentHistorySchema = z.object({
   id: z.string(),
   amount: z.number(),
-  status: z.enum(['PENDING', 'COMPLETED', 'FAILED']),
+  status: z.enum(["PENDING", "COMPLETED", "FAILED"]),
   stripeSessionId: z.string(),
   createdAt: z.date(),
   payer: z.object({
@@ -31,7 +31,7 @@ export const PaymentHistorySchema = z.object({
   votes: z.array(
     z.object({
       id: z.string(),
-      type: z.enum(['FREE', 'PAID']),
+      type: z.enum(["FREE", "PAID"]),
       contest: z.object({
         name: z.string(),
       }),
@@ -43,6 +43,6 @@ export const PaymentHistorySchema = z.object({
         }),
       }),
       createdAt: z.date(),
-    })
+    }),
   ),
 });

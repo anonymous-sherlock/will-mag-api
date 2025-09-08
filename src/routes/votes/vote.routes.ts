@@ -6,7 +6,6 @@ import { z } from "zod";
 
 import { PayVoteRequestSchema, PayVoteResponseSchema } from "@/db/schema/payments.schema";
 import {
-  GetLatestVotesResponseSchema,
   GetTopVotersForVoteeResponseSchema,
   GetVotesByProfileIdResponseSchema,
   VoteInsertSchema,

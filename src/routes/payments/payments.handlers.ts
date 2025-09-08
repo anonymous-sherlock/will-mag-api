@@ -1,23 +1,23 @@
-import * as HttpStatusCodes from 'stoker/http-status-codes';
+import * as HttpStatusCodes from "stoker/http-status-codes";
 
-import type { AppRouteHandler } from '@/types/types';
+import type { AppRouteHandler } from "@/types/types";
 
-import { db } from '@/db/index';
-import { sendErrorResponse } from '@/helpers/send-error-response';
-import { calculatePaginationMetadata } from '@/lib/queries/query.helper';
+import { db } from "@/db/index";
+import { sendErrorResponse } from "@/helpers/send-error-response";
+import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 
-import type { GetAllPayments, GetPaymentHistory } from './payments.routes';
+import type { GetAllPayments, GetPaymentHistory } from "./payments.routes";
 
-export const getPaymentHistory: AppRouteHandler<GetPaymentHistory> = async c => {
-  const { page, limit } = c.req.valid('query');
-  const { profileId } = c.req.valid('param');
+export const getPaymentHistory: AppRouteHandler<GetPaymentHistory> = async (c) => {
+  const { page, limit } = c.req.valid("query");
+  const { profileId } = c.req.valid("param");
 
   const profile = await db.profile.findFirst({
     where: { id: profileId },
   });
 
   if (!profile) {
-    return sendErrorResponse(c, 'notFound', 'Profile not found');
+    return sendErrorResponse(c, "notFound", "Profile not found");
   }
 
   const [payments, total] = await Promise.all([
@@ -37,9 +37,9 @@ export const getPaymentHistory: AppRouteHandler<GetPaymentHistory> = async c => 
             user: {
               select: {
                 name: true,
-              }
-            }
-          }
+              },
+            },
+          },
         },
         votes: {
           select: {
@@ -49,7 +49,7 @@ export const getPaymentHistory: AppRouteHandler<GetPaymentHistory> = async c => 
             contest: {
               select: {
                 name: true,
-              }
+              },
             },
             votee: {
               select: {
@@ -57,9 +57,9 @@ export const getPaymentHistory: AppRouteHandler<GetPaymentHistory> = async c => 
                 user: {
                   select: {
                     name: true,
-                  }
-                }
-              }
+                  },
+                },
+              },
             },
             voter: {
               select: {
@@ -67,18 +67,18 @@ export const getPaymentHistory: AppRouteHandler<GetPaymentHistory> = async c => 
                 user: {
                   select: {
                     name: true,
-                  }
-                }
-              }
+                  },
+                },
+              },
             },
-            createdAt: true
-          }
-        }
+            createdAt: true,
+          },
+        },
       },
       skip: (page - 1) * limit,
       take: limit,
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     }),
     db.payment.count({
@@ -95,12 +95,12 @@ export const getPaymentHistory: AppRouteHandler<GetPaymentHistory> = async c => 
       data: payments,
       pagination,
     },
-    HttpStatusCodes.OK
+    HttpStatusCodes.OK,
   );
 };
 
-export const getAllPayments: AppRouteHandler<GetAllPayments> = async c => {
-  const { page, limit } = c.req.valid('query');
+export const getAllPayments: AppRouteHandler<GetAllPayments> = async (c) => {
+  const { page, limit } = c.req.valid("query");
 
   const [payments, total] = await Promise.all([
     db.payment.findMany({
@@ -116,9 +116,9 @@ export const getAllPayments: AppRouteHandler<GetAllPayments> = async c => {
             user: {
               select: {
                 name: true,
-              }
-            }
-          }
+              },
+            },
+          },
         },
         votes: {
           select: {
@@ -128,7 +128,7 @@ export const getAllPayments: AppRouteHandler<GetAllPayments> = async c => {
             contest: {
               select: {
                 name: true,
-              }
+              },
             },
             votee: {
               select: {
@@ -136,9 +136,9 @@ export const getAllPayments: AppRouteHandler<GetAllPayments> = async c => {
                 user: {
                   select: {
                     name: true,
-                  }
-                }
-              }
+                  },
+                },
+              },
             },
             voter: {
               select: {
@@ -146,18 +146,18 @@ export const getAllPayments: AppRouteHandler<GetAllPayments> = async c => {
                 user: {
                   select: {
                     name: true,
-                  }
-                }
-              }
+                  },
+                },
+              },
             },
-            createdAt: true
-          }
-        }
+            createdAt: true,
+          },
+        },
       },
       skip: (page - 1) * limit,
       take: limit,
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     }),
     db.payment.count(),
@@ -170,6 +170,6 @@ export const getAllPayments: AppRouteHandler<GetAllPayments> = async c => {
       data: payments,
       pagination,
     },
-    HttpStatusCodes.OK
+    HttpStatusCodes.OK,
   );
 };

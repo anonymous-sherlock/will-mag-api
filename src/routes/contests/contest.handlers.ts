@@ -7,7 +7,7 @@ import { db } from "@/db";
 import { sendErrorResponse } from "@/helpers/send-error-response";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 import { utapi } from "@/lib/uploadthing";
-import { generateSlug, generateUniqueSlug } from "@/utils/slugify";
+import { generateUniqueSlug } from "@/utils/slugify";
 
 import type { CreateRoute, GetAvailableContestsRoute, GetBySlugRoute, GetContestLeaderboardRoute, GetContestStatsRoute, GetJoinedContestsRoute, GetOneRoute, GetUpcomingContestsRoute, ListRoute, PatchRoute, RemoveContestImageRoute, RemoveRoute, ToggleVotingRoute, UploadContestImagesRoute } from "./contest.routes";
 

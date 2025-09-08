@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { adminClient } from "better-auth/client/plugins";
-import { bearer, createAuthMiddleware, customSession, openAPI, username } from "better-auth/plugins";
+import { bearer, customSession, openAPI, username } from "better-auth/plugins";
 
 import type { User_Type } from "@/generated/prisma";
 
@@ -39,7 +39,7 @@ export const auth = betterAuth({
       clientId: env.GOOGLE_CLIENT_ID!,
       clientSecret: env.GOOGLE_CLIENT_SECRET!,
       accessType: "offline",
-      prompt: "select_account+consent",
+      prompt: "select_account consent",
       mapProfileToUser(profile) {
         return {
           email: profile.email,

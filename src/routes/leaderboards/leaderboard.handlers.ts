@@ -1,17 +1,17 @@
-import * as HttpStatusCodes from 'stoker/http-status-codes';
+import * as HttpStatusCodes from "stoker/http-status-codes";
 
-import type { AppRouteHandler } from '@/types/types';
+import type { AppRouteHandler } from "@/types/types";
 
-import { db } from '@/db';
-import { calculatePaginationMetadata } from '@/lib/queries/query.helper';
+import { db } from "@/db";
+import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 
 import type {
   getLeaderboard as GetLeaderboardRoute,
   GetLeaderboardStatsRoute,
-} from './leaderboard.routes';
+} from "./leaderboard.routes";
 
-export const getLeaderboard: AppRouteHandler<typeof GetLeaderboardRoute> = async c => {
-  const { page = 1, limit = 50 } = c.req.valid('query');
+export const getLeaderboard: AppRouteHandler<typeof GetLeaderboardRoute> = async (c) => {
+  const { page = 1, limit = 50 } = c.req.valid("query");
   const offset = (page - 1) * limit;
 
   // Get total count of profiles with votes and valid usernames
@@ -65,7 +65,7 @@ export const getLeaderboard: AppRouteHandler<typeof GetLeaderboardRoute> = async
     },
     orderBy: {
       votesReceived: {
-        _count: 'desc',
+        _count: "desc",
       },
     },
     skip: offset,
@@ -75,10 +75,10 @@ export const getLeaderboard: AppRouteHandler<typeof GetLeaderboardRoute> = async
   // Sort by paid votes first, then by total votes
   profilesWithVotes.sort((a, b) => {
     const aPaidVotes = a.votesReceived
-      .filter(vote => vote.type === 'PAID')
+      .filter(vote => vote.type === "PAID")
       .reduce((sum, vote) => sum + vote.count, 0);
     const bPaidVotes = b.votesReceived
-      .filter(vote => vote.type === 'PAID')
+      .filter(vote => vote.type === "PAID")
       .reduce((sum, vote) => sum + vote.count, 0);
 
     // First sort by paid votes (descending)
@@ -96,10 +96,10 @@ export const getLeaderboard: AppRouteHandler<typeof GetLeaderboardRoute> = async
   const leaderboardData = profilesWithVotes.map((profile, index) => {
     const totalVotes = profile.votesReceived.reduce((sum, vote) => sum + vote.count, 0);
     const freeVotes = profile.votesReceived
-      .filter(vote => vote.type === 'FREE')
+      .filter(vote => vote.type === "FREE")
       .reduce((sum, vote) => sum + vote.count, 0);
     const paidVotes = profile.votesReceived
-      .filter(vote => vote.type === 'PAID')
+      .filter(vote => vote.type === "PAID")
       .reduce((sum, vote) => sum + vote.count, 0);
     const rank = offset + index + 1;
 
@@ -123,14 +123,14 @@ export const getLeaderboard: AppRouteHandler<typeof GetLeaderboardRoute> = async
   return c.json({ data: leaderboardData, pagination }, HttpStatusCodes.OK);
 };
 
-export const getLeaderboardStats: AppRouteHandler<GetLeaderboardStatsRoute> = async c => {
+export const getLeaderboardStats: AppRouteHandler<GetLeaderboardStatsRoute> = async (c) => {
   const [totalModels, voteAggregate, activeContests] = await Promise.all([
     db.profile.count(),
     db.vote.aggregate({
       _sum: { count: true },
     }),
     db.contest.count({
-      where: { status: 'ACTIVE' },
+      where: { status: "ACTIVE" },
     }),
   ]);
 
@@ -142,6 +142,6 @@ export const getLeaderboardStats: AppRouteHandler<GetLeaderboardStatsRoute> = as
       totalVotes,
       activeContests,
     },
-    HttpStatusCodes.OK
+    HttpStatusCodes.OK,
   );
 };

@@ -4,8 +4,8 @@ import { jsonContent, jsonContentRequired } from "stoker/openapi/helpers";
 import { createErrorSchema } from "stoker/openapi/schemas";
 
 import { ContestParticipationSelectSchema } from "@/db/schema/contest-participation.schema";
-import { ContestSelectSchemaWithAwards, ContestSelectSchemaWithAwardsandImages } from "@/db/schema/contest.schema";
-import { MediaSelectPartial, MediaSelectSchema } from "@/db/schema/media.schema";
+import { ContestSelectSchemaWithAwardsandImages } from "@/db/schema/contest.schema";
+import { MediaSelectPartial } from "@/db/schema/media.schema";
 import { ProfileInsertSchema, ProfileSelectSchema, ProfileSelectSchemaWithMediaRelation } from "@/db/schema/profile.schema";
 import { BadRequestResponse, NotFoundResponse, UnauthorizedResponse } from "@/lib/openapi.responses";
 import { createPaginatedResponseSchema, PaginationQuerySchema } from "@/lib/queries/query.schema";

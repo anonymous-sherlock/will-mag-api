@@ -27,6 +27,9 @@ const EnvSchema = z
     NODEMAILER_APP_PASSWORD: z.string(),
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
+    CLOUDFLARE_TOKEN: z.string().optional(),
+    CLOUDFLARE_KV_NAMESPACE: z.string().optional(),
+    CLOUDFLARE_ACCOUNT_ID: z.string().optional(),
   });
 
 export type env = z.infer<typeof EnvSchema>;
@@ -41,3 +44,14 @@ if (error) {
 }
 
 export default env!;
+
+export function parseEnv(data: any) {
+  const { data: env, error } = EnvSchema.safeParse(data);
+
+  if (error) {
+    const errorMessage = `❌ Invalid env - ${Object.entries(error.flatten().fieldErrors).map(([key, errors]) => `${key}: ${errors.join(",")}`).join(" | ")}`;
+    throw new Error(errorMessage);
+  }
+
+  return env;
+}

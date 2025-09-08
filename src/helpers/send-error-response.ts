@@ -7,7 +7,7 @@ import * as HttpStatusCodes from "stoker/http-status-codes";
 import * as HttpStatusPhrases from "stoker/http-status-phrases";
 
 // Error types
-export type ErrorType = "unauthorized" | "forbidden" | "notFound" | "conflict" | "badRequest" | "serviceUnavailable" | "conflict" | "tooManyRequests" | "internalServerError";
+export type ErrorType = "unauthorized" | "forbidden" | "notFound" | "conflict" | "badRequest" | "serviceUnavailable" | "conflict" | "tooManyRequests" | "internalServerError" | "requestTimeout";
 
 // Presets for common error responses
 const errorPresets = {
@@ -50,6 +50,11 @@ const errorPresets = {
     status: HttpStatusCodes.INTERNAL_SERVER_ERROR,
     statusText: HttpStatusPhrases.INTERNAL_SERVER_ERROR,
     message: "Internal Server Error",
+  },
+  requestTimeout: {
+    status: HttpStatusCodes.REQUEST_TIMEOUT,
+    statusText: "Request Timeout",
+    message: "Request Timeout",
   },
 
 } as const satisfies Record<ErrorType, { status: StatusCode; statusText: string; message: string }>;

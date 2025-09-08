@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { adminClient } from "better-auth/client/plugins";
-import { bearer, createAuthMiddleware, customSession, openAPI, username } from "better-auth/plugins";
+import { bearer, customSession, openAPI, username } from "better-auth/plugins";
 
 import type { User_Type } from "@/generated/prisma";
 

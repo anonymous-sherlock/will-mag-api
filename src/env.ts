@@ -30,6 +30,7 @@ const EnvSchema = z
     CLOUDFLARE_TOKEN: z.string().optional(),
     CLOUDFLARE_KV_NAMESPACE: z.string().optional(),
     CLOUDFLARE_ACCOUNT_ID: z.string().optional(),
+    REDIS_URL: z.string().optional(),
   });
 
 export type env = z.infer<typeof EnvSchema>;

@@ -18,11 +18,15 @@ export const list = createRoute({
   request: {
     query: PaginationQuerySchema.extend({
       limit: z.coerce.number().optional().default(50),
+      profileId: z.string().optional(),
     }),
   },
   responses: {
     [HttpStatusCodes.OK]: jsonContent(
-      createPaginatedResponseSchema(RankSchema),
+      z.object({
+        currentProfile: RankSchema.nullable(),
+        ...createPaginatedResponseSchema(RankSchema).shape,
+      }),
       "The rank list",
     ),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(

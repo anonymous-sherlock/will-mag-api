@@ -120,7 +120,7 @@ export const transformImage: AppRouteHandler<TransformImageRoute> = async (c) =>
     let sharpInstance = sharp(responseBuffer, {
       sequentialRead: true,
       failOnError: false,
-      limitInputPixels: 4096 * 4096,
+      limitInputPixels: 8192 * 8192,
     });
 
     // Apply transformations

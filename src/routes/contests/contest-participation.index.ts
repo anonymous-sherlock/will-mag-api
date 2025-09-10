@@ -10,6 +10,8 @@ const router = createBaseAPIRouter()
   .openapi(routes.getContestWinner, handlers.getContestWinner)
   .openapi(routes.setContestWinner, handlers.setContestWinner)
   .openapi(routes.checkParticipation, handlers.checkParticipation)
-  .openapi(routes.uploadParticipationCoverImage, handlers.uploadParticipationCoverImage);
+  .openapi(routes.uploadParticipationCoverImage, handlers.uploadParticipationCoverImage)
+  .openapi(routes.toggleParticipantApproval, handlers.toggleParticipantApproval)
+  .openapi(routes.bulkToggleParticipantApproval, handlers.bulkToggleParticipantApproval);
 
 export default router;

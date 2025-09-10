@@ -1,7 +1,7 @@
 import * as HttpStatusCodes from "stoker/http-status-codes";
 
 import type { Prisma } from "@/generated/prisma";
-import type { AppRouteHandler } from "@/types/types";
+import type { AppRouteHandler, ProfileWithRankAndStats, TransformedRankData } from "@/types/types";
 
 import { COMPUTED_RANK_START, FILL_MANUAL_GAPS_WITH_COMPUTED, FREE_VOTE_WEIGHT, MAX_MANUAL_RANK, PAID_VOTE_WEIGHT } from "@/constants";
 import { db } from "@/db";
@@ -227,11 +227,23 @@ export const getProfileRank: AppRouteHandler<GetProfileRankRoute> = async (c) =>
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
-  const { limit, page, search } = c.req.valid("query");
+  const { limit, page, search, profileId } = c.req.valid("query");
 
-  const where: Prisma.ProfileWhereInput = {
+  const where: Prisma.ProfileWhereInput = {};
 
-  };
+  let currentProfile: ProfileWithRankAndStats | null = null;
+
+  if (profileId) {
+    currentProfile = await db.profile.findUnique({
+      where: { id: profileId },
+      include: {
+        rank: { select: { id: true, manualRank: true, computedRank: true, createdAt: true, updatedAt: true } },
+        stats: { select: { freeVotes: true, paidVotes: true, weightedScore: true } },
+        user: { select: { name: true, image: true, username: true } },
+      },
+    });
+  }
+
   if (search) {
     where.OR = [
       { user: { email: { contains: search } } },
@@ -254,7 +266,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
     },
   });
 
-  const transformed = allProfiles.map((p) => {
+  const transformed: TransformedRankData[] = allProfiles.map((p) => {
     const rankValue = p.rank?.manualRank ?? p.rank?.computedRank ?? "N/A" as number | "N/A";
     return {
       id: p.rank?.id ?? `temp-${p.id}`,
@@ -270,6 +282,24 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
     };
   });
 
+  const transformedCurrentProfile: TransformedRankData | null = currentProfile
+    ? (() => {
+        const rankValue = currentProfile.rank?.manualRank ?? currentProfile.rank?.computedRank ?? "N/A" as number | "N/A";
+        return {
+          id: currentProfile.rank?.id ?? `temp-${currentProfile.id}`,
+          rank: rankValue,
+          isManualRank: !!currentProfile.rank?.manualRank,
+          profile: { id: currentProfile.id, name: currentProfile.user.name, image: currentProfile.user.image ?? undefined, username: currentProfile.user.username ?? "", bio: currentProfile.bio ?? undefined },
+          stats: {
+            freeVotes: currentProfile.stats?.freeVotes ?? 0,
+            paidVotes: currentProfile.stats?.paidVotes ?? 0,
+          },
+          createdAt: currentProfile.rank?.createdAt ?? new Date(),
+          updatedAt: currentProfile.rank?.updatedAt ?? new Date(),
+        };
+      })()
+    : null;
+
   transformed.sort((a, b) => {
     if (a.rank === "N/A")
       return 1;
@@ -282,6 +312,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
   const pageItems = transformed.slice(start, start + limit);
 
   return c.json({
+    currentProfile: transformedCurrentProfile,
     data: pageItems.map(r => ({
       ...r,
       profile: {

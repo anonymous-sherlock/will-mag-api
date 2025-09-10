@@ -3,6 +3,7 @@ import * as HttpStatusCodes from "stoker/http-status-codes";
 import type { AppRouteHandler } from "@/types/types";
 
 import { db } from "@/db";
+import { CacheLeaderboard } from "@/lib/cache";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 
 import type {

@@ -17,7 +17,7 @@ const CACHE_TTL = 30 * 24 * 60 * 60; // 30 days in seconds
 const CACHE_PREFIX = "img_cache:";
 
 // --- Allowed Hosts (optional for SSRF protection) ---
-const ALLOWED_HOSTS = ["app.swingboudoirmag.com", "images.unsplash.com"];
+// const ALLOWED_HOSTS = ["app.swingboudoirmag.com", "images.unsplash.com"];
 
 // --- Transform Image Route ---
 export const transformImage: AppRouteHandler<TransformImageRoute> = async (c) => {
@@ -51,18 +51,18 @@ export const transformImage: AppRouteHandler<TransformImageRoute> = async (c) =>
       return sendErrorResponse(c, "badRequest", "Image URL is required");
 
     // Optional: SSRF protection
-    try {
-      const parsed = new URL(url);
-      if (env.NODE_ENV === "production") {
-        // ✅ Restrict only in production
-        if (!ALLOWED_HOSTS.includes(parsed.hostname)) {
-          return sendErrorResponse(c, "forbidden", "Host not allowed");
-        }
-      }
-    }
-    catch {
-      return sendErrorResponse(c, "badRequest", "Invalid URL");
-    }
+    // try {
+    //   // const parsed = new URL(url);
+    //   if (env.NODE_ENV === "production") {
+    //     // ✅ Restrict only in production
+    //     // if (!ALLOWED_HOSTS.includes(parsed.hostname)) {
+    //     //   return sendErrorResponse(c, "forbidden", "Host not allowed");
+    //     // }
+    //   }
+    // }
+    // catch {
+    //   return sendErrorResponse(c, "badRequest", "Invalid URL");
+    // }
 
     // Generate cache key for KV storage
     const cacheKey = `${CACHE_PREFIX}${Buffer.from(JSON.stringify(query)).toString("base64")}`;
@@ -120,7 +120,7 @@ export const transformImage: AppRouteHandler<TransformImageRoute> = async (c) =>
     let sharpInstance = sharp(responseBuffer, {
       sequentialRead: true,
       failOnError: false,
-      limitInputPixels: 4096 * 4096,
+      limitInputPixels: 8192 * 8192,
     });
 
     // Apply transformations

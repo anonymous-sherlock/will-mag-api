@@ -5,6 +5,7 @@ import type { AppRouteHandler } from "@/types/types";
 
 import { db } from "@/db";
 import { sendErrorResponse } from "@/helpers/send-error-response";
+import { ContestCacheUtils, getCacheService } from "@/lib/cache";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 import { utapi } from "@/lib/uploadthing";
 import { generateUniqueSlug } from "@/utils/slugify";
@@ -14,87 +15,98 @@ import type { CreateRoute, GetAvailableContestsRoute, GetBySlugRoute, GetContest
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const { page, limit, status, search } = c.req.valid("query");
 
-  const now = new Date();
-  let whereClause: Prisma.ContestWhereInput = {};
+  const result = await ContestCacheUtils.cacheContestList(
+    page,
+    limit,
+    status,
+    search ?? undefined,
+    async () => {
+      const now = new Date();
+      let whereClause: Prisma.ContestWhereInput = {};
 
-  // Apply status filtering
-  switch (status) {
-    case "active":
-    case "booked":
-      whereClause = {
-        startDate: {
-          lte: now,
-        },
-        endDate: {
-          gte: now,
-        },
-      };
-      break;
-    case "upcoming":
-      whereClause = {
-        startDate: {
-          gte: now,
-        },
-      };
-      break;
-    case "ended":
-      whereClause = {
-        endDate: {
-          lt: now,
-        },
-      };
-      break;
-    case "all":
-    default:
-      // No filtering - return all contests
-      whereClause = {};
-      break;
-  }
+      // Apply status filtering
+      switch (status) {
+        case "active":
+        case "booked":
+          whereClause = {
+            startDate: {
+              lte: now,
+            },
+            endDate: {
+              gte: now,
+            },
+          };
+          break;
+        case "upcoming":
+          whereClause = {
+            startDate: {
+              gte: now,
+            },
+          };
+          break;
+        case "ended":
+          whereClause = {
+            endDate: {
+              lt: now,
+            },
+          };
+          break;
+        case "all":
+        default:
+          // No filtering - return all contests
+          whereClause = {};
+          break;
+      }
 
-  if (search) {
-    whereClause.OR = [
-      { name: { contains: search } },
-      { description: { contains: search } },
-      { slug: { contains: search } },
-    ];
-  }
+      if (search) {
+        whereClause.OR = [
+          { name: { contains: search } },
+          { description: { contains: search } },
+          { slug: { contains: search } },
+        ];
+      }
 
-  const [contests, total] = await Promise.all([
-    db.contest.findMany({
-      where: whereClause,
-      skip: (page - 1) * limit,
-      take: limit,
-      include: {
-        images: {
-          select: {
-            id: true,
-            url: true,
-            key: true,
-            caption: true,
+      const [contests, total] = await Promise.all([
+        db.contest.findMany({
+          where: whereClause,
+          skip: (page - 1) * limit,
+          take: limit,
+          include: {
+            images: {
+              select: {
+                id: true,
+                url: true,
+                key: true,
+                caption: true,
 
+              },
+            },
+            awards: {
+              orderBy: {
+                createdAt: "asc",
+              },
+            },
           },
-        },
-        awards: {
           orderBy: {
-            createdAt: "asc",
+            startDate: "asc",
           },
-        },
-      },
-      orderBy: {
-        startDate: "asc",
-      },
-    }),
-    db.contest.count({
-      where: whereClause,
-    }),
-  ]);
+        }),
+        db.contest.count({
+          where: whereClause,
+        }),
+      ]);
 
-  const pagination = calculatePaginationMetadata(total, page, limit);
+      const pagination = calculatePaginationMetadata(total, page, limit);
 
-  return c.json({
-    data: contests,
-    pagination,
-  }, HttpStatusCodes.OK);
+      return {
+        data: contests,
+        pagination,
+      };
+    },
+    300, // 5 minutes cache
+  );
+
+  return c.json(result, HttpStatusCodes.OK);
 };
 
 export const create: AppRouteHandler<CreateRoute> = async (c) => {
@@ -129,37 +141,69 @@ export const create: AppRouteHandler<CreateRoute> = async (c) => {
     },
   });
 
+  // Invalidate cache after creating contest
+  const cache = getCacheService();
+  await cache.invalidateGlobalCache("contest");
+
   return c.json(insertedContest, HttpStatusCodes.CREATED);
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
   const { id } = c.req.valid("param");
-  const contest = await db.contest.findUnique({
-    where: { id },
-    include: {
-      images: true,
-      awards: true,
-    },
-  });
 
-  if (!contest)
+  const contest = await ContestCacheUtils.cacheContestById(
+    id,
+    async () => {
+      const contest = await db.contest.findUnique({
+        where: { id },
+        include: {
+          images: true,
+          awards: true,
+        },
+      });
+
+      if (!contest) {
+        return null;
+      }
+
+      return contest;
+    },
+    600, // 10 minutes cache
+  );
+
+  if (!contest) {
     return sendErrorResponse(c, "notFound", "Contest not found");
+  }
 
   return c.json(contest, HttpStatusCodes.OK);
 };
 
 export const getBySlug: AppRouteHandler<GetBySlugRoute> = async (c) => {
   const { slug } = c.req.valid("param");
-  const contest = await db.contest.findUnique({
-    where: { slug },
-    include: {
-      images: true,
-      awards: true,
-    },
-  });
 
-  if (!contest)
+  const contest = await ContestCacheUtils.cacheContestBySlug(
+    slug,
+    async () => {
+      const contest = await db.contest.findUnique({
+        where: { slug },
+        include: {
+          images: true,
+          awards: true,
+        },
+      });
+
+      if (!contest) {
+        return null;
+      }
+
+      return contest;
+    },
+    600, // 10 minutes cache
+  );
+
+  if (!contest) {
     return sendErrorResponse(c, "notFound", "Contest not found");
+  }
 
   return c.json(contest, HttpStatusCodes.OK);
 };
@@ -217,6 +261,11 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
     },
   });
 
+  // Invalidate cache after updating contest
+  const cache = getCacheService();
+  await cache.invalidateContestCache(id, "update");
+  await cache.invalidateGlobalCache("contest");
+
   return c.json(updatedContest, HttpStatusCodes.OK);
 };
 
@@ -243,6 +292,11 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
       where: { id },
     }),
   ]);
+
+  // Invalidate cache after deleting contest
+  const cache = getCacheService();
+  await cache.invalidateContestCache(id, "update");
+  await cache.invalidateGlobalCache("contest");
 
   return c.json({ message: "Contest deleted successfully" }, HttpStatusCodes.OK);
 };
@@ -409,58 +463,84 @@ export const getJoinedContests: AppRouteHandler<GetJoinedContestsRoute> = async 
 export const getContestStats: AppRouteHandler<GetContestStatsRoute> = async (c) => {
   const { id } = c.req.valid("param");
 
-  const contest = await db.contest.findUnique({
-    where: { id },
-    include: {
-      contestParticipations: {
-        include: {
-          profile: {
-            include: {
-              user: true,
-            },
-          },
+  const stats = await ContestCacheUtils.cacheContestStats(
+    id,
+    async () => {
+      const contest = await db.contest.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          prizePool: true,
+          startDate: true,
+          endDate: true,
         },
-      },
-      votes: true,
-    },
-  });
+      });
 
-  if (!contest) {
+      if (!contest) {
+        return null;
+      }
+
+      const now = new Date();
+      const isActive = contest.startDate <= now && contest.endDate >= now;
+      const daysRemaining = isActive ? Math.ceil((contest.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : undefined;
+
+      // Aggregate votes
+      const [totalVotesAgg, freeVotesAgg, paidVotesAgg] = await Promise.all([
+        db.vote.aggregate({
+          where: { contestId: id },
+          _sum: { count: true },
+        }),
+        db.vote.aggregate({
+          where: { contestId: id, type: "FREE" },
+          _sum: { count: true },
+        }),
+        db.vote.aggregate({
+          where: { contestId: id, type: "PAID" },
+          _sum: { count: true },
+        }),
+      ]);
+
+      const totalVotes = totalVotesAgg._sum.count || 0;
+      const freeVotes = freeVotesAgg._sum.count || 0;
+      const paidVotes = paidVotesAgg._sum.count || 0;
+
+      // Calculate participation statistics
+      // Count participants
+      const [totalParticipants, approvedParticipants] = await Promise.all([
+        db.contestParticipation.count({ where: { contestId: id } }),
+        db.contestParticipation.count({ where: { contestId: id, isApproved: true, isParticipating: true } }),
+      ]);
+
+      const participationRate = totalParticipants > 0
+        ? (approvedParticipants / totalParticipants) * 100
+        : 0;
+
+      const pendingParticipants = totalParticipants - approvedParticipants;
+
+      return {
+        contestId: contest.id,
+        contestName: contest.name,
+        totalParticipants,
+        approvedParticipants,
+        pendingParticipants,
+        totalVotes,
+        freeVotes,
+        paidVotes,
+        totalPrizePool: contest.prizePool,
+        startDate: contest.startDate.toISOString(),
+        endDate: contest.endDate.toISOString(),
+        isActive,
+        daysRemaining,
+        participationRate: Math.round(participationRate * 100) / 100, // 2 decimals
+      };
+    },
+    300, // 5 minutes cache
+  );
+
+  if (!stats) {
     return sendErrorResponse(c, "notFound", "Contest not found");
   }
-
-  const now = new Date();
-  const isActive = contest.startDate <= now && contest.endDate >= now;
-  const daysRemaining = isActive ? Math.ceil((contest.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : undefined;
-
-  // Calculate vote statistics
-  const totalVotes = contest.votes.reduce((sum, vote) => sum + vote.count, 0);
-  const freeVotes = contest.votes
-    .filter(vote => vote.type === "FREE")
-    .reduce((sum, vote) => sum + vote.count, 0);
-  const paidVotes = contest.votes
-    .filter(vote => vote.type === "PAID")
-    .reduce((sum, vote) => sum + vote.count, 0);
-
-  // Calculate participation statistics
-  const totalParticipants = contest.contestParticipations.length;
-  const activeParticipants = contest.contestParticipations.filter(p => p.isParticipating).length;
-  const participationRate = totalParticipants > 0 ? (activeParticipants / totalParticipants) * 100 : 0;
-
-  const stats = {
-    contestId: contest.id,
-    contestName: contest.name,
-    totalParticipants,
-    totalVotes,
-    freeVotes,
-    paidVotes,
-    totalPrizePool: contest.prizePool,
-    startDate: contest.startDate.toISOString(),
-    endDate: contest.endDate.toISOString(),
-    isActive,
-    daysRemaining,
-    participationRate: Math.round(participationRate * 100) / 100, // Round to 2 decimal places
-  };
 
   return c.json(stats, HttpStatusCodes.OK);
 };
@@ -469,108 +549,122 @@ export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> 
   const { id } = c.req.valid("param");
   const { page, limit } = c.req.valid("query");
 
-  const contest = await db.contest.findUnique({
-    where: { id },
-  });
+  const result = await ContestCacheUtils.cacheContestLeaderboard(
+    id,
+    page,
+    limit,
+    async () => {
+      const contest = await db.contest.findUnique({
+        where: { id },
+      });
 
-  if (!contest) {
-    return sendErrorResponse(c, "notFound", "Contest not found");
-  }
+      if (!contest) {
+        return null;
+      }
 
-  const participants = await db.contestParticipation.findMany({
-    where: {
-      contestId: id,
-      isParticipating: true,
-    },
-    include: {
-      coverImage: true,
-      profile: {
+      const participants = await db.contestParticipation.findMany({
+        where: {
+          contestId: id,
+          isParticipating: true,
+        },
         include: {
-          coverImage: {
-            select: {
-              url: true,
-            },
-          },
-          user: {
-            select: {
-              id: true,
-              username: true,
-              displayUsername: true,
-              image: true,
+          coverImage: true,
+          profile: {
+            include: {
+              coverImage: {
+                select: {
+                  url: true,
+                },
+              },
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayUsername: true,
+                  image: true,
+                },
+              },
             },
           },
         },
-      },
-    },
-    skip: (page - 1) * limit,
-    take: limit,
-  });
+        skip: (page - 1) * limit,
+        take: limit,
+      });
 
-  const participantsWithVotes = await Promise.all(
-    participants.map(async (participation) => {
-      const [freeVotesResult, paidVotesResult] = await Promise.all([
-        db.vote.aggregate({
-          where: {
-            contestId: id,
-            voteeId: participation.profileId,
-            type: "FREE",
-          },
-          _sum: {
-            count: true,
-          },
-        }),
-        db.vote.aggregate({
-          where: {
-            contestId: id,
-            voteeId: participation.profileId,
-            type: "PAID",
-          },
-          _sum: {
-            count: true,
-          },
-        }),
-      ]);
+      const participantsWithVotes = await Promise.all(
+        participants.map(async (participation) => {
+          const [freeVotesResult, paidVotesResult] = await Promise.all([
+            db.vote.aggregate({
+              where: {
+                contestId: id,
+                voteeId: participation.profileId,
+                type: "FREE",
+              },
+              _sum: {
+                count: true,
+              },
+            }),
+            db.vote.aggregate({
+              where: {
+                contestId: id,
+                voteeId: participation.profileId,
+                type: "PAID",
+              },
+              _sum: {
+                count: true,
+              },
+            }),
+          ]);
 
-      const freeVotes = freeVotesResult._sum.count || 0;
-      const paidVotes = paidVotesResult._sum.count || 0;
+          const freeVotes = freeVotesResult._sum.count || 0;
+          const paidVotes = paidVotesResult._sum.count || 0;
+
+          return {
+            rank: 0,
+            profileId: participation.profileId,
+            username: participation.profile.user.username || "",
+            displayUsername: participation.profile.user.displayUsername,
+            avatarUrl: participation.profile.coverImage?.url || participation.profile.user.image || null,
+            bio: participation.profile.bio,
+            totalVotes: freeVotes + paidVotes,
+            freeVotes,
+            paidVotes,
+            isParticipating: participation.isParticipating || true,
+            coverImage: participation.coverImage?.url || null,
+            isApproved: participation.isApproved,
+          };
+        }),
+      );
+
+      // Sort by total votes (descending) and assign ranks
+      participantsWithVotes.sort((a, b) => b.totalVotes - a.totalVotes);
+      participantsWithVotes.forEach((participant, index) => {
+        participant.rank = index + 1;
+      });
+
+      // Get total count for pagination
+      const total = await db.contestParticipation.count({
+        where: {
+          contestId: id,
+          isParticipating: true,
+        },
+      });
+
+      const pagination = calculatePaginationMetadata(total, page, limit);
 
       return {
-        rank: 0,
-        profileId: participation.profileId,
-        username: participation.profile.user.username || "",
-        displayUsername: participation.profile.user.displayUsername,
-        avatarUrl: participation.profile.coverImage?.url || participation.profile.user.image || null,
-        bio: participation.profile.bio,
-        totalVotes: freeVotes + paidVotes,
-        freeVotes,
-        paidVotes,
-        isParticipating: participation.isParticipating || true,
-        coverImage: participation.coverImage?.url || null,
-        isApproved: participation.isApproved,
+        data: participantsWithVotes,
+        pagination,
       };
-    }),
+    },
+    300, // 5 minutes cache
   );
 
-  // Sort by total votes (descending) and assign ranks
-  participantsWithVotes.sort((a, b) => b.totalVotes - a.totalVotes);
-  participantsWithVotes.forEach((participant, index) => {
-    participant.rank = index + 1;
-  });
+  if (!result) {
+    return sendErrorResponse(c, "notFound", "Contest not found");
+  }
 
-  // Get total count for pagination
-  const total = await db.contestParticipation.count({
-    where: {
-      contestId: id,
-      isParticipating: true,
-    },
-  });
-
-  const pagination = calculatePaginationMetadata(total, page, limit);
-
-  return c.json({
-    data: participantsWithVotes,
-    pagination,
-  }, HttpStatusCodes.OK);
+  return c.json(result, HttpStatusCodes.OK);
 };
 
 export const uploadContestImages: AppRouteHandler<UploadContestImagesRoute> = async (c) => {
@@ -709,6 +803,10 @@ export const toggleVoting: AppRouteHandler<ToggleVotingRoute> = async (c) => {
       isVotingEnabled: newVotingStatus,
     },
   });
+
+  // Invalidate cache after updating voting status
+  const cache = getCacheService();
+  await cache.invalidateContestCache(id, "update");
 
   const statusMessage = newVotingStatus ? "Voting enabled" : "Voting disabled";
 

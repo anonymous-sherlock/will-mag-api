@@ -212,6 +212,8 @@ export const getContestStats = createRoute({
         contestId: z.string(),
         contestName: z.string(),
         totalParticipants: z.number(),
+        approvedParticipants: z.number(),
+        pendingParticipants: z.number(),
         totalVotes: z.number(),
         freeVotes: z.number(),
         paidVotes: z.number(),

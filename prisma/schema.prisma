@@ -329,7 +329,7 @@ model Vote {
   updatedAt DateTime @updatedAt
 
   @@index([contestId, voteeId, type])
-  @@index([contestId, type])   
+  @@index([contestId, type])
 }
 
 enum Vote_Type {
@@ -370,6 +370,8 @@ model ContestParticipation {
   @@index([contestId])
   @@index([profileId])
   @@index([contestId, profileId])
+  @@index([profileId, isParticipating])
+  @@index([profileId, createdAt])
 }
 
 enum Contest_Participation_Status {

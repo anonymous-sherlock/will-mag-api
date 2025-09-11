@@ -719,7 +719,7 @@ export const getActiveParticipationByProfile: AppRouteHandler<GetActiveParticipa
     limit,
     async () => {
       // Get active participations (contests that are currently running)
-      const [participations, total] = await Promise.all([
+      const [participations, total] = await db.$transaction([
         db.contestParticipation.findMany({
           where: {
             profileId,

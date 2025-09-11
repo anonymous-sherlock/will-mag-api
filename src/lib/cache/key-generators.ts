@@ -93,6 +93,9 @@ export const cacheKeyGenerators: CacheKeyGenerators = {
       const profileKey = profileId ? `:profile:${profileId}` : "";
       return `${CACHE_NAMESPACES.PROFILE}:list:page:${page}:limit:${limit}${searchKey}${profileKey}`;
     },
+
+    activeParticipation: (profileId: string, page = 1, limit = 50) =>
+      `${CACHE_NAMESPACES.PROFILE}:activeParticipation:${profileId}:page:${page}:limit:${limit}`,
   },
 
   vote: {
@@ -146,6 +149,14 @@ export const cacheInvalidationPatterns = {
       cacheKeyGenerators.profile.stats(profileId),
       cacheKeyGenerators.leaderboard.main(),
       cacheKeyGenerators.leaderboard.stats(),
+    ],
+
+    onParticipationChange: (profileId: string) => [
+      // Invalidate all active participation cache for this profile
+      // Note: We can't invalidate specific pages, so we invalidate by tags
+      `profile:activeParticipation:${profileId}:*`,
+      cacheKeyGenerators.profile.stats(profileId),
+      cacheKeyGenerators.leaderboard.main(),
     ],
   },
 

@@ -122,6 +122,7 @@ export interface CacheKeyGenerators {
     rank: (profileId: string) => string;
     stats: (profileId: string) => string;
     list: (page?: number, limit?: number, search?: string, profileId?: string) => string;
+    activeParticipation: (profileId: string, page?: number, limit?: number) => string;
   };
 
   // Vote keys
@@ -142,6 +143,7 @@ export interface CacheInvalidationPatterns {
   profile: {
     onRankChange: (profileId: string) => string[];
     onStatsChange: (profileId: string) => string[];
+    onParticipationChange: (profileId: string) => string[];
   };
 
   global: {

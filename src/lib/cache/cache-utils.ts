@@ -498,3 +498,84 @@ export class LeaderboardCacheUtils {
     );
   }
 }
+
+export class ProfileCacheUtils {
+  private static cache = getCacheService();
+
+  /**
+   * Cache profile rank data
+   */
+  static async cacheProfileRank<T>(
+    profileId: string,
+    queryFn: () => Promise<T>,
+    ttl = 300,
+  ): Promise<T> {
+    const key = cacheKeyGenerators.profile.rank(profileId);
+
+    return CacheUtils.cacheWithTags(
+      queryFn,
+      key,
+      ["profile", "rank"],
+      ttl,
+    );
+  }
+
+  /**
+   * Cache profile stats
+   */
+  static async cacheProfileStats<T>(
+    profileId: string,
+    queryFn: () => Promise<T>,
+    ttl = 300,
+  ): Promise<T> {
+    const key = cacheKeyGenerators.profile.stats(profileId);
+
+    return CacheUtils.cacheWithTags(
+      queryFn,
+      key,
+      ["profile", "stats"],
+      ttl,
+    );
+  }
+
+  /**
+   * Cache profile active participation data
+   */
+  static async cacheProfileActiveParticipation<T>(
+    profileId: string,
+    page: number,
+    limit: number,
+    queryFn: () => Promise<T>,
+    ttl = 300,
+  ): Promise<T> {
+    const key = cacheKeyGenerators.profile.activeParticipation(profileId, page, limit);
+
+    return CacheUtils.cacheWithTags(
+      queryFn,
+      key,
+      ["profile", "participation", "contest"],
+      ttl,
+    );
+  }
+
+  /**
+   * Cache profile list with filters
+   */
+  static async cacheProfileList<T>(
+    page: number,
+    limit: number,
+    search: string | undefined,
+    profileId: string | undefined,
+    queryFn: () => Promise<T>,
+    ttl = 300,
+  ): Promise<T> {
+    const key = cacheKeyGenerators.profile.list(page, limit, search, profileId);
+
+    return CacheUtils.cacheWithTags(
+      queryFn,
+      key,
+      ["profile", "list"],
+      ttl,
+    );
+  }
+}

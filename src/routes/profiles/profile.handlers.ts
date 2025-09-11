@@ -4,6 +4,7 @@ import type { AppRouteHandler } from "@/types/types";
 
 import { db } from "@/db";
 import { sendErrorResponse } from "@/helpers/send-error-response";
+import { ProfileCacheUtils } from "@/lib/cache/cache-utils";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 import { utapi } from "@/lib/uploadthing";
 
@@ -711,26 +712,41 @@ export const getActiveParticipationByProfile: AppRouteHandler<GetActiveParticipa
 
   const now = new Date();
 
-  // Get active participations (contests that are currently running)
-  const [participations, total] = await Promise.all([
-    db.contestParticipation.findMany({
-      where: {
-        profileId,
-        contest: {
-          startDate: { lte: now },
-          endDate: { gte: now },
-          status: { in: ["ACTIVE", "VOTING", "JUDGING", "PUBLISHED", "BOOKED"] },
+  // Use caching for the active participations query
+  const result = await ProfileCacheUtils.cacheProfileActiveParticipation(
+    profileId,
+    page,
+    limit,
+    async () => {
+      // Get active participations (contests that are currently running)
+      const [participations, total] = await Promise.all([
+        db.contestParticipation.findMany({
+          where: {
+            profileId,
+            contest: {
+              startDate: { lte: now },
+              endDate: { gte: now },
+              status: { in: ["ACTIVE", "VOTING", "JUDGING", "PUBLISHED", "BOOKED"] },
 
-        },
-        isParticipating: true,
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-      include: {
-        contest: {
+            },
+            isParticipating: true,
+          },
+          skip: (page - 1) * limit,
+          take: limit,
           include: {
-            awards: true,
-            images: {
+            contest: {
+              include: {
+                awards: true,
+                images: {
+                  select: {
+                    id: true,
+                    url: true,
+                    key: true,
+                  },
+                },
+              },
+            },
+            coverImage: {
               select: {
                 id: true,
                 url: true,
@@ -738,36 +754,32 @@ export const getActiveParticipationByProfile: AppRouteHandler<GetActiveParticipa
               },
             },
           },
-        },
-        coverImage: {
-          select: {
-            id: true,
-            url: true,
-            key: true,
+          orderBy: {
+            createdAt: "desc",
           },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    }),
-    db.contestParticipation.count({
-      where: {
-        profileId,
-        contest: {
-          startDate: { lte: now },
-          endDate: { gte: now },
-          status: { in: ["ACTIVE", "VOTING", "JUDGING", "PUBLISHED", "BOOKED"] },
-        },
-        isParticipating: true,
-      },
-    }),
-  ]);
+        }),
+        db.contestParticipation.count({
+          where: {
+            profileId,
+            contest: {
+              startDate: { lte: now },
+              endDate: { gte: now },
+              status: { in: ["ACTIVE", "VOTING", "JUDGING", "PUBLISHED", "BOOKED"] },
+            },
+            isParticipating: true,
+          },
+        }),
+      ]);
 
-  const pagination = calculatePaginationMetadata(total, page, limit);
+      const pagination = calculatePaginationMetadata(total, page, limit);
 
-  return c.json({
-    data: participations,
-    pagination,
-  }, HttpStatusCodes.OK);
+      return {
+        data: participations,
+        pagination,
+      };
+    },
+    300, // Cache for 5 minutes
+  );
+
+  return c.json(result, HttpStatusCodes.OK);
 };

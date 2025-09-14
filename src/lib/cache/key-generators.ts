@@ -29,9 +29,10 @@ export const CACHE_TAGS = {
 export const cacheKeyGenerators: CacheKeyGenerators = {
   contest: {
     participants: (contestId: string, page = 1, limit = 50, search?: string, status?: string) => {
-      const searchKey = search ? `:search:${search}` : "";
-      const statusKey = status ? `:status:${status}` : "";
-      return `${CACHE_NAMESPACES.CONTEST}:participants:${contestId}:page:${page}:limit:${limit}${searchKey}${statusKey}`;
+      const searchKey = search ? `:search:${search.replace(/[^a-z0-9]/gi, "_")}` : "";
+      const statusKey = status ? `:status:${status.replace(/[^a-z0-9]/gi, "_")}` : "";
+      const key = `${CACHE_NAMESPACES.CONTEST}:participants:${contestId}:page:${page}:limit:${limit}${searchKey}${statusKey}`;
+      return key.slice(0, 512); // Enforce max key length
     },
 
     winner: (contestId: string) =>

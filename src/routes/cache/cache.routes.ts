@@ -460,6 +460,158 @@ export const cacheHealthCheck = createRoute({
   },
 });
 
+/**
+ * Get cache analytics route
+ */
+export const getCacheAnalytics = createRoute({
+  path: "/cache/analytics",
+  method: "get",
+  tags,
+  summary: "Get Cache Analytics",
+  description: "Get comprehensive cache analytics including performance metrics, health status, and trends",
+  responses: {
+    [HttpStatusCodes.OK]: {
+      description: "Cache analytics retrieved successfully",
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.boolean(),
+            data: z.object({
+              performance: z.object({
+                hitRate: z.number(),
+                missRate: z.number(),
+                totalRequests: z.number(),
+                averageResponseTime: z.number(),
+              }),
+              health: z.object({
+                isHealthy: z.boolean(),
+                adapter: z.string(),
+                lastHealthCheck: z.number(),
+              }),
+              memory: z.object({
+                used: z.number(),
+                available: z.number(),
+                utilizationPercent: z.number(),
+              }),
+              keys: z.object({
+                total: z.number(),
+                expired: z.number(),
+                active: z.number(),
+                evicted: z.number(),
+              }),
+              security: z.object({
+                violations: z.number(),
+                rateLimitHits: z.number(),
+                blockedRequests: z.number(),
+              }),
+              topKeys: z.array(z.object({
+                key: z.string(),
+                hits: z.number(),
+                lastAccessed: z.number(),
+              })),
+              trends: z.object({
+                hitRateTrend: z.array(z.number()),
+                memoryTrend: z.array(z.number()),
+                requestTrend: z.array(z.number()),
+                timestamps: z.array(z.number()),
+              }),
+            }),
+            timestamp: z.string(),
+          }),
+        },
+      },
+    },
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: InternalServerErrorResponse("Failed to get cache analytics"),
+  },
+});
+
+/**
+ * Get cache analytics summary route
+ */
+export const getCacheAnalyticsSummary = createRoute({
+  path: "/cache/analytics/summary",
+  method: "get",
+  tags,
+  summary: "Get Cache Analytics Summary",
+  description: "Get a quick summary of cache performance and health status",
+  responses: {
+    [HttpStatusCodes.OK]: {
+      description: "Cache analytics summary retrieved successfully",
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.boolean(),
+            data: z.object({
+              status: z.enum(["healthy", "warning", "critical"]),
+              hitRate: z.number(),
+              memoryUsage: z.number(),
+              totalRequests: z.number(),
+              errors: z.number(),
+            }),
+            timestamp: z.string(),
+          }),
+        },
+      },
+    },
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: InternalServerErrorResponse("Failed to get cache analytics summary"),
+  },
+});
+
+/**
+ * Export cache analytics route
+ */
+export const exportCacheAnalytics = createRoute({
+  path: "/cache/analytics/export",
+  method: "get",
+  tags,
+  summary: "Export Cache Analytics",
+  description: "Export comprehensive cache analytics data as JSON file",
+  responses: {
+    [HttpStatusCodes.OK]: {
+      description: "Cache analytics exported successfully",
+      content: {
+        "application/json": {
+          schema: z.object({
+            analytics: z.any(),
+            exportTime: z.number(),
+            version: z.string(),
+          }),
+        },
+      },
+      headers: z.object({
+        "Content-Disposition": z.string().describe("Attachment filename"),
+      }),
+    },
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: InternalServerErrorResponse("Failed to export cache analytics"),
+  },
+});
+
+/**
+ * Clear cache analytics route
+ */
+export const clearCacheAnalytics = createRoute({
+  path: "/cache/analytics",
+  method: "delete",
+  tags,
+  summary: "Clear Cache Analytics",
+  description: "Clear all cached analytics data and reset analytics tracking",
+  responses: {
+    [HttpStatusCodes.OK]: {
+      description: "Cache analytics cleared successfully",
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.boolean(),
+            message: z.string(),
+            timestamp: z.string(),
+          }),
+        },
+      },
+    },
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: InternalServerErrorResponse("Failed to clear cache analytics"),
+  },
+});
+
 // Export route types
 export type ClearAllCacheRoute = typeof clearAllCache;
 export type GetCacheStatsRoute = typeof getCacheStats;
@@ -474,3 +626,7 @@ export type DeleteCacheKeysRoute = typeof deleteCacheKeys;
 export type WarmupCacheRoute = typeof warmupCache;
 export type GetCacheTagsRoute = typeof getCacheTags;
 export type CacheHealthCheckRoute = typeof cacheHealthCheck;
+export type GetCacheAnalyticsRoute = typeof getCacheAnalytics;
+export type GetCacheAnalyticsSummaryRoute = typeof getCacheAnalyticsSummary;
+export type ExportCacheAnalyticsRoute = typeof exportCacheAnalytics;
+export type ClearCacheAnalyticsRoute = typeof clearCacheAnalytics;

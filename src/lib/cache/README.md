@@ -6,7 +6,7 @@ A comprehensive, type-safe caching service layer for the Will Mag API with suppo
 
 - **Type-safe**: Full TypeScript support with proper type inference
 - **Multiple backends**: Redis and in-memory adapters with automatic fallback
-- **Decorators**: Easy-to-use decorators for route handlers
+- **Manual cache management**: Explicit cache control with utility functions
 - **Tag-based invalidation**: Smart cache invalidation using tags
 - **Batch operations**: Efficient batch get/set operations
 - **Statistics**: Built-in cache statistics and monitoring
@@ -36,22 +36,58 @@ await cache.set("contest:456", { title: "Contest 1" }, {
 await cache.invalidateByTags(["contest"]);
 ```
 
-### Using Decorators
+### Manual Cache Management
 
 ```typescript
-import { CacheContestParticipants, CacheLeaderboard } from "@/lib/cache";
+import { getCacheService } from "@/lib/cache";
 
 export class ContestHandlers {
-  @CacheContestParticipants(300) // Cache for 5 minutes
   async getParticipants(c: any) {
-    // Your existing handler logic
-    return c.json({ data: [], pagination: {} }, 200);
+    const cache = getCacheService();
+    const { contestId } = c.req.valid("param");
+    const { page = 1, limit = 50, search, status } = c.req.valid("query");
+
+    // Generate cache key
+    const cacheKey = `contest:${contestId}:participants:${page}:${limit}:${search || ""}:${status || ""}`;
+
+    // Try to get from cache
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      return c.json(cached, 200);
+    }
+
+    // Your existing handler logic here
+    const result = { data: [], pagination: {} };
+
+    // Cache the result
+    await cache.set(cacheKey, result, {
+      ttl: 300, // 5 minutes
+      tags: ["contest", "participants"]
+    });
+
+    return c.json(result, 200);
   }
 
-  @CacheLeaderboard(600) // Cache for 10 minutes
   async getLeaderboard(c: any) {
-    // Your existing handler logic
-    return c.json({ data: [], pagination: {} }, 200);
+    const cache = getCacheService();
+    const { page = 1, limit = 50 } = c.req.valid("query");
+
+    const cacheKey = `leaderboard:${page}:${limit}`;
+
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      return c.json(cached, 200);
+    }
+
+    // Your existing handler logic here
+    const result = { data: [], pagination: {} };
+
+    await cache.set(cacheKey, result, {
+      ttl: 600, // 10 minutes
+      tags: ["leaderboard"]
+    });
+
+    return c.json(result, 200);
   }
 }
 ```
@@ -96,15 +132,11 @@ REDIS_URL=redis://localhost:6379
 ### Cache Configuration
 
 ```typescript
-import { createCacheService } from "@/lib/cache";
+import { getCacheService } from "@/lib/cache";
 
-const cache = createCacheService({
-  defaultTtl: 300, // 5 minutes default TTL
-  maxSize: 100 * 1024 * 1024, // 100MB max size
-  enableCompression: false,
-  keyPrefix: "will-mag:",
-  enableStats: true,
-});
+const cache = getCacheService();
+// Cache service uses default configuration
+// Configuration can be modified via environment variables
 ```
 
 ## Cache Key Patterns
@@ -184,7 +216,7 @@ See `src/lib/cache/examples.ts` for comprehensive usage examples.
 
 ## API Reference
 
-### CacheService
+### Cache Service Methods
 
 - `get<T>(key: CacheKey): Promise<T | null>`
 - `set<T>(key: CacheKey, value: T, options?: CacheOptions): Promise<void>`
@@ -196,18 +228,9 @@ See `src/lib/cache/examples.ts` for comprehensive usage examples.
 - `clear(): Promise<void>`
 - `stats(): Promise<CacheStats>`
 - `invalidateByTags(tags: string[]): Promise<number>`
-
-### Decorators
-
-- `@Cache(options?: CacheDecoratorOptions)`
-- `@CacheContestParticipants(ttl?: number)`
-- `@CacheLeaderboard(ttl?: number)`
-- `@CacheAnalytics(type: string, ttl?: number)`
-- `@CacheProfileRank(ttl?: number)`
-- `@InvalidateCache(patterns: string[] | Function)`
-- `@InvalidateContestCache(type: string)`
-- `@InvalidateProfileCache(type: string)`
-- `@InvalidateGlobalCache(type: string)`
+- `invalidateContestCache(contestId: string, type: string): Promise<void>`
+- `invalidateProfileCache(profileId: string, type: string): Promise<void>`
+- `invalidateGlobalCache(type: string): Promise<void>`
 
 ### Utility Classes
 

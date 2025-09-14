@@ -7,6 +7,7 @@ import { notFound, onError, serveEmojiFavicon } from "stoker/middlewares";
 import { defaultHook } from "stoker/openapi";
 
 import env from "@/env";
+import { cacheInterceptor } from "@/middlewares/cache-interceptor";
 import { pinoLogger } from "@/middlewares/pino-logger";
 
 import type { AppBindings, AppOpenAPI } from "../types/types";
@@ -44,7 +45,8 @@ export default function createApp() {
     }))
     .use(requestId())
     .use(serveEmojiFavicon("📝"))
-    .use(pinoLogger());
+    .use(pinoLogger())
+    .use(cacheInterceptor());
 
   app.notFound(notFound);
   app.onError(onError);

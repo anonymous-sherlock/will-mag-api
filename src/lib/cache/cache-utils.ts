@@ -32,6 +32,44 @@ export class CacheUtils {
   }
 
   /**
+   * Cache a function result and return cache hit information
+   */
+  static async cacheWithInfo<T>(
+    fn: () => Promise<T>,
+    key: CacheKey,
+    ttl = 300,
+  ): Promise<{ data: T; fromCache: boolean; cacheKey: string }> {
+    const cached = await this.cache.get<T>(key);
+    if (cached !== null) {
+      // Track cache hit for interceptor
+      this.trackCacheHit(key, true);
+      return { data: cached, fromCache: true, cacheKey: key };
+    }
+
+    const result = await fn();
+    await this.cache.set(key, result, { ttl });
+    // Track cache miss for interceptor
+    this.trackCacheHit(key, false);
+    return { data: result, fromCache: false, cacheKey: key };
+  }
+
+  /**
+   * Track cache hit for interceptor (if available)
+   */
+  private static trackCacheHit(key: string, fromCache: boolean) {
+    try {
+      // Use global function set by middleware
+      const trackFn = (globalThis as any).__trackCacheHit;
+      if (trackFn) {
+        trackFn(key, fromCache);
+      }
+    }
+    catch {
+      // Interceptor not available, ignore
+    }
+  }
+
+  /**
    * Cache database query results
    */
   static async cacheQuery<T>(

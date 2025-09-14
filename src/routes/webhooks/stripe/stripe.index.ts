@@ -101,12 +101,13 @@ async function sessionCompleted(event: Stripe.Event) {
     if (existingPayment.status === "COMPLETED" || existingPayment.status === "FAILED")
       return;
 
-    // update payment status
+    // update payment status and store comment
     await tx.payment.update({
       where: { id: metadata.paymentId },
       data: {
         status: "COMPLETED",
         stripeSessionId: eventObject.id,
+        intendedComment: comment,
       },
     });
     // create vote
@@ -134,6 +135,8 @@ async function sessionExpired(event: Stripe.Event) {
     throw new Error("Missing metadata in checkout session");
   }
 
+  const comment = eventObject.custom_fields?.find(field => field.key === "comment")?.text?.value || null;
+
   const metadata = PaymentMetadataSchema.parse({
     ...eventObject.metadata,
     voteCount: Number.parseInt(eventObject.metadata.voteCount || "0"),
@@ -141,6 +144,10 @@ async function sessionExpired(event: Stripe.Event) {
 
   await db.payment.update({
     where: { id: metadata.paymentId },
-    data: { status: "FAILED", stripeSessionId: eventObject.id },
+    data: {
+      status: "FAILED",
+      stripeSessionId: eventObject.id,
+      intendedComment: comment,
+    },
   });
 }

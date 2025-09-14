@@ -142,8 +142,9 @@ model Profile {
 
   notification Notification[]
 
-  payments Payment[]
-  stats    ProfileStats?
+  payments         Payment[]
+  stats            ProfileStats?
+  paymentsReceived Payment[]     @relation("PaymentIntendedVotee")
 
   @@fulltext([bio])
   @@fulltext([hobbiesAndPassions])
@@ -275,8 +276,9 @@ model Contest {
   requirements String? @db.LongText
 
   // Audit
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  payments  Payment[] @relation("PaymentIntendedContest")
 
   // Indexes
   @@index([status])
@@ -455,6 +457,16 @@ model Payment {
   stripeSessionId String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  // Intent fields (who/what payment is for)
+  intendedVoteeId String?
+  intendedVotee   Profile? @relation("PaymentIntendedVotee", fields: [intendedVoteeId], references: [id], onDelete: SetNull)
+
+  intendedContestId String?
+  intendedContest   Contest? @relation("PaymentIntendedContest", fields: [intendedContestId], references: [id], onDelete: SetNull)
+
+  intendedVoteCount Int?
+  intendedComment   String? @db.Text
 }
 
 enum Payment_Status {

@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+import { Payment_Status } from "@/generated/prisma";
+
+// ===== PAY VOTE REQUEST/RESPONSE =====
 export const PayVoteRequestSchema = z.object({
   voteeId: z.string(),
   voterId: z.string(),
@@ -11,38 +14,47 @@ export const PayVoteResponseSchema = z.object({
   url: z.string(),
 });
 
+// ===== STRIPE METADATA =====
 export const PaymentMetadataSchema = PayVoteRequestSchema.extend({
   paymentId: z.string(),
-  votesMultipleBy: z.coerce.number().int().positive().optional().default(1),
+  votesMultipleBy: z.coerce.number().int().positive().default(1),
 });
 
-export const PaymentHistorySchema = z.object({
+// ===== PAYMENT SCHEMA =====
+export const PaymentSchema = z.object({
   id: z.string(),
   amount: z.number(),
-  status: z.enum(["PENDING", "COMPLETED", "FAILED"]),
+  status: z.nativeEnum(Payment_Status),
   stripeSessionId: z.string(),
-  createdAt: z.date(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
   payer: z.object({
     id: z.string(),
     user: z.object({
-      name: z.string(),
+      name: z.string().nullable(),
+      username: z.string().nullable(),
+      image: z.string().nullable(),
     }),
   }),
-  votes: z.array(
-    z.object({
-      id: z.string(),
-      type: z.enum(["FREE", "PAID"]),
-      contest: z.object({
-        name: z.string(),
-      }),
-      count: z.coerce.number(),
-      votee: z.object({
-        id: z.string(),
-        user: z.object({
-          name: z.string(),
-        }),
-      }),
-      createdAt: z.date(),
+  model: z.object({
+    id: z.string(),
+    user: z.object({
+      name: z.string().nullable(),
+      username: z.string().nullable(),
+      image: z.string().nullable(),
     }),
-  ),
+  }),
+  contest: z.object({
+    id: z.string(),
+    name: z.string(),
+    slug: z.string(),
+  }).nullable(),
+  comment: z.string().nullable(),
+  voteCount: z.number().nullable(),
 });
+
+// ===== TYPE EXPORTS =====
+export type PayVoteRequest = z.infer<typeof PayVoteRequestSchema>;
+export type PayVoteResponse = z.infer<typeof PayVoteResponseSchema>;
+export type PaymentMetadata = z.infer<typeof PaymentMetadataSchema>;
+export type Payment = z.infer<typeof PaymentSchema>;

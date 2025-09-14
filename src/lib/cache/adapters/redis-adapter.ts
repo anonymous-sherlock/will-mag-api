@@ -8,19 +8,32 @@ import type { CacheAdapter, CacheConfig, CacheKey, CacheOptions, CacheStats, Cac
 
 export class RedisCacheAdapter implements CacheAdapter {
   private client: any; // Redis client
+  private isConnected = false;
+  private connectionFailed = false;
+  private lastHealthCheck = 0;
+  private healthCheckInterval = 30000; // 30 seconds
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
   private cacheStats = {
     hits: 0,
     misses: 0,
     keys: 0,
     memory: 0,
     uptime: Date.now(),
+    connectionErrors: 0,
+    reconnects: 0,
   };
 
   constructor(
     private config: CacheConfig,
     private redisUrl?: string,
   ) {
-    this.initializeRedis();
+    // Initialize Redis asynchronously without blocking constructor
+    this.initializeRedis().catch((error) => {
+      this.connectionFailed = true;
+      this.isConnected = false;
+      console.warn("Redis initialization failed:", error instanceof Error ? error.message : error);
+    });
   }
 
   private async initializeRedis(): Promise<void> {
@@ -30,21 +43,46 @@ export class RedisCacheAdapter implements CacheAdapter {
 
       this.client = createClient({
         url: this.redisUrl || env.REDIS_URL || "redis://localhost:6379",
+        socket: {
+          reconnectStrategy: false, // Disable automatic reconnection
+          connectTimeout: 5000, // 5 second timeout
+        },
       });
 
       this.client.on("error", (err: Error) => {
-        console.error("Redis Client Error:", err);
+        if (!this.connectionFailed) {
+          console.error("Redis Client Error:", err);
+        }
+        this.isConnected = false;
+      });
+
+      this.client.on("connect", () => {
+        this.isConnected = true;
+        this.connectionFailed = false;
+        console.warn("✅ Redis connected successfully");
+      });
+
+      this.client.on("disconnect", () => {
+        this.isConnected = false;
       });
 
       await this.client.connect();
+      this.isConnected = true;
     }
     catch (error) {
-      console.warn("Redis not available, falling back to memory cache:", error);
-      throw new Error("Redis connection failed");
+      this.connectionFailed = true;
+      this.isConnected = false;
+      console.warn("Redis not available, falling back to memory cache:", error instanceof Error ? error.message : error);
+      // Don't throw error - let the cache service handle fallback
     }
   }
 
   async get<T = CacheValue>(key: CacheKey): Promise<T | null> {
+    if (!this.isConnected || this.connectionFailed) {
+      this.cacheStats.misses++;
+      return null;
+    }
+
     try {
       const fullKey = this.getFullKey(key);
       const value = await this.client.get(fullKey);
@@ -65,6 +103,10 @@ export class RedisCacheAdapter implements CacheAdapter {
   }
 
   async set<T = CacheValue>(key: CacheKey, value: T, options: CacheOptions = {}): Promise<void> {
+    if (!this.isConnected || this.connectionFailed) {
+      return; // Silently fail when Redis is not available
+    }
+
     try {
       const fullKey = this.getFullKey(key);
       const ttl = options.ttl ?? this.config.defaultTtl;
@@ -81,11 +123,15 @@ export class RedisCacheAdapter implements CacheAdapter {
     }
     catch (error) {
       console.error("Redis set error:", error);
-      throw error;
+      // Don't throw error, just fail silently
     }
   }
 
   async del(key: CacheKey): Promise<boolean> {
+    if (!this.isConnected || this.connectionFailed) {
+      return false;
+    }
+
     try {
       const fullKey = this.getFullKey(key);
       const result = await this.client.del(fullKey);
@@ -105,6 +151,10 @@ export class RedisCacheAdapter implements CacheAdapter {
   }
 
   async delMany(keys: CacheKey[]): Promise<number> {
+    if (!this.isConnected || this.connectionFailed) {
+      return 0;
+    }
+
     try {
       const fullKeys = keys.map(key => this.getFullKey(key));
       const result = await this.client.del(fullKeys);
@@ -125,6 +175,10 @@ export class RedisCacheAdapter implements CacheAdapter {
   }
 
   async exists(key: CacheKey): Promise<boolean> {
+    if (!this.isConnected || this.connectionFailed) {
+      return false;
+    }
+
     try {
       const fullKey = this.getFullKey(key);
       const result = await this.client.exists(fullKey);
@@ -137,6 +191,10 @@ export class RedisCacheAdapter implements CacheAdapter {
   }
 
   async getMany<T = CacheValue>(keys: CacheKey[]): Promise<(T | null)[]> {
+    if (!this.isConnected || this.connectionFailed) {
+      return keys.map(() => null);
+    }
+
     try {
       const fullKeys = keys.map(key => this.getFullKey(key));
       const values = await this.client.mGet(fullKeys);
@@ -158,6 +216,10 @@ export class RedisCacheAdapter implements CacheAdapter {
   }
 
   async setMany<T = CacheValue>(entries: Array<{ key: CacheKey; value: T; options?: CacheOptions }>): Promise<void> {
+    if (!this.isConnected || this.connectionFailed) {
+      return; // Silently fail when Redis is not available
+    }
+
     try {
       const pipeline = this.client.multi();
 
@@ -178,11 +240,15 @@ export class RedisCacheAdapter implements CacheAdapter {
     }
     catch (error) {
       console.error("Redis setMany error:", error);
-      throw error;
+      // Don't throw error, just fail silently
     }
   }
 
   async clear(): Promise<void> {
+    if (!this.isConnected || this.connectionFailed) {
+      return; // Silently fail when Redis is not available
+    }
+
     try {
       const pattern = `${this.config.keyPrefix}*`;
       const keys = await this.client.keys(pattern);
@@ -195,7 +261,7 @@ export class RedisCacheAdapter implements CacheAdapter {
     }
     catch (error) {
       console.error("Redis clear error:", error);
-      throw error;
+      // Don't throw error, just fail silently
     }
   }
 
@@ -221,6 +287,10 @@ export class RedisCacheAdapter implements CacheAdapter {
   }
 
   async invalidateByTags(tags: string[]): Promise<number> {
+    if (!this.isConnected || this.connectionFailed) {
+      return 0;
+    }
+
     try {
       let deletedCount = 0;
 
@@ -258,6 +328,77 @@ export class RedisCacheAdapter implements CacheAdapter {
     catch (error) {
       console.error("Redis close error:", error);
     }
+  }
+
+  /**
+   * Health check for Redis connection
+   */
+  async healthCheck(): Promise<{ healthy: boolean; latency: number; error?: string }> {
+    const startTime = Date.now();
+
+    try {
+      if (!this.client || !this.isConnected) {
+        return { healthy: false, latency: 0, error: "Not connected" };
+      }
+
+      // Simple ping to check connection
+      await this.client.ping();
+
+      const latency = Date.now() - startTime;
+      this.lastHealthCheck = Date.now();
+
+      return { healthy: true, latency };
+    }
+    catch (error) {
+      this.cacheStats.connectionErrors++;
+      this.isConnected = false;
+
+      return {
+        healthy: false,
+        latency: Date.now() - startTime,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+
+  /**
+   * Attempt to reconnect to Redis
+   */
+  async reconnect(): Promise<boolean> {
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.warn("Max reconnection attempts reached");
+      return false;
+    }
+
+    this.reconnectAttempts++;
+    console.warn(`Attempting Redis reconnection (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+
+    try {
+      if (this.client) {
+        await this.client.quit();
+      }
+
+      await this.initializeRedis();
+      this.reconnectAttempts = 0;
+      this.cacheStats.reconnects++;
+      console.warn("✅ Redis reconnected successfully");
+      return true;
+    }
+    catch (error) {
+      console.error("Redis reconnection failed:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Get connection status
+   */
+  getConnectionStatus(): { connected: boolean; lastHealthCheck: number; reconnectAttempts: number } {
+    return {
+      connected: this.isConnected,
+      lastHealthCheck: this.lastHealthCheck,
+      reconnectAttempts: this.reconnectAttempts,
+    };
   }
 
   private getFullKey(key: CacheKey): string {

@@ -4,7 +4,8 @@ import type { AppRouteHandler } from "@/types/types";
 
 import { db } from "@/db";
 import { sendErrorResponse } from "@/helpers/send-error-response";
-import { ProfileCacheUtils } from "@/lib/cache/cache-utils";
+import { getCacheService } from "@/lib/cache/cache-service";
+import { CacheUtils, ProfileCacheUtils } from "@/lib/cache/cache-utils";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 import { utapi } from "@/lib/uploadthing";
 
@@ -27,43 +28,58 @@ import type {
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const { page, limit } = c.req.valid("query");
 
-  const [profiles, total] = await Promise.all([
-    db.profile.findMany({
-      skip: (page - 1) * limit,
-      take: limit,
-      include: {
-        coverImage: {
-          select: {
-            id: true,
-            key: true,
-            caption: true,
-            url: true,
+  // Use cached data for both profiles and total count with hit information
+  const [profilesResult, countResult] = await Promise.all([
+    CacheUtils.cacheWithInfo(
+      async () => {
+        return db.profile.findMany({
+          skip: (page - 1) * limit,
+          take: limit,
+          include: {
+            coverImage: {
+              select: {
+                id: true,
+                key: true,
+                caption: true,
+                url: true,
+              },
+            },
+            bannerImage: {
+              select: {
+                id: true,
+                key: true,
+                caption: true,
+                url: true,
+              },
+            },
+            user: {
+              select: {
+                name: true,
+                displayUsername: true,
+                username: true,
+                image: true,
+              },
+            },
           },
-        },
-        bannerImage: {
-          select: {
-            id: true,
-            key: true,
-            caption: true,
-            url: true,
+          orderBy: {
+            createdAt: "asc",
           },
-        },
-        user: {
-          select: {
-            name: true,
-            displayUsername: true,
-            username: true,
-            image: true,
-          },
-        },
+        });
       },
-      orderBy: {
-        createdAt: "asc",
+      `profile:list:page:${page}:limit:${limit}`,
+      300,
+    ),
+    CacheUtils.cacheWithInfo(
+      async () => {
+        return db.profile.count();
       },
-    }),
-    db.profile.count(),
+      `profile:count:page:${page}:limit:${limit}`,
+      300,
+    ),
   ]);
 
+  const profiles = profilesResult.data;
+  const total = countResult.data;
   const pagination = calculatePaginationMetadata(total, page, limit);
 
   return c.json(
@@ -86,6 +102,11 @@ export const create: AppRouteHandler<CreateRoute> = async (c) => {
       ...profile,
     },
   });
+
+  // Invalidate profile list cache when a profile is created/updated
+  const cache = getCacheService();
+  await cache.invalidateByTags(["profile", "list"]);
+
   return c.json(insertedProfile, HttpStatusCodes.CREATED);
 };
 
@@ -277,6 +298,10 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
     }),
   ]);
 
+  // Invalidate profile list cache when a profile is updated
+  const cache = getCacheService();
+  await cache.invalidateByTags(["profile", "list"]);
+
   return c.json(updatedProfile, HttpStatusCodes.OK);
 };
 
@@ -293,6 +318,10 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
   await db.profile.delete({
     where: { id },
   });
+
+  // Invalidate profile list cache when a profile is deleted
+  const cache = getCacheService();
+  await cache.invalidateByTags(["profile", "list"]);
 
   return c.json({ message: "Profile deleted successfully" }, HttpStatusCodes.OK);
 };

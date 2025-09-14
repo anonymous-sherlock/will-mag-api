@@ -19,7 +19,11 @@ const cacheRouter = createRouteBuilder()
   .openapi(routes.deleteCacheKeys, handlers.deleteCacheKeys)
   .openapi(routes.warmupCache, handlers.warmupCache)
   .openapi(routes.getCacheTags, handlers.getCacheTags)
-  .openapi(routes.cacheHealthCheck, handlers.cacheHealthCheck);
+  .openapi(routes.cacheHealthCheck, handlers.cacheHealthCheck)
+  .openapi(routes.getCacheAnalytics, handlers.getCacheAnalytics)
+  .openapi(routes.getCacheAnalyticsSummary, handlers.getCacheAnalyticsSummary)
+  .openapi(routes.exportCacheAnalytics, handlers.exportCacheAnalytics)
+  .openapi(routes.clearCacheAnalytics, handlers.clearCacheAnalytics);
 
 export default cacheRouter.getRouter();
 
@@ -27,8 +31,12 @@ export default cacheRouter.getRouter();
 export {
   cacheHealthCheck,
   clearAllCache,
+  clearCacheAnalytics,
   deleteCacheKey,
   deleteCacheKeys,
+  exportCacheAnalytics,
+  getCacheAnalytics,
+  getCacheAnalyticsSummary,
   getCacheStats,
   getCacheTags,
   invalidateCacheByTag,
@@ -44,8 +52,12 @@ export {
 export type {
   CacheHealthCheckRoute,
   ClearAllCacheRoute,
+  ClearCacheAnalyticsRoute,
   DeleteCacheKeyRoute,
   DeleteCacheKeysRoute,
+  ExportCacheAnalyticsRoute,
+  GetCacheAnalyticsRoute,
+  GetCacheAnalyticsSummaryRoute,
   GetCacheStatsRoute,
   GetCacheTagsRoute,
   InvalidateCacheByTagRoute,

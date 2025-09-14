@@ -4,6 +4,7 @@ import * as routes from "./payments.routes";
 
 const paymentRouter = createRouteBuilder()
   .openapi(routes.getPaymentHistory, handlers.getPaymentHistory, "private")
-  .openapi(routes.getAllPayments, handlers.getAllPayments, "admin");
+  .openapi(routes.getAllPayments, handlers.getAllPayments, "admin")
+  .openapi(routes.getPaymentAnalytics, handlers.getPaymentAnalytics, "admin");
 
 export default paymentRouter.getRouter();

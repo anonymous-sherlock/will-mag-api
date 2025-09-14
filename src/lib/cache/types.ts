@@ -57,6 +57,9 @@ export interface CacheStats {
   keys: number;
   memory: number;
   uptime: number;
+  evictions?: number;
+  connectionErrors?: number;
+  reconnects?: number;
 }
 
 export interface CacheConfig {
@@ -64,12 +67,18 @@ export interface CacheConfig {
   defaultTtl: number;
   /** Maximum cache size in bytes */
   maxSize: number;
+  /** Maximum number of keys */
+  maxKeys?: number;
+  /** Maximum memory usage in bytes */
+  maxMemory?: number;
   /** Whether to enable compression */
   enableCompression: boolean;
   /** Cache key prefix */
   keyPrefix: string;
   /** Whether to enable statistics */
   enableStats: boolean;
+  /** Eviction policy */
+  evictionPolicy?: "lru" | "lfu" | "fifo";
 }
 
 export type CacheStrategy = "write-through" | "write-behind" | "write-around";
@@ -79,6 +88,9 @@ export interface CacheEntry<T = CacheValue> {
   ttl: number;
   createdAt: number;
   tags?: string[];
+  compressed?: boolean;
+  originalSize?: number;
+  compressedSize?: number;
 }
 
 export interface CacheMetadata {

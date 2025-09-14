@@ -5,13 +5,11 @@
 import type { User } from "@/generated/prisma";
 
 import { AnalyticsCacheUtils, ContestCacheUtils, LeaderboardCacheUtils } from "./cache-utils";
-import { CacheAnalytics, CacheContestParticipants, CacheLeaderboard, getCacheService } from "./index";
+import { getCacheService } from "./index";
 
 // Example 1: Basic cache usage
 export async function basicCacheExample() {
-  const cache = getCacheService({
-    enableCompression: true,
-  });
+  const cache = getCacheService();
 
   // Simple get/set
   await cache.set("user:123", { name: "John", email: "john@example.com" }, { ttl: 300 });
@@ -27,25 +25,74 @@ export async function basicCacheExample() {
   await cache.invalidateByTags(["contest"]);
 }
 
-// Example 2: Using decorators in route handlers
+// Example 2: Manual cache management in route handlers
 export class ContestHandlers {
-  // @CacheContestParticipants(300) // Cache for 5 minutes
   async getParticipants(c: any) {
-    // Your existing handler logic
-    // The decorator will automatically cache the result
-    return c.json({ data: [], pagination: {} }, 200);
+    const cache = getCacheService();
+    const { contestId } = c.req.valid("param");
+    const { page = 1, limit = 50, search, status } = c.req.valid("query");
+
+    // Generate cache key
+    const cacheKey = `contest:${contestId}:participants:${page}:${limit}:${search || ""}:${status || ""}`;
+
+    // Try to get from cache
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      return c.json(cached, 200);
+    }
+
+    // Your existing handler logic here
+    const result = { data: [], pagination: {} };
+
+    // Cache the result
+    await cache.set(cacheKey, result, {
+      ttl: 300, // 5 minutes
+      tags: ["contest", "participants"],
+    });
+
+    return c.json(result, 200);
   }
 
-  // @CacheLeaderboard(600) // Cache for 10 minutes
   async getLeaderboard(c: any) {
-    // Your existing handler logic
-    return c.json({ data: [], pagination: {} }, 200);
+    const cache = getCacheService();
+    const { page = 1, limit = 50 } = c.req.valid("query");
+
+    const cacheKey = `leaderboard:${page}:${limit}`;
+
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      return c.json(cached, 200);
+    }
+
+    // Your existing handler logic here
+    const result = { data: [], pagination: {} };
+
+    await cache.set(cacheKey, result, {
+      ttl: 600, // 10 minutes
+      tags: ["leaderboard"],
+    });
+
+    return c.json(result, 200);
   }
 
-  // @CacheAnalytics("dashboard", 900) // Cache for 15 minutes
   async getDashboardStats(c: any) {
-    // Your existing handler logic
-    return c.json({ stats: {} }, 200);
+    const cache = getCacheService();
+    const cacheKey = "analytics:dashboard";
+
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      return c.json(cached, 200);
+    }
+
+    // Your existing handler logic here
+    const result = { stats: {} };
+
+    await cache.set(cacheKey, result, {
+      ttl: 900, // 15 minutes
+      tags: ["analytics", "dashboard"],
+    });
+
+    return c.json(result, 200);
   }
 }
 

@@ -8,6 +8,7 @@ import * as HttpStatusCodes from "stoker/http-status-codes";
 import type { AppRouteHandler } from "@/types/types";
 
 import { sendErrorResponse } from "@/helpers/send-error-response";
+import { getAnalyticsService } from "@/lib/cache/analytics";
 import { getCacheService } from "@/lib/cache/cache-service";
 import { CacheUtils } from "@/lib/cache/cache-utils";
 import { CACHE_TAGS } from "@/lib/cache/key-generators";
@@ -15,8 +16,12 @@ import { CACHE_TAGS } from "@/lib/cache/key-generators";
 import type {
   CacheHealthCheckRoute,
   ClearAllCacheRoute,
+  ClearCacheAnalyticsRoute,
   DeleteCacheKeyRoute,
   DeleteCacheKeysRoute,
+  ExportCacheAnalyticsRoute,
+  GetCacheAnalyticsRoute,
+  GetCacheAnalyticsSummaryRoute,
   GetCacheStatsRoute,
   GetCacheTagsRoute,
   InvalidateCacheByTagRoute,
@@ -337,5 +342,85 @@ export const cacheHealthCheck: AppRouteHandler<CacheHealthCheckRoute> = async (c
   catch (error) {
     console.error("Cache health check error:", error);
     return sendErrorResponse(c, "internalServerError", "Cache service is unhealthy");
+  }
+};
+
+/**
+ * Get cache analytics
+ */
+export const getCacheAnalytics: AppRouteHandler<GetCacheAnalyticsRoute> = async (c) => {
+  try {
+    const analyticsService = getAnalyticsService();
+    const analytics = await analyticsService.getAnalytics();
+
+    return c.json({
+      success: true,
+      data: analytics,
+      timestamp: new Date().toISOString(),
+    }, HttpStatusCodes.OK);
+  }
+  catch (error) {
+    console.error("Cache analytics error:", error);
+    return sendErrorResponse(c, "internalServerError", "Failed to get cache analytics");
+  }
+};
+
+/**
+ * Get cache analytics summary
+ */
+export const getCacheAnalyticsSummary: AppRouteHandler<GetCacheAnalyticsSummaryRoute> = async (c) => {
+  try {
+    const analyticsService = getAnalyticsService();
+    const summary = await analyticsService.getSummary();
+
+    return c.json({
+      success: true,
+      data: summary,
+      timestamp: new Date().toISOString(),
+    }, HttpStatusCodes.OK);
+  }
+  catch (error) {
+    console.error("Cache analytics summary error:", error);
+    return sendErrorResponse(c, "internalServerError", "Failed to get cache analytics summary");
+  }
+};
+
+/**
+ * Export cache analytics
+ */
+export const exportCacheAnalytics: AppRouteHandler<ExportCacheAnalyticsRoute> = async (c) => {
+  try {
+    const analyticsService = getAnalyticsService();
+    const exportData = await analyticsService.exportData();
+
+    // Set headers for file download
+    c.header("Content-Type", "application/json");
+    c.header("Content-Disposition", `attachment; filename="cache-analytics-${Date.now()}.json"`);
+
+    return c.json(exportData, HttpStatusCodes.OK);
+  }
+  catch (error) {
+    console.error("Export cache analytics error:", error);
+    return sendErrorResponse(c, "internalServerError", "Failed to export cache analytics");
+  }
+};
+
+/**
+ * Clear cache analytics
+ */
+export const clearCacheAnalytics: AppRouteHandler<ClearCacheAnalyticsRoute> = async (c) => {
+  try {
+    const analyticsService = getAnalyticsService();
+    analyticsService.clear();
+
+    return c.json({
+      success: true,
+      message: "Cache analytics data cleared successfully",
+      timestamp: new Date().toISOString(),
+    }, HttpStatusCodes.OK);
+  }
+  catch (error) {
+    console.error("Clear cache analytics error:", error);
+    return sendErrorResponse(c, "internalServerError", "Failed to clear cache analytics");
   }
 };

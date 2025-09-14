@@ -211,6 +211,11 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
       status: "PENDING",
       payerId: voter.id,
       stripeSessionId: "",
+      // Store voting intent data
+      intendedVoteeId: votee.id,
+      intendedContestId: contest.id,
+      intendedVoteCount: voteCount,
+      intendedComment: null,
     },
   });
 

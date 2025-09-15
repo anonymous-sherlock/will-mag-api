@@ -10,7 +10,7 @@ import type { GetAllVotes } from "./admin-votes.routes";
 
 export const getAllVotes: AppRouteHandler<GetAllVotes> = async (c) => {
   const query = c.req.valid("query");
-  const { page = 1, limit = 20, contestId, voterId, voteeId, search, type, startDate, endDate, sortBy, sortOrder } = query;
+  const { page = 1, limit = 20, contestId, voterId, modelId, search, type, startDate, endDate, sortBy, sortOrder } = query;
   // Build where clause for filtering
   const where: Prisma.VoteWhereInput = {};
 
@@ -22,8 +22,8 @@ export const getAllVotes: AppRouteHandler<GetAllVotes> = async (c) => {
     where.voterId = voterId;
   }
 
-  if (voteeId) {
-    where.voteeId = voteeId;
+  if (modelId) {
+    where.voteeId = modelId;
   }
 
   if (search) {

@@ -405,8 +405,7 @@ export const uploadCoverImage: AppRouteHandler<UploadCoverImageRoute> = async (c
       await db.media.delete({
         where: { id: oldCoverImage.id },
       });
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Error deleting old cover image:", error);
       // Don't fail the request if deletion fails, just log it
     }
@@ -486,8 +485,7 @@ export const uploadBannerImage: AppRouteHandler<UploadBannerImageRoute> = async 
       await db.media.delete({
         where: { id: oldBannerImage.id },
       });
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Error deleting old banner image:", error);
       // Don't fail the request if deletion fails, just log it
     }
@@ -602,8 +600,7 @@ export const removeProfileImage: AppRouteHandler<RemoveProfileImageRoute> = asyn
     });
 
     return c.json({ message: "Image removed successfully" }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Error removing profile image:", error);
     return sendErrorResponse(c, "badRequest", "Failed to remove image");
   }

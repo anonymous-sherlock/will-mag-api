@@ -68,8 +68,7 @@ export class RedisCacheAdapter implements CacheAdapter {
 
       await this.client.connect();
       this.isConnected = true;
-    }
-    catch (error) {
+    } catch (error) {
       this.connectionFailed = true;
       this.isConnected = false;
       console.warn("Redis not available, falling back to memory cache:", error instanceof Error ? error.message : error);
@@ -94,8 +93,7 @@ export class RedisCacheAdapter implements CacheAdapter {
 
       this.cacheStats.hits++;
       return JSON.parse(value) as T;
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Redis get error:", error);
       this.cacheStats.misses++;
 
@@ -127,8 +125,7 @@ export class RedisCacheAdapter implements CacheAdapter {
       }
 
       this.cacheStats.keys++;
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Redis set error:", error);
 
       // Mark connection as failed if we get a client closed error
@@ -157,8 +154,7 @@ export class RedisCacheAdapter implements CacheAdapter {
       }
 
       return result > 0;
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Redis del error:", error);
       return false;
     }
@@ -181,8 +177,7 @@ export class RedisCacheAdapter implements CacheAdapter {
       }
 
       return result;
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Redis delMany error:", error);
       return 0;
     }
@@ -197,8 +192,7 @@ export class RedisCacheAdapter implements CacheAdapter {
       const fullKey = this.getFullKey(key);
       const result = await this.client.exists(fullKey);
       return result === 1;
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Redis exists error:", error);
       return false;
     }
@@ -222,8 +216,7 @@ export class RedisCacheAdapter implements CacheAdapter {
         this.cacheStats.hits++;
         return JSON.parse(value) as T;
       });
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Redis getMany error:", error);
       return keys.map(() => null);
     }
@@ -251,8 +244,7 @@ export class RedisCacheAdapter implements CacheAdapter {
 
       await pipeline.exec();
       this.cacheStats.keys += entries.length;
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Redis setMany error:", error);
       // Don't throw error, just fail silently
     }
@@ -272,8 +264,7 @@ export class RedisCacheAdapter implements CacheAdapter {
       }
 
       this.cacheStats.keys = 0;
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Redis clear error:", error);
       // Don't throw error, just fail silently
     }
@@ -299,8 +290,7 @@ export class RedisCacheAdapter implements CacheAdapter {
         memory,
         uptime: Date.now() - this.cacheStats.uptime,
       };
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Redis stats error:", error);
 
       // Mark connection as failed if we get a client closed error
@@ -343,8 +333,7 @@ export class RedisCacheAdapter implements CacheAdapter {
       }
 
       return deletedCount;
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Redis invalidateByTags error:", error);
       return 0;
     }
@@ -358,8 +347,7 @@ export class RedisCacheAdapter implements CacheAdapter {
           if (this.isConnected) {
             await this.client.quit();
           }
-        }
-        catch (quitError) {
+        } catch (quitError) {
           // Ignore quit errors - client might already be closed
           console.warn("Client quit error during close (ignoring):", quitError instanceof Error ? quitError.message : quitError);
         }
@@ -369,8 +357,7 @@ export class RedisCacheAdapter implements CacheAdapter {
         this.isConnected = false;
         this.connectionFailed = true;
       }
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Redis close error:", error);
     }
   }
@@ -397,8 +384,7 @@ export class RedisCacheAdapter implements CacheAdapter {
       this.lastHealthCheck = Date.now();
 
       return { healthy: true, latency };
-    }
-    catch (error) {
+    } catch (error) {
       this.cacheStats.connectionErrors++;
       this.isConnected = false;
 
@@ -435,8 +421,7 @@ export class RedisCacheAdapter implements CacheAdapter {
           if (this.isConnected) {
             await this.client.quit();
           }
-        }
-        catch (quitError) {
+        } catch (quitError) {
           // Ignore quit errors - client might already be closed
           console.warn("Client quit error during reconnect (ignoring):", quitError instanceof Error ? quitError.message : quitError);
         }
@@ -463,8 +448,7 @@ export class RedisCacheAdapter implements CacheAdapter {
         this.connectionFailed = true;
         return false;
       }
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Redis reconnection failed:", error);
       this.connectionFailed = true;
       this.isConnected = false;
@@ -493,8 +477,7 @@ export class RedisCacheAdapter implements CacheAdapter {
         await this.client.sAdd(`tags:${key}`, tag);
         await this.client.sAdd(`tag:${tag}`, key);
       }
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Redis addTagsToKey error:", error);
     }
   }
@@ -508,8 +491,7 @@ export class RedisCacheAdapter implements CacheAdapter {
       }
 
       await this.client.del(`tags:${key}`);
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Redis removeTagsFromKey error:", error);
     }
   }

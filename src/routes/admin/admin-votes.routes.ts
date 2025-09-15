@@ -19,7 +19,7 @@ export const getAllVotes = createRoute({
     query: PaginationQuerySchema.extend({
       contestId: z.string().optional().describe("Filter votes by contest ID"),
       voterId: z.string().optional().describe("Filter votes by voter ID"),
-      voteeId: z.string().optional().describe("Filter votes by votee ID"),
+      modelId: z.string().optional().describe("Filter votes by model ID"),
       type: z.enum(["all", "FREE", "PAID"]).default("all").optional().describe("Filter votes by type"),
       startDate: z.string().optional().or(z.literal("")).describe("Filter votes from this date (ISO string or YYYY-MM-DD)"),
       endDate: z.string().optional().or(z.literal("")).describe("Filter votes until this date (ISO string or YYYY-MM-DD)"),

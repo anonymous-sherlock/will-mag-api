@@ -24,8 +24,7 @@ stripeWebhookRouter.post("/api/v1/webhooks/stripe", async (c) => {
   let rawBody: string;
   try {
     rawBody = await c.req.text();
-  }
-  catch {
+  } catch {
     // console.error("❌ Failed to read request body:", error);
     return c.text("Failed to read request body", 400);
   }
@@ -54,8 +53,7 @@ stripeWebhookRouter.post("/api/v1/webhooks/stripe", async (c) => {
     }
 
     return c.text("Success", 200);
-  }
-  catch (err) {
+  } catch (err) {
     console.error("❌ Stripe signature verification failed:", err);
 
     if (err instanceof Stripe.errors.StripeSignatureVerificationError) {

@@ -171,8 +171,7 @@ export async function errorHandlingExample() {
     if (cached) {
       return cached;
     }
-  }
-  catch (error) {
+  } catch (error) {
     console.warn("Cache error, proceeding without cache:", error);
   }
 
@@ -182,8 +181,7 @@ export async function errorHandlingExample() {
   try {
     // Try to cache the result
     await cache.set("important-data", freshData, { ttl: 300 });
-  }
-  catch (error) {
+  } catch (error) {
     console.warn("Failed to cache data:", error);
   }
 

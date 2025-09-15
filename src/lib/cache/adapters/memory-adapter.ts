@@ -54,8 +54,7 @@ export class MemoryCacheAdapter implements CacheAdapter {
       try {
         const decompressed = await decompressData(entry.value, true);
         return JSON.parse(decompressed.data) as T;
-      }
-      catch (error) {
+      } catch (error) {
         console.error("Decompression failed:", error);
         this.cache.delete(key);
         this.accessOrder.delete(key);
@@ -90,8 +89,7 @@ export class MemoryCacheAdapter implements CacheAdapter {
           originalSize: compressionResult.originalSize,
           compressedSize: compressionResult.compressedSize,
         };
-      }
-      catch (error) {
+      } catch (error) {
         console.warn("Compression failed, storing uncompressed:", error);
         entry = {
           value,
@@ -101,8 +99,7 @@ export class MemoryCacheAdapter implements CacheAdapter {
           compressed: false,
         };
       }
-    }
-    else {
+    } else {
       entry = {
         value,
         ttl,

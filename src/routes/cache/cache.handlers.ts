@@ -46,8 +46,7 @@ export const clearAllCache: AppRouteHandler<ClearAllCacheRoute> = async (c) => {
       message: "All cache cleared successfully",
       timestamp: new Date().toISOString(),
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Cache clear error:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to clear cache");
   }
@@ -66,8 +65,7 @@ export const getCacheStats: AppRouteHandler<GetCacheStatsRoute> = async (c) => {
       data: stats,
       timestamp: new Date().toISOString(),
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Cache stats error:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to get cache statistics");
   }
@@ -90,8 +88,7 @@ export const invalidateCacheByTags: AppRouteHandler<InvalidateCacheByTagsRoute> 
       tags,
       timestamp: new Date().toISOString(),
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Cache invalidate by tags error:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to invalidate cache by tags");
   }
@@ -114,8 +111,7 @@ export const invalidateCacheByTag: AppRouteHandler<InvalidateCacheByTagRoute> = 
       tag,
       timestamp: new Date().toISOString(),
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Cache invalidate by tag error:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to invalidate cache by tag");
   }
@@ -133,8 +129,7 @@ export const invalidateContestCache: AppRouteHandler<InvalidateContestCacheRoute
 
     if (type) {
       await cacheService.invalidateContestCache(contestId, type);
-    }
-    else {
+    } else {
       // Invalidate all contest-related cache
       await cacheService.invalidateContestCache(contestId, "participation");
       await cacheService.invalidateContestCache(contestId, "vote");
@@ -148,8 +143,7 @@ export const invalidateContestCache: AppRouteHandler<InvalidateContestCacheRoute
       type: type || "all",
       timestamp: new Date().toISOString(),
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Cache invalidate contest error:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to invalidate contest cache");
   }
@@ -167,8 +161,7 @@ export const invalidateProfileCache: AppRouteHandler<InvalidateProfileCacheRoute
 
     if (type) {
       await cacheService.invalidateProfileCache(profileId, type);
-    }
-    else {
+    } else {
       // Invalidate all profile-related cache
       await cacheService.invalidateProfileCache(profileId, "rank");
       await cacheService.invalidateProfileCache(profileId, "stats");
@@ -181,8 +174,7 @@ export const invalidateProfileCache: AppRouteHandler<InvalidateProfileCacheRoute
       type: type || "all",
       timestamp: new Date().toISOString(),
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Cache invalidate profile error:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to invalidate profile cache");
   }
@@ -204,8 +196,7 @@ export const invalidateGlobalCache: AppRouteHandler<InvalidateGlobalCacheRoute> 
       type,
       timestamp: new Date().toISOString(),
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Cache invalidate global error:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to invalidate global cache");
   }
@@ -227,8 +218,7 @@ export const purgeCacheByPattern: AppRouteHandler<PurgeCacheByPatternRoute> = as
       pattern,
       timestamp: new Date().toISOString(),
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Cache purge pattern error:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to purge cache by pattern");
   }
@@ -251,8 +241,7 @@ export const deleteCacheKey: AppRouteHandler<DeleteCacheKeyRoute> = async (c) =>
       key,
       timestamp: new Date().toISOString(),
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Cache delete key error:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to delete cache key");
   }
@@ -275,8 +264,7 @@ export const deleteCacheKeys: AppRouteHandler<DeleteCacheKeysRoute> = async (c) 
       keys,
       timestamp: new Date().toISOString(),
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Cache delete keys error:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to delete cache keys");
   }
@@ -295,8 +283,7 @@ export const warmupCache: AppRouteHandler<WarmupCacheRoute> = async (c) => {
       message: "Cache warmup completed successfully",
       timestamp: new Date().toISOString(),
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Cache warmup error:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to warm up cache");
   }
@@ -315,8 +302,7 @@ export const getCacheTags: AppRouteHandler<GetCacheTagsRoute> = async (c) => {
       },
       timestamp: new Date().toISOString(),
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Cache tags error:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to get cache tags");
   }
@@ -338,8 +324,7 @@ export const cacheHealthCheck: AppRouteHandler<CacheHealthCheckRoute> = async (c
         timestamp: new Date().toISOString(),
       },
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Cache health check error:", error);
     return sendErrorResponse(c, "internalServerError", "Cache service is unhealthy");
   }
@@ -358,8 +343,7 @@ export const getCacheAnalytics: AppRouteHandler<GetCacheAnalyticsRoute> = async 
       data: analytics,
       timestamp: new Date().toISOString(),
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Cache analytics error:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to get cache analytics");
   }
@@ -378,8 +362,7 @@ export const getCacheAnalyticsSummary: AppRouteHandler<GetCacheAnalyticsSummaryR
       data: summary,
       timestamp: new Date().toISOString(),
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Cache analytics summary error:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to get cache analytics summary");
   }
@@ -398,8 +381,7 @@ export const exportCacheAnalytics: AppRouteHandler<ExportCacheAnalyticsRoute> = 
     c.header("Content-Disposition", `attachment; filename="cache-analytics-${Date.now()}.json"`);
 
     return c.json(exportData, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Export cache analytics error:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to export cache analytics");
   }
@@ -418,8 +400,7 @@ export const clearCacheAnalytics: AppRouteHandler<ClearCacheAnalyticsRoute> = as
       message: "Cache analytics data cleared successfully",
       timestamp: new Date().toISOString(),
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Clear cache analytics error:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to clear cache analytics");
   }

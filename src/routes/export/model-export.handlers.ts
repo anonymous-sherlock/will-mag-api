@@ -274,8 +274,7 @@ export const exportModelData: AppRouteHandler<ExportModelDataRoute> = async (c) 
     if (format === "excel") {
       fileBuffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
       contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-    }
-    else {
+    } else {
       // For CSV, we'll export the main data only
       const csvData = XLSX.utils.sheet_to_csv(mainSheet);
       fileBuffer = new TextEncoder().encode(csvData);
@@ -288,8 +287,7 @@ export const exportModelData: AppRouteHandler<ExportModelDataRoute> = async (c) 
     c.header("Content-Length", fileBuffer.length.toString());
 
     return c.body(new Uint8Array(fileBuffer), HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Export error:", error);
     return sendErrorResponse(c, "badRequest", "Failed to generate export file");
   }

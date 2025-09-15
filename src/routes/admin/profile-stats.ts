@@ -27,8 +27,7 @@ export const recalculateAllStats: AppRouteHandler<RecalculateAllStatsRoute> = as
         totalWeightedScore,
       },
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Error recalculating ProfileStats:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to recalculate ProfileStats");
   }
@@ -49,8 +48,7 @@ export const recalculateProfileStatsById: AppRouteHandler<RecalculateProfileStat
       message: `Successfully recalculated ProfileStats for profile ${profileId}`,
       stats,
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Error recalculating ProfileStats:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to recalculate ProfileStats");
   }

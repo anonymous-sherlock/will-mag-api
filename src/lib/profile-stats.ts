@@ -38,8 +38,7 @@ export async function updateProfileStatsOnVote(
             lastUpdated: new Date(),
           },
         });
-      }
-      else {
+      } else {
         // Create new stats record
         const freeVotes = voteType === "FREE" ? voteCount : 0;
         const paidVotes = voteType === "PAID" ? voteCount : 0;
@@ -56,8 +55,7 @@ export async function updateProfileStatsOnVote(
         });
       }
     });
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Error updating ProfileStats:", error);
     // Don't throw - we don't want vote creation to fail if stats update fails
   }
@@ -80,8 +78,7 @@ export async function recalculateProfileStats(profileId: string) {
     for (const vote of votes) {
       if (vote.type === "FREE") {
         freeVotes += vote.count;
-      }
-      else {
+      } else {
         paidVotes += vote.count;
       }
     }
@@ -106,8 +103,7 @@ export async function recalculateProfileStats(profileId: string) {
     });
 
     return { freeVotes, paidVotes, weightedScore };
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Error recalculating ProfileStats:", error);
     throw error;
   }
@@ -131,8 +127,7 @@ export async function recalculateAllProfileStats(): Promise<Array<{ profileId: s
     }
 
     return results;
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Error recalculating all ProfileStats:", error);
     throw error;
   }

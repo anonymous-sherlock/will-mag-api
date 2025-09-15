@@ -50,18 +50,14 @@ export const searchProfiles: AppRouteHandler<SearchProfiles> = async (c) => {
   if (hasAvatar !== undefined) {
     if (hasAvatar) {
       where.coverImageId = { not: null };
-    }
-    else {
-      where.coverImageId = null;
-    }
+    } else { where.coverImageId = null; }
   }
 
   // Build order by clause
   const orderBy: Prisma.ProfileOrderByWithRelationInput = {};
   if (sortBy === "name" || sortBy === "username") {
     orderBy.user = { [sortBy]: sortOrder };
-  }
-  else {
+  } else {
     orderBy[sortBy] = sortOrder;
   }
 
@@ -85,6 +81,7 @@ export const searchProfiles: AppRouteHandler<SearchProfiles> = async (c) => {
             name: true,
             email: true,
             image: true,
+            type: true,
           },
         },
       },
@@ -244,8 +241,7 @@ export const searchUsers: AppRouteHandler<SearchUsers> = async (c) => {
   if (hasProfile !== undefined) {
     if (hasProfile) {
       where.profile = { isNot: null };
-    }
-    else {
+    } else {
       where.profile = null;
     }
   }

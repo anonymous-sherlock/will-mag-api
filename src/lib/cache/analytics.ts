@@ -202,8 +202,7 @@ export class CacheAnalyticsService {
         this.trends.requests = this.trends.requests.slice(-this.config.maxTrendPoints);
         this.trends.timestamps = this.trends.timestamps.slice(-this.config.maxTrendPoints);
       }
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Analytics collection error:", error);
     }
   }
@@ -361,15 +360,13 @@ export class CacheAnalyticsService {
 
     if (analytics.performance.hitRate < 50) {
       status = "critical";
-    }
-    else if (analytics.performance.hitRate < 80) {
+    } else if (analytics.performance.hitRate < 80) {
       status = "warning";
     }
 
     if (analytics.memory.utilizationPercent > 90) {
       status = "critical";
-    }
-    else if (analytics.memory.utilizationPercent > 70) {
+    } else if (analytics.memory.utilizationPercent > 70) {
       status = "warning";
     }
 

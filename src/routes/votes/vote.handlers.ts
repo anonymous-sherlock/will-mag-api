@@ -262,7 +262,7 @@ export const getLatestVotes: AppRouteHandler<GetLatestVotes> = async (c) => {
   if (search) {
     const fields: (keyof Prisma.UserWhereInput)[] = ["name", "username", "email", "displayUsername"];
 
-    where.OR = fields.map((field) => ({
+    where.OR = fields.map(field => ({
       votee: {
         user: {
           [field]: { contains: search },
@@ -310,21 +310,20 @@ export const getLatestVotes: AppRouteHandler<GetLatestVotes> = async (c) => {
     db.vote.count({ where }),
   ]);
 
-
-  const formattedVotes = votes.map((vote) => ({
+  const formattedVotes = votes.map(vote => ({
     votee: vote.votee?.user
       ? {
-        name: vote.votee.user.name,
-        id: vote.votee.id,
-        profilePicture: vote.votee.user.image ?? "",
-      }
+          name: vote.votee.user.name,
+          id: vote.votee.id,
+          profilePicture: vote.votee.user.image ?? "",
+        }
       : null,
     voter: vote.voter?.user
       ? {
-        name: vote.voter.user.name,
-        id: vote.voter.id,
-        profilePicture: vote.voter.user.image ?? "",
-      }
+          name: vote.voter.user.name,
+          id: vote.voter.id,
+          profilePicture: vote.voter.user.image ?? "",
+        }
       : null,
     totalVotes: vote.count,
     comment: vote.comment,
@@ -397,7 +396,7 @@ export const getVotesByProfileId: AppRouteHandler<GetVotesByProfileId> = async (
     }),
   ]);
 
-  const formattedVotesReceived = votes.map((vote) => ({
+  const formattedVotesReceived = votes.map(vote => ({
     profileId: vote.voter.user.profile?.id ?? "",
     name: vote.voter.user.name,
     username: vote.voter.user.username ?? "Anonymous User",
@@ -485,7 +484,7 @@ export const getTopVotersForVotee: AppRouteHandler<GetTopVotersForVotee> = async
         comment: latestVote?.comment ?? null,
         lastVoteAt: latestVote?.createdAt.toISOString() ?? "",
       };
-    })
+    }),
   );
 
   return c.json(topVotersWithDetails, HttpStatusCodes.OK);

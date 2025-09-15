@@ -128,8 +128,7 @@ export class CacheWarmer {
         ),
       ]);
       console.warn(`✅ Strategy ${strategy.name} completed`);
-    }
-    catch (error) {
+    } catch (error) {
       console.error(`❌ Strategy ${strategy.name} failed:`, error);
     }
   }

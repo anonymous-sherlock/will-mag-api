@@ -308,8 +308,7 @@ export const updateNullUsernames: AppRouteHandler<UpdateNullUsernamesRoute> = as
         });
 
         updatedCount++;
-      }
-      catch (error) {
+      } catch (error) {
         console.error(`Failed to update username for user ${user.id}:`, error);
         // Continue with other users even if one fails
       }
@@ -320,8 +319,7 @@ export const updateNullUsernames: AppRouteHandler<UpdateNullUsernamesRoute> = as
       updatedCount,
       users: updatedUsers,
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Error updating null usernames:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to update usernames");
   }

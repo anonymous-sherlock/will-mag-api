@@ -11,7 +11,7 @@ import { RedisCacheAdapter } from "./adapters/redis-adapter";
 import { getAnalyticsService } from "./analytics";
 import { getErrorHandler } from "./error-handling";
 import { cacheInvalidationPatterns } from "./key-generators";
-import { CacheRateLimiter, sanitizeCacheKey, validateCacheKey, validateCacheValue } from "./security";
+import { CacheRateLimiter, validateCacheKey, validateCacheValue } from "./security";
 import { CacheWarmer, defaultWarmingConfig } from "./warming";
 
 export class CacheService {
@@ -50,8 +50,7 @@ export class CacheService {
       this.adapter = new RedisCacheAdapter(this.config, env.REDIS_URL);
       console.warn("✅ Redis cache adapter created (connection will be established asynchronously)");
       this.isInitialized = true;
-    }
-    catch (error) {
+    } catch (error) {
       console.warn("⚠️ Redis adapter creation failed, falling back to memory cache:", error instanceof Error ? error.message : error);
       this.adapter = new MemoryCacheAdapter(this.config);
       this.isInitialized = true;
@@ -101,15 +100,13 @@ export class CacheService {
         this.metrics.cacheHits++;
         // Track analytics
         getAnalyticsService().trackKeyAccess(key, true);
-      }
-      else {
+      } else {
         this.metrics.cacheMisses++;
         // Track analytics
         getAnalyticsService().trackKeyAccess(key, false);
       }
       return result;
-    }
-    catch (error) {
+    } catch (error) {
       this.metrics.errors++;
       throw error;
     }
@@ -153,8 +150,7 @@ export class CacheService {
           ? () => new MemoryCacheAdapter(this.config).set(key, value, options)
           : undefined,
       );
-    }
-    catch (error) {
+    } catch (error) {
       this.metrics.errors++;
       throw error;
     }
@@ -270,8 +266,7 @@ export class CacheService {
     try {
       await this.warmer.start();
       console.warn("✅ Cache warmup completed");
-    }
-    catch (error) {
+    } catch (error) {
       console.error("❌ Cache warmup failed:", error);
     }
   }
@@ -314,8 +309,7 @@ export class CacheService {
           }
         }
       }
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Health check error:", error);
       this.metrics.errors++;
     }

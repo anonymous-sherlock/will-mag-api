@@ -54,6 +54,7 @@ export const ProfileSearchResultSchema = z.object({
     name: z.string(),
     email: z.string(),
     image: z.string().nullable(),
+    type: z.enum(["MODEL", "VOTER"]),
   }),
 });
 

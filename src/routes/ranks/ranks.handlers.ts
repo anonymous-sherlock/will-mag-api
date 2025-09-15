@@ -92,8 +92,7 @@ async function updateComputedRanksInternal() {
       if (FILL_MANUAL_GAPS_WITH_COMPUTED && i < availableManualGaps.length) {
         // Fill manual gaps with computed ranks
         computedRank = availableManualGaps[i];
-      }
-      else {
+      } else {
         // Start computed ranks from COMPUTED_RANK_START
         computedRank = computedRankStart + i;
       }
@@ -105,8 +104,7 @@ async function updateComputedRanksInternal() {
       if (existing) {
         await tx.rank.update({ where: { id: existing.id }, data: { computedRank, updatedAt: new Date() } });
         profilesUpdated++;
-      }
-      else {
+      } else {
         await tx.rank.create({ data: { profileId: profilesWithScores[i].id, computedRank } });
         profilesCreated++;
       }
@@ -133,8 +131,7 @@ export const updateComputedRanks: AppRouteHandler<UpdateComputedRanksRoute> = as
         scoringWeights: { paidVoteWeight: PAID_VOTE_WEIGHT, freeVoteWeight: FREE_VOTE_WEIGHT },
       },
     }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Error updating computed ranks:", error);
     return c.json({
       success: false,

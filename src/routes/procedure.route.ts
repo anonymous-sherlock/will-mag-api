@@ -52,8 +52,7 @@ class RouteBuilder {
 
     if (typeof authOrOptions === "string") {
       auth = authOrOptions;
-    }
-    else if (typeof authOrOptions === "object" && authOrOptions !== null) {
+    } else if (typeof authOrOptions === "object" && authOrOptions !== null) {
       auth = authOrOptions.auth ?? "public";
       middlewares = authOrOptions.middlewares ?? [];
     }

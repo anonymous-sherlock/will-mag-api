@@ -774,8 +774,7 @@ export const removeContestImage: AppRouteHandler<RemoveContestImageRoute> = asyn
     });
 
     return c.json({ message: "Image removed successfully" }, HttpStatusCodes.OK);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Error removing contest image:", error);
     return sendErrorResponse(c, "badRequest", "Failed to remove image");
   }

@@ -479,8 +479,7 @@ export const uploadParticipationCoverImage: AppRouteHandler<UploadParticipationC
       await db.media.delete({
         where: { id: oldCoverImage.id },
       });
-    }
-    catch (error) {
+    } catch (error) {
       console.error("Error deleting old cover image:", error);
       // Don't fail the request if deletion fails, just log it
     }
@@ -504,8 +503,7 @@ async function invalidateContestParticipationCache(contestIds: string[]) {
       // Also invalidate by tags to catch all cached participant data
       cache.invalidateByTags(["contest", "leaderboard"]),
     ]);
-  }
-  catch (error) {
+  } catch (error) {
     console.warn("Cache invalidation error:", error);
   }
 }

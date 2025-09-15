@@ -85,8 +85,7 @@ export const transformImage: AppRouteHandler<TransformImageRoute> = async (c) =>
         c.header("X-Cached", "true");
         return c.body(new Uint8Array(cachedBuffer));
       }
-    }
-    catch (error: unknown) {
+    } catch (error: unknown) {
       const err = error as CloudflareError;
       console.warn("KV cache retrieval failed:", err?.message || error);
       // Continue if cache fails
@@ -176,8 +175,7 @@ export const transformImage: AppRouteHandler<TransformImageRoute> = async (c) =>
           value: finalBuffer.toString("base64"),
           expiration_ttl: CACHE_TTL,
         });
-      }
-      catch (error) {
+      } catch (error) {
         console.warn("KV cache storage failed:", error);
       }
     }
@@ -189,8 +187,7 @@ export const transformImage: AppRouteHandler<TransformImageRoute> = async (c) =>
     c.header("X-Cached", "false");
 
     return c.body(new Uint8Array(finalBuffer));
-  }
-  catch (err) {
+  } catch (err) {
     console.error("Image transform error:", err);
     return sendErrorResponse(c, "internalServerError", "Failed to transform image");
   }
@@ -224,8 +221,7 @@ export const healthCheck: AppRouteHandler<HealthCheckRoute> = async (c) => {
       },
       HttpStatusCodes.OK,
     );
-  }
-  catch (error) {
+  } catch (error) {
     return c.json(
       {
         status: "unhealthy",

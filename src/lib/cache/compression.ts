@@ -51,8 +51,7 @@ export async function compressData(data: string, threshold = 1024): Promise<Comp
       compressedSize,
       compressionRatio,
     };
-  }
-  catch (error) {
+  } catch (error) {
     console.warn("Compression failed, using original data:", error);
     return {
       data: Buffer.from(data, "utf8"),
@@ -81,8 +80,7 @@ export async function decompressData(data: Buffer, wasCompressed: boolean): Prom
       data: decompressed.toString("utf8"),
       wasCompressed: true,
     };
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Decompression failed:", error);
     throw new Error("Failed to decompress cached data");
   }

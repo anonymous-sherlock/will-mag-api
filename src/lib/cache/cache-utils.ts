@@ -63,8 +63,7 @@ export class CacheUtils {
       if (trackFn) {
         trackFn(key, fromCache);
       }
-    }
-    catch {
+    } catch {
       // Interceptor not available, ignore
     }
   }
@@ -198,8 +197,7 @@ export class CacheUtils {
       const result = await primaryFn();
       await this.cache.set(key, result, { ttl });
       return result;
-    }
-    catch (error) {
+    } catch (error) {
       console.warn("Primary function failed, using fallback:", error);
       const fallbackResult = await fallbackFn();
       await this.cache.set(key, fallbackResult, { ttl: 60 }); // Shorter TTL for fallback
@@ -229,8 +227,7 @@ export class CacheUtils {
 
       if (cachedValue !== null) {
         results.push(cachedValue);
-      }
-      else {
+      } else {
         const result = await operation.fn();
         results.push(result);
         toCache.push({

@@ -17,8 +17,7 @@ function appendIndexIfDirectory(importPath: string, fileDir: string): string {
     if (stat.isDirectory()) {
       return `${importPath}/index.js`;
     }
-  }
-  catch {
+  } catch {
     // if path doesn't exist, ignore
   }
   return importPath;
@@ -61,8 +60,7 @@ function fixImportsInFile(filePath: string): void {
       fs.writeFileSync(filePath, content, "utf8");
       console.log(`Fixed imports in: ${filePath}`);
     }
-  }
-  catch (error) {
+  } catch (error) {
     console.error(
       `Error processing ${filePath}:`,
       error instanceof Error ? error.message : String(error),
@@ -80,13 +78,11 @@ function processDirectory(dir: string): void {
 
       if (stat.isDirectory()) {
         processDirectory(filePath);
-      }
-      else if (file.endsWith(".js")) {
+      } else if (file.endsWith(".js")) {
         fixImportsInFile(filePath);
       }
     }
-  }
-  catch (error) {
+  } catch (error) {
     console.error(
       `Error processing directory ${dir}:`,
       error instanceof Error ? error.message : String(error),

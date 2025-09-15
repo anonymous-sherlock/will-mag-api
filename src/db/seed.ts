@@ -142,8 +142,7 @@ async function runSeed() {
     console.log(`   - ${profiles.length} profiles`);
     console.log(`   - ${contests.length} contests`);
     console.log(`   - ${awards.length} awards`);
-  }
-  catch (error) {
+  } catch (error) {
     console.error("❌ Seed failed:", error);
     throw error;
   }

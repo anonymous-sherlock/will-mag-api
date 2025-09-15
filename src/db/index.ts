@@ -11,8 +11,7 @@ if (env.NODE_ENV === "production") {
   prisma = new PrismaClient({
     log: ["error", "warn"],
   });
-}
-else {
+} else {
   if (!globalThis.cachedPrisma) {
     globalThis.cachedPrisma = new PrismaClient();
   }

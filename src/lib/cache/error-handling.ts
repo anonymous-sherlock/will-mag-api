@@ -58,8 +58,7 @@ export class CacheErrorHandler {
         this.resetCircuitBreaker(operationId);
 
         return result;
-      }
-      catch (error) {
+      } catch (error) {
         lastError = error as Error;
 
         // Record failure for circuit breaker
@@ -71,8 +70,7 @@ export class CacheErrorHandler {
             try {
               console.warn(`Operation ${operationId} failed, using fallback`);
               return await fallback();
-            }
-            catch (fallbackError) {
+            } catch (fallbackError) {
               console.error(`Fallback also failed for ${operationId}:`, fallbackError);
             }
           }
@@ -98,8 +96,7 @@ export class CacheErrorHandler {
   ): Promise<T> {
     try {
       return await this.handleWithRetry(operation, operationId);
-    }
-    catch (error) {
+    } catch (error) {
       if (this.config.enableGracefulDegradation) {
         console.warn(`Graceful degradation for ${operationId}:`, error);
         return fallbackValue;

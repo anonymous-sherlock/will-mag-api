@@ -153,7 +153,24 @@ export class CacheAnalyticsService {
     try {
       const cache = getCacheService();
       const metrics = cache.getMetrics();
-      const stats = await cache.stats();
+
+      // Get stats safely - this will handle Redis connection failures gracefully
+      let stats;
+      try {
+        stats = await cache.stats();
+      } catch (statsError) {
+        // If stats collection fails, use default values
+        console.warn("Cache stats collection failed, using defaults:", statsError instanceof Error ? statsError.message : statsError);
+        stats = {
+          hits: 0,
+          misses: 0,
+          keys: 0,
+          memory: 0,
+          uptime: 0,
+          connectionErrors: 0,
+          reconnects: 0,
+        };
+      }
 
       const now = Date.now();
 
@@ -249,7 +266,23 @@ export class CacheAnalyticsService {
     const cache = getCacheService();
     const metrics = cache.getMetrics();
     const healthStatus = await cache.getHealthStatus();
-    const stats = await cache.stats();
+
+    // Get stats safely - handle Redis connection failures
+    let stats;
+    try {
+      stats = await cache.stats();
+    } catch (statsError) {
+      console.warn("Cache stats collection failed in getAnalytics, using defaults:", statsError instanceof Error ? statsError.message : statsError);
+      stats = {
+        hits: 0,
+        misses: 0,
+        keys: 0,
+        memory: 0,
+        uptime: 0,
+        connectionErrors: 0,
+        reconnects: 0,
+      };
+    }
 
     // Calculate performance metrics
     const hitRate = metrics.hitRate || 0;

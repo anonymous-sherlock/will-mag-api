@@ -1,5 +1,6 @@
 import * as HttpStatusCodes from "stoker/http-status-codes";
 
+import type { Prisma } from "@/generated/prisma";
 import type { AppRouteHandler } from "@/types/types";
 
 import { FREE_VOTE_INTERVAL } from "@/constants";
@@ -11,14 +12,7 @@ import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 import { stripe } from "@/lib/stripe";
 import { getActiveVoteMultiplier } from "@/lib/vote-multiplier";
 
-import type {
-  FreeVote,
-  GetLatestVotes,
-  GetTopVotersForVotee,
-  GetVotesByProfileId,
-  IsFreeVoteAvailable,
-  PayVote,
-} from "./vote.routes";
+import type { FreeVote, GetLatestVotes, GetTopVotersForVotee, GetVotesByProfileId, IsFreeVoteAvailable, PayVote } from "./vote.routes";
 
 import { updateLastFreeVote, validateFreeVote } from "./vote.action";
 
@@ -27,11 +21,7 @@ export const freeVote: AppRouteHandler<FreeVote> = async (c) => {
 
   // Prevent users from voting for themselves
   if (data.voterId === data.voteeId) {
-    return sendErrorResponse(
-      c,
-      "badRequest",
-      "You cannot vote for yourself",
-    );
+    return sendErrorResponse(c, "badRequest", "You cannot vote for yourself");
   }
 
   // Check if voting is enabled for the contest
@@ -45,19 +35,11 @@ export const freeVote: AppRouteHandler<FreeVote> = async (c) => {
   }
 
   if (!contest.isVotingEnabled) {
-    return sendErrorResponse(
-      c,
-      "badRequest",
-      "Voting is not enabled for this contest yet",
-    );
+    return sendErrorResponse(c, "badRequest", "Voting is not enabled for this contest yet");
   }
 
   if (!(await validateFreeVote(data.voterId))) {
-    return sendErrorResponse(
-      c,
-      "tooManyRequests",
-      "You can only use a free vote once every 24 hours for this contest",
-    );
+    return sendErrorResponse(c, "tooManyRequests", "You can only use a free vote once every 24 hours for this contest");
   }
 
   const vote = await db.vote.create({ data });
@@ -98,29 +80,17 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
 
   // Prevent users from voting for themselves
   if (voterId === voteeId) {
-    return sendErrorResponse(
-      c,
-      "badRequest",
-      "You cannot vote for yourself",
-    );
+    return sendErrorResponse(c, "badRequest", "You cannot vote for yourself");
   }
 
   // Validate vote count is supported
   if (voteCount <= 0) {
-    return sendErrorResponse(
-      c,
-      "badRequest",
-      "Vote count must be greater than 0",
-    );
+    return sendErrorResponse(c, "badRequest", "Vote count must be greater than 0");
   }
 
   // For custom votes, validate reasonable limits
   if (voteCount > 1000) {
-    return sendErrorResponse(
-      c,
-      "badRequest",
-      "Vote count cannot exceed 1000",
-    );
+    return sendErrorResponse(c, "badRequest", "Vote count cannot exceed 1000");
   }
 
   const [voter, votee, contest] = await Promise.all([
@@ -169,11 +139,7 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
 
   // Check if voting is enabled for the contest
   if (!contest.isVotingEnabled) {
-    return sendErrorResponse(
-      c,
-      "badRequest",
-      "Voting is not enabled for this contest yet",
-    );
+    return sendErrorResponse(c, "badRequest", "Voting is not enabled for this contest yet");
   }
 
   const isVoteePresent = await db.contestParticipation.findFirst({
@@ -286,15 +252,30 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
 };
 
 export const getLatestVotes: AppRouteHandler<GetLatestVotes> = async (c) => {
-  const { page, limit } = c.req.valid("query");
+  const { page, limit, search } = c.req.valid("query");
 
   const skip = (page - 1) * limit;
   const take = limit;
+
+  const where: Prisma.VoteWhereInput = {};
+
+  if (search) {
+    const fields: (keyof Prisma.UserWhereInput)[] = ["name", "username", "email", "displayUsername"];
+
+    where.OR = fields.map((field) => ({
+      votee: {
+        user: {
+          [field]: { contains: search },
+        },
+      },
+    }));
+  }
 
   const [votes, totalVotes] = await Promise.all([
     db.vote.findMany({
       skip,
       take,
+      where,
       orderBy: {
         createdAt: "desc",
       },
@@ -326,23 +307,24 @@ export const getLatestVotes: AppRouteHandler<GetLatestVotes> = async (c) => {
         createdAt: true,
       },
     }),
-    db.vote.count(),
+    db.vote.count({ where }),
   ]);
 
-  const formattedVotes = votes.map(vote => ({
+
+  const formattedVotes = votes.map((vote) => ({
     votee: vote.votee?.user
       ? {
-          name: vote.votee.user.name,
-          id: vote.votee.id,
-          profilePicture: vote.votee.user.image ?? "",
-        }
+        name: vote.votee.user.name,
+        id: vote.votee.id,
+        profilePicture: vote.votee.user.image ?? "",
+      }
       : null,
     voter: vote.voter?.user
       ? {
-          name: vote.voter.user.name,
-          id: vote.voter.id,
-          profilePicture: vote.voter.user.image ?? "",
-        }
+        name: vote.voter.user.name,
+        id: vote.voter.id,
+        profilePicture: vote.voter.user.image ?? "",
+      }
       : null,
     totalVotes: vote.count,
     comment: vote.comment,
@@ -415,7 +397,7 @@ export const getVotesByProfileId: AppRouteHandler<GetVotesByProfileId> = async (
     }),
   ]);
 
-  const formattedVotesReceived = votes.map(vote => ({
+  const formattedVotesReceived = votes.map((vote) => ({
     profileId: vote.voter.user.profile?.id ?? "",
     name: vote.voter.user.name,
     username: vote.voter.user.username ?? "Anonymous User",
@@ -503,7 +485,7 @@ export const getTopVotersForVotee: AppRouteHandler<GetTopVotersForVotee> = async
         comment: latestVote?.comment ?? null,
         lastVoteAt: latestVote?.createdAt.toISOString() ?? "",
       };
-    }),
+    })
   );
 
   return c.json(topVotersWithDetails, HttpStatusCodes.OK);

@@ -27,27 +27,21 @@ export const getAllVotes: AppRouteHandler<GetAllVotes> = async (c) => {
   }
 
   if (search) {
-    where.OR = [
-      {
-        voter: {
-          user: {
-            username: { contains: search },
-            name: { contains: search },
-            email: { contains: search },
-          },
-        },
-      },
-      {
-        votee: {
-          user: {
-            name: { contains: search },
-            username: { contains: search },
-            email: { contains: search },
-          },
-        },
-      },
-      { comment: { contains: search } },
+    const fields: (keyof Prisma.UserWhereInput)[] = ["name", "username", "email", "displayUsername"];
 
+    where.OR = [
+      // votee user fields
+      ...fields.map(field => ({
+        votee: { user: { [field]: { contains: search } } },
+      })),
+
+      // voter user fields
+      ...fields.map(field => ({
+        voter: { user: { [field]: { contains: search } } },
+      })),
+
+      // comment field
+      { comment: { contains: search } },
     ];
   }
 

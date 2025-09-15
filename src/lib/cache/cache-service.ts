@@ -302,11 +302,15 @@ export class CacheService {
         if (!health.healthy) {
           console.warn("⚠️ Redis health check failed:", health.error);
 
-          // Attempt reconnection
-          const reconnected = await this.adapter.reconnect();
-          if (!reconnected) {
-            console.error("❌ Redis reconnection failed, falling back to memory cache");
-            this.adapter = new MemoryCacheAdapter(this.config);
+          // Only attempt reconnection if we haven't reached max attempts
+          const status = this.adapter.getConnectionStatus();
+          if (status.reconnectAttempts < 5) {
+            const reconnected = await this.adapter.reconnect();
+            if (!reconnected) {
+              console.warn("Redis reconnection failed, continuing with memory cache fallback");
+            }
+          } else {
+            console.warn("Redis max reconnection attempts reached, continuing with memory cache fallback");
           }
         }
       }

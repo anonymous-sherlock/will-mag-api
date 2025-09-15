@@ -78,7 +78,7 @@ export class RedisCacheAdapter implements CacheAdapter {
   }
 
   async get<T = CacheValue>(key: CacheKey): Promise<T | null> {
-    if (!this.isConnected || this.connectionFailed) {
+    if (!this.isConnected || this.connectionFailed || !this.client) {
       this.cacheStats.misses++;
       return null;
     }
@@ -98,12 +98,19 @@ export class RedisCacheAdapter implements CacheAdapter {
     catch (error) {
       console.error("Redis get error:", error);
       this.cacheStats.misses++;
+
+      // Mark connection as failed if we get a client closed error
+      if (error instanceof Error && error.message.includes("ClientClosedError")) {
+        this.connectionFailed = true;
+        this.isConnected = false;
+      }
+
       return null;
     }
   }
 
   async set<T = CacheValue>(key: CacheKey, value: T, options: CacheOptions = {}): Promise<void> {
-    if (!this.isConnected || this.connectionFailed) {
+    if (!this.isConnected || this.connectionFailed || !this.client) {
       return; // Silently fail when Redis is not available
     }
 
@@ -123,6 +130,13 @@ export class RedisCacheAdapter implements CacheAdapter {
     }
     catch (error) {
       console.error("Redis set error:", error);
+
+      // Mark connection as failed if we get a client closed error
+      if (error instanceof Error && error.message.includes("ClientClosedError")) {
+        this.connectionFailed = true;
+        this.isConnected = false;
+      }
+
       // Don't throw error, just fail silently
     }
   }
@@ -266,6 +280,15 @@ export class RedisCacheAdapter implements CacheAdapter {
   }
 
   async stats(): Promise<CacheStats> {
+    // Check if Redis is available before attempting to get stats
+    if (!this.isConnected || this.connectionFailed || !this.client) {
+      return {
+        ...this.cacheStats,
+        memory: 0,
+        uptime: Date.now() - this.cacheStats.uptime,
+      };
+    }
+
     try {
       const info = await this.client.info("memory");
       const memoryMatch = info.match(/used_memory:(\d+)/);
@@ -279,8 +302,16 @@ export class RedisCacheAdapter implements CacheAdapter {
     }
     catch (error) {
       console.error("Redis stats error:", error);
+
+      // Mark connection as failed if we get a client closed error
+      if (error instanceof Error && error.message.includes("ClientClosedError")) {
+        this.connectionFailed = true;
+        this.isConnected = false;
+      }
+
       return {
         ...this.cacheStats,
+        memory: 0,
         uptime: Date.now() - this.cacheStats.uptime,
       };
     }
@@ -322,7 +353,21 @@ export class RedisCacheAdapter implements CacheAdapter {
   async close(): Promise<void> {
     try {
       if (this.client) {
-        await this.client.quit();
+        try {
+          // Only attempt to quit if client is still connected
+          if (this.isConnected) {
+            await this.client.quit();
+          }
+        }
+        catch (quitError) {
+          // Ignore quit errors - client might already be closed
+          console.warn("Client quit error during close (ignoring):", quitError instanceof Error ? quitError.message : quitError);
+        }
+
+        // Clear references
+        this.client = null;
+        this.isConnected = false;
+        this.connectionFailed = true;
       }
     }
     catch (error) {
@@ -337,7 +382,11 @@ export class RedisCacheAdapter implements CacheAdapter {
     const startTime = Date.now();
 
     try {
-      if (!this.client || !this.isConnected) {
+      if (!this.client) {
+        return { healthy: false, latency: 0, error: "No client instance" };
+      }
+
+      if (!this.isConnected || this.connectionFailed) {
         return { healthy: false, latency: 0, error: "Not connected" };
       }
 
@@ -353,6 +402,11 @@ export class RedisCacheAdapter implements CacheAdapter {
       this.cacheStats.connectionErrors++;
       this.isConnected = false;
 
+      // If ping fails, mark connection as failed
+      if (error instanceof Error && (error.message.includes("ClientClosedError") || error.message.includes("ECONNREFUSED"))) {
+        this.connectionFailed = true;
+      }
+
       return {
         healthy: false,
         latency: Date.now() - startTime,
@@ -366,7 +420,7 @@ export class RedisCacheAdapter implements CacheAdapter {
    */
   async reconnect(): Promise<boolean> {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.warn("Max reconnection attempts reached");
+      console.warn("Max reconnection attempts reached, Redis will remain unavailable");
       return false;
     }
 
@@ -374,18 +428,46 @@ export class RedisCacheAdapter implements CacheAdapter {
     console.warn(`Attempting Redis reconnection (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
 
     try {
+      // Safely close existing client if it exists
       if (this.client) {
-        await this.client.quit();
+        try {
+          // Check if client is still connected before attempting to quit
+          if (this.isConnected) {
+            await this.client.quit();
+          }
+        }
+        catch (quitError) {
+          // Ignore quit errors - client might already be closed
+          console.warn("Client quit error during reconnect (ignoring):", quitError instanceof Error ? quitError.message : quitError);
+        }
+
+        // Clear the client reference
+        this.client = null;
+        this.isConnected = false;
       }
 
+      // Reset connection state
+      this.connectionFailed = false;
+
+      // Initialize new connection
       await this.initializeRedis();
-      this.reconnectAttempts = 0;
-      this.cacheStats.reconnects++;
-      console.warn("✅ Redis reconnected successfully");
-      return true;
+
+      // Verify the connection actually worked
+      if (this.isConnected && !this.connectionFailed) {
+        this.reconnectAttempts = 0;
+        this.cacheStats.reconnects++;
+        console.warn("✅ Redis reconnected successfully");
+        return true;
+      } else {
+        console.warn("Redis reconnection failed - connection not established");
+        this.connectionFailed = true;
+        return false;
+      }
     }
     catch (error) {
       console.error("Redis reconnection failed:", error);
+      this.connectionFailed = true;
+      this.isConnected = false;
       return false;
     }
   }

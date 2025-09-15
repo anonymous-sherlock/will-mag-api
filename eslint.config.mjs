@@ -23,5 +23,9 @@ export default antfu({
       case: "kebabCase",
       ignore: ["README.md"],
     }],
+    "style/brace-style": "off",
+    "@stylistic/brace-style": ["error", "1tbs", {
+      allowSingleLine: true,
+    }],
   },
 });

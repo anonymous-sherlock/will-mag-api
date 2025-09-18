@@ -1,5 +1,6 @@
 import * as HttpStatusCodes from "stoker/http-status-codes";
 
+import type { Prisma } from "@/generated/prisma";
 import type { AppRouteHandler } from "@/types/types";
 
 import { db } from "@/db";
@@ -730,6 +731,7 @@ export const getActiveParticipationByProfile: AppRouteHandler<GetActiveParticipa
   // Check if profile exists
   const profile = await db.profile.findUnique({
     where: { id: profileId },
+    select: { id: true }, // only fetch what we need
   });
 
   if (!profile) {
@@ -738,73 +740,62 @@ export const getActiveParticipationByProfile: AppRouteHandler<GetActiveParticipa
 
   const now = new Date();
 
-  // Use caching for the active participations query
+  // Prebuild contest filter
+  const contestFilter: Prisma.ContestWhereInput = {
+    startDate: { lte: now },
+    endDate: { gte: now },
+    status: { in: ["ACTIVE", "VOTING", "JUDGING", "PUBLISHED", "BOOKED"] },
+  };
+
+  // Cache results
   const result = await ProfileCacheUtils.cacheProfileActiveParticipation(
     profileId,
     page,
     limit,
     async () => {
-      // Get active participations (contests that are currently running)
+      const whereCondition: Prisma.ContestParticipationWhereInput = {
+        profileId,
+        isParticipating: true,
+        contest: contestFilter,
+      };
+
       const [participations, total] = await db.$transaction([
         db.contestParticipation.findMany({
-          where: {
-            profileId,
-            contest: {
-              startDate: { lte: now },
-              endDate: { gte: now },
-              status: { in: ["ACTIVE", "VOTING", "JUDGING", "PUBLISHED", "BOOKED"] },
-
-            },
-            isParticipating: true,
-          },
+          where: whereCondition,
           skip: (page - 1) * limit,
           take: limit,
+          orderBy: { createdAt: "desc" },
           include: {
             contest: {
               include: {
                 awards: true,
                 images: {
-                  select: {
-                    id: true,
-                    url: true,
-                    key: true,
-                  },
+                  select: { id: true, url: true, key: true, caption: true },
                 },
+                _count: { select: { contestParticipations: true } },
               },
             },
             coverImage: {
-              select: {
-                id: true,
-                url: true,
-                key: true,
-              },
+              select: { id: true, url: true, key: true },
             },
           },
-          orderBy: {
-            createdAt: "desc",
-          },
         }),
-        db.contestParticipation.count({
-          where: {
-            profileId,
-            contest: {
-              startDate: { lte: now },
-              endDate: { gte: now },
-              status: { in: ["ACTIVE", "VOTING", "JUDGING", "PUBLISHED", "BOOKED"] },
-            },
-            isParticipating: true,
-          },
-        }),
+        db.contestParticipation.count({ where: whereCondition }),
       ]);
 
       const pagination = calculatePaginationMetadata(total, page, limit);
 
-      return {
-        data: participations,
-        pagination,
-      };
+      const data = participations.map(p => ({
+        ...p,
+        contest: {
+          ...p.contest,
+          totalParticipants: p.contest._count.contestParticipations,
+        },
+      }));
+
+      return { data, pagination };
     },
-    300, // Cache for 5 minutes
+    300, // 5 minutes cache
   );
 
   return c.json(result, HttpStatusCodes.OK);

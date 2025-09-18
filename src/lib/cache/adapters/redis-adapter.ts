@@ -13,7 +13,7 @@ export class RedisCacheAdapter implements CacheAdapter {
   private lastHealthCheck = 0;
   private healthCheckInterval = 30000; // 30 seconds
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
+  private maxReconnectAttempts = 3;
   private cacheStats = {
     hits: 0,
     misses: 0,
@@ -51,7 +51,9 @@ export class RedisCacheAdapter implements CacheAdapter {
 
       this.client.on("error", (err: Error) => {
         if (!this.connectionFailed) {
-          console.error("Redis Client Error:", err);
+          if (env.LOG_LEVEL !== "silent") {
+            console.error("Redis Client Error:", err);
+          }
         }
         this.isConnected = false;
       });
@@ -71,7 +73,9 @@ export class RedisCacheAdapter implements CacheAdapter {
     } catch (error) {
       this.connectionFailed = true;
       this.isConnected = false;
-      console.warn("Redis not available, falling back to memory cache:", error instanceof Error ? error.message : error);
+      if (env.LOG_LEVEL !== "silent" && env.LOG_LEVEL !== "error") {
+        console.warn("Redis not available, falling back to memory cache:", error instanceof Error ? error.message : error);
+      }
       // Don't throw error - let the cache service handle fallback
     }
   }
@@ -441,15 +445,15 @@ export class RedisCacheAdapter implements CacheAdapter {
       if (this.isConnected && !this.connectionFailed) {
         this.reconnectAttempts = 0;
         this.cacheStats.reconnects++;
-        console.warn("✅ Redis reconnected successfully");
+        // quiet success
         return true;
       } else {
-        console.warn("Redis reconnection failed - connection not established");
+        // quiet failure
         this.connectionFailed = true;
         return false;
       }
-    } catch (error) {
-      console.error("Redis reconnection failed:", error);
+    } catch {
+      // quiet error to avoid noise when redis is down
       this.connectionFailed = true;
       this.isConnected = false;
       return false;

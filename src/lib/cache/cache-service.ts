@@ -37,7 +37,7 @@ export class CacheService {
   }
 
   private async initializeAdapter(): Promise<void> {
-    // Check if Redis URL is provided
+    // If no Redis URL, use memory cache
     if (!env.REDIS_URL) {
       console.warn("⚠️ No Redis URL provided, using memory cache");
       this.adapter = new MemoryCacheAdapter(this.config);
@@ -295,7 +295,9 @@ export class CacheService {
         const health = await this.adapter.healthCheck();
 
         if (!health.healthy) {
-          console.warn("⚠️ Redis health check failed:", health.error);
+          if (env.LOG_LEVEL !== "silent" && env.LOG_LEVEL !== "error") {
+            console.warn("⚠️ Redis health check failed:", health.error);
+          }
 
           // Only attempt reconnection if we haven't reached max attempts
           const status = this.adapter.getConnectionStatus();

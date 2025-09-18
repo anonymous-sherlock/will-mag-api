@@ -266,6 +266,36 @@ export const updateNullUsernames = createRoute({
   },
 });
 
+export const createVoterProfile = createRoute({
+  path: "/users/{id}/voter/profile/create",
+  method: "post",
+  tags,
+  summary: "Create Voter Profile",
+  description: "Create a voter profile for a user if it does not exist",
+  security: [
+    {
+      BearerAuth: [],
+    },
+  ],
+  request: {
+    params: z.object({
+      id: z.string().describe("The user ID"),
+    }),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(
+      z.object({
+        message: z.string(),
+      }),
+      "Create voter profile result",
+    ),
+    [HttpStatusCodes.UNAUTHORIZED]: UnauthorizedResponse(),
+    [HttpStatusCodes.FORBIDDEN]: ForbiddenResponse(),
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: InternalServerErrorResponse(),
+    [HttpStatusCodes.NOT_FOUND]: NotFoundResponse("User not found"),
+  },
+});
+
 export type ListRoute = typeof list;
 export type CreateRoute = typeof create;
 export type GetOneRoute = typeof getOne;
@@ -276,3 +306,4 @@ export type RemoveRoute = typeof remove;
 export type GetUserProfileRoute = typeof getUserProfile;
 export type ChangeUserTypeRoute = typeof changeUserType;
 export type UpdateNullUsernamesRoute = typeof updateNullUsernames;
+export type CreateVoterProfileRoute = typeof createVoterProfile;

@@ -9,7 +9,7 @@ import { auth } from "@/lib/auth";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 import { generateUniqueUsernameFromEmail } from "@/utils/username";
 
-import type { ChangeUserTypeRoute, CreateRoute, GetByEmailRoute, GetByUsernameRoute, GetOneRoute, GetUserProfileRoute, ListRoute, PatchRoute, RemoveRoute, UpdateNullUsernamesRoute } from "./user.routes";
+import type { ChangeUserTypeRoute, CreateRoute, CreateVoterProfileRoute, GetByEmailRoute, GetByUsernameRoute, GetOneRoute, GetUserProfileRoute, ListRoute, PatchRoute, RemoveRoute, UpdateNullUsernamesRoute } from "./user.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const { page, limit, search, sortBy, sortOrder } = c.req.valid("query");
@@ -138,6 +138,14 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
 
   const existingUser = await db.user.findUnique({
     where: { id },
+    select: {
+      id: true,
+      profile: {
+        select: {
+          id: true,
+        },
+      },
+    },
   });
 
   if (!existingUser) {
@@ -148,7 +156,6 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
     where: { id },
     data: userData,
   });
-
   return c.json(updatedUser, HttpStatusCodes.OK);
 };
 
@@ -322,5 +329,54 @@ export const updateNullUsernames: AppRouteHandler<UpdateNullUsernamesRoute> = as
   } catch (error) {
     console.error("Error updating null usernames:", error);
     return sendErrorResponse(c, "internalServerError", "Failed to update usernames");
+  }
+};
+
+export const createVoterProfile: AppRouteHandler<CreateVoterProfileRoute> = async (c) => {
+  const { id } = c.req.valid("param");
+  const currentUser = c.get("user");
+
+  // 🔹 Auth check
+  if (!currentUser) {
+    return sendErrorResponse(c, "unauthorized");
+  }
+  if (currentUser.id !== id && currentUser.role !== "ADMIN") {
+    return sendErrorResponse(c, "forbidden");
+  }
+
+  try {
+    // 🔹 Run everything in a transaction to avoid partial updates
+    const [updatedUser, profile] = await db.$transaction([
+      // Ensure user type = VOTER
+      db.user.update({
+        where: { id },
+        data: { type: "VOTER" },
+        select: { id: true, type: true },
+      }),
+
+      // Ensure profile exists
+      db.profile.upsert({
+        where: { userId: id },
+        update: {},
+        create: { userId: id, address: "" },
+        select: { id: true, userId: true, address: true },
+      }),
+    ]);
+
+    return c.json(
+      {
+        message: "Voter profile created successfully",
+        user: updatedUser,
+        profile,
+      },
+      HttpStatusCodes.OK,
+    );
+  } catch (err: any) {
+    if (err.code === "P2025") {
+      // Prisma "record not found" error
+      return sendErrorResponse(c, "notFound", "User not found");
+    }
+    console.error("createVoterProfile error:", err);
+    return sendErrorResponse(c, "internalServerError", "Something went wrong");
   }
 };

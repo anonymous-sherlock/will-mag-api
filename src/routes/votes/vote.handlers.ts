@@ -169,7 +169,7 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
 
   const totalPrice = getPriceForVoteCount(voteCount);
   const activeMultiplier = await getActiveVoteMultiplier();
-  const unitPrice = Math.round((totalPrice / voteCount) * 100); // Convert to cents
+  const unitPrice = Math.round((totalPrice / voteCount) * 100);
 
   const payment = await db.payment.create({
     data: {
@@ -180,7 +180,7 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
       // Store voting intent data
       intendedVoteeId: votee.id,
       intendedContestId: contest.id,
-      intendedVoteCount: voteCount,
+      intendedVoteCount: voteCount * activeMultiplier,
       intendedComment: null,
     },
   });

@@ -153,13 +153,21 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
           createdAt: "asc",
         },
       },
+      rank: {
+        select: {
+          manualRank: true,
+          computedRank: true,
+        },
+      },
     },
   });
 
   if (!profile)
     return sendErrorResponse(c, "notFound", "Profile not found");
 
-  return c.json(profile, HttpStatusCodes.OK);
+  const displayRank = profile.rank?.manualRank ?? profile.rank?.computedRank ?? "N/A" as number | "N/A";
+
+  return c.json({ ...profile, rank: displayRank }, HttpStatusCodes.OK);
 };
 
 export const getByUserId: AppRouteHandler<GetByUserIdRoute> = async (c) => {
@@ -204,13 +212,21 @@ export const getByUserId: AppRouteHandler<GetByUserIdRoute> = async (c) => {
           createdAt: "asc",
         },
       },
+      rank: {
+        select: {
+          manualRank: true,
+          computedRank: true,
+        },
+      },
     },
   });
 
   if (!profile)
     return sendErrorResponse(c, "notFound", "Profile not found");
 
-  return c.json(profile, HttpStatusCodes.OK);
+  const displayRank = profile.rank?.manualRank ?? profile.rank?.computedRank ?? "N/A" as number | "N/A";
+
+  return c.json({ ...profile, rank: displayRank }, HttpStatusCodes.OK);
 };
 
 export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async (c) => {
@@ -259,6 +275,12 @@ export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async (c) => {
               createdAt: "asc",
             },
           },
+          rank: {
+            select: {
+              manualRank: true,
+              computedRank: true,
+            },
+          },
         },
       },
     },
@@ -269,7 +291,9 @@ export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async (c) => {
   }
 
   // Return the profile with included cover image and profile photos
-  return c.json(user.profile, HttpStatusCodes.OK);
+  const displayRank = user.profile.rank?.manualRank ?? user.profile.rank?.computedRank ?? "N/A" as number | "N/A";
+
+  return c.json({ ...user.profile, rank: displayRank }, HttpStatusCodes.OK);
 };
 
 export const patch: AppRouteHandler<PatchRoute> = async (c) => {
@@ -612,11 +636,21 @@ export const getProfileStats: AppRouteHandler<GetProfileStatsRoute> = async (c) 
 
   const profile = await db.profile.findFirst({
     where: { id },
+    include: {
+      rank: {
+        select: {
+          manualRank: true,
+          computedRank: true,
+        },
+      },
+    },
   });
 
   if (!profile) {
     return sendErrorResponse(c, "notFound", "Profile not found");
   }
+
+  const displayRank = profile.rank?.manualRank ?? profile.rank?.computedRank ?? "N/A" as number | "N/A";
 
   const now = new Date();
 
@@ -628,14 +662,16 @@ export const getProfileStats: AppRouteHandler<GetProfileStatsRoute> = async (c) 
     },
   });
 
-  // Get all votes received by this profile
-  const votesReceived = await db.vote.findMany({
+  // Aggregate votes received by this profile
+  const votesReceivedAgg = await db.vote.aggregate({
     where: { voteeId: profile.id },
+    _sum: { count: true },
   });
 
-  // Get all votes given by this profile
-  const votesGiven = await db.vote.findMany({
+  // Aggregate votes given by this profile
+  const votesGivenAgg = await db.vote.aggregate({
     where: { voterId: profile.id },
+    _sum: { count: true },
   });
 
   // Calculate statistics
@@ -644,69 +680,28 @@ export const getProfileStats: AppRouteHandler<GetProfileStatsRoute> = async (c) 
     p.contest.startDate <= now && p.contest.endDate >= now,
   ).length;
 
-  const totalVotesReceived = votesReceived.reduce((sum, vote) => sum + vote.count, 0);
-  const totalVotes = votesGiven.reduce((sum, vote) => sum + vote.count, 0);
+  const totalVotesReceived = votesReceivedAgg._sum.count || 0;
+  const totalVotes = votesGivenAgg._sum.count || 0;
 
   // Calculate earnings based on contests won
-  const wonContests = await db.contest.findMany({
+  const earningsAgg = await db.contest.aggregate({
     where: {
       winnerProfileId: profile.id,
       endDate: { lt: now }, // Only completed contests
     },
+    _sum: { prizePool: true },
   });
 
-  const totalEarnings = wonContests.reduce((sum, contest) => sum + contest.prizePool, 0);
+  const totalEarnings = earningsAgg._sum.prizePool || 0;
 
-  // Calculate rank statistics
-  const contestRanks = [];
-  for (const participation of participations) {
-    if (participation.contest.endDate < now) {
-      // Contest has ended, calculate rank
-      const allParticipants = await db.contestParticipation.findMany({
-        where: {
-          contestId: participation.contest.id,
-          isParticipating: true,
-        },
-      });
-
-      const participantVotes = await Promise.all(
-        allParticipants.map(async (p) => {
-          const votes = await db.vote.aggregate({
-            where: {
-              contestId: participation.contest.id,
-              voteeId: p.profileId,
-            },
-            _sum: { count: true },
-          });
-          return {
-            profileId: p.profileId,
-            totalVotes: votes._sum.count || 0,
-          };
-        }),
-      );
-
-      participantVotes.sort((a, b) => b.totalVotes - a.totalVotes);
-      const rank = participantVotes.findIndex(p => p.profileId === profile.id) + 1;
-      if (rank > 0) {
-        contestRanks.push(rank);
-      }
-    }
-  }
-
-  const averageRank = contestRanks.length > 0
-    ? contestRanks.reduce((sum, rank) => sum + rank, 0) / contestRanks.length
-    : 0;
-  const bestRank = contestRanks.length > 0 ? Math.min(...contestRanks) : 0;
-  const currentRank = contestRanks.length > 0 ? contestRanks[contestRanks.length - 1] : 0;
+  // Rank-related stats are now sourced from DB; skip expensive per-contest computations
+  const currentRank = displayRank as number;
 
   // Calculate win rate (contests where rank is 1)
-  const wins = contestRanks.filter(rank => rank === 1).length;
-  const winRate = contestRanks.length > 0 ? (wins / contestRanks.length) * 100 : 0;
+  const winRate = 0;
 
   // Get total participants across all contests
-  const totalParticipants = await db.contestParticipation.count({
-    where: { profileId: profile.id },
-  });
+  const totalParticipants = participations.length;
 
   const stats = {
     currentRank,
@@ -716,8 +711,6 @@ export const getProfileStats: AppRouteHandler<GetProfileStatsRoute> = async (c) 
     totalVotes,
     totalVotesReceived,
     winRate: Math.round(winRate * 100) / 100, // Round to 2 decimal places
-    averageRank: Math.round(averageRank * 100) / 100,
-    bestRank,
     totalParticipants,
   };
 

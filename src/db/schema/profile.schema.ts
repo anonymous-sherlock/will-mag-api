@@ -87,4 +87,5 @@ export const ProfileSelectSchemaWithMediaRelation = ProfileSchema.extend({
       }),
     )
     .nullable(),
+  rank: z.union([z.number(), z.literal("N/A")]),
 });

@@ -118,8 +118,6 @@ export const getProfileStats = createRoute({
         totalVotes: z.number(),
         totalVotesReceived: z.number(),
         winRate: z.number(),
-        averageRank: z.number(),
-        bestRank: z.number(),
         totalParticipants: z.number(),
       }),
       "Profile statistics",

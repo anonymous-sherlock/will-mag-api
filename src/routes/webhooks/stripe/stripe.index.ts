@@ -6,6 +6,7 @@ import Stripe from "stripe";
 import { db } from "@/db";
 import { PaymentMetadataSchema } from "@/db/schema/payments.schema";
 import env from "@/env";
+import { Icon, Notification_Type } from "@/generated/prisma";
 import { updateProfileStatsOnVote } from "@/lib/profile-stats";
 import { stripe } from "@/lib/stripe";
 
@@ -124,6 +125,30 @@ async function sessionCompleted(event: Stripe.Event) {
 
   // Update ProfileStats for the votee (outside transaction to avoid conflicts)
   await updateProfileStatsOnVote(metadata.voteeId, "PAID", metadata.voteCount);
+
+  // Notify the votee that they received paid votes
+  try {
+    const voter = await db.profile.findUnique({
+      where: { id: metadata.voterId },
+      select: { user: { select: { name: true, username: true } } },
+    });
+
+    const voterName = voter?.user?.name ?? "Someone";
+    const voterUsername = voter?.user?.username;
+    const totalVoteCount = metadata.voteCount * metadata.votesMultipleBy;
+    const votesLabel = totalVoteCount === 1 ? "paid vote" : "paid votes";
+
+    await db.notification.create({
+      data: {
+        profileId: metadata.voteeId,
+        title: "Paid vote received",
+        message: `${voterName} sent you ${totalVoteCount} ${votesLabel}`,
+        type: Notification_Type.VOTE_PREMIUM,
+        icon: Icon.SUCCESS,
+        action: voterUsername ? `/profile/${voterUsername}` : undefined,
+      },
+    });
+  } catch {}
 }
 
 async function sessionExpired(event: Stripe.Event) {

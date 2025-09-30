@@ -6,6 +6,7 @@ import type { AppRouteHandler } from "@/types/types";
 import { FREE_VOTE_INTERVAL } from "@/constants";
 import { db } from "@/db";
 import env from "@/env";
+import { Icon, Notification_Type } from "@/generated/prisma";
 import { sendErrorResponse } from "@/helpers/send-error-response";
 import { updateProfileStatsOnVote } from "@/lib/profile-stats";
 import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
@@ -42,12 +43,56 @@ export const freeVote: AppRouteHandler<FreeVote> = async (c) => {
     return sendErrorResponse(c, "tooManyRequests", "You can only use a free vote once every 24 hours for this contest");
   }
 
+  // Fetch minimal info to personalize the notification
+  const [voter, votee] = await Promise.all([
+    db.profile.findUnique({
+      where: { id: data.voterId },
+      select: {
+        id: true,
+        user: { select: { name: true, username: true } },
+      },
+    }),
+    db.profile.findUnique({
+      where: { id: data.voteeId },
+      select: {
+        id: true,
+        user: { select: { username: true } },
+      },
+    }),
+  ]);
+
+  if (!votee) {
+    return sendErrorResponse(c, "notFound", "Votee not found");
+  }
+  if (!voter) {
+    return sendErrorResponse(c, "notFound", "Voter not found");
+  }
+
   const vote = await db.vote.create({ data });
 
   await updateLastFreeVote(data.voterId);
 
   // Update ProfileStats for the votee
-  await updateProfileStatsOnVote(data.voteeId, "FREE", 1);
+  await updateProfileStatsOnVote(votee.id, "FREE", 1);
+
+  // Notify the votee that they received a free vote
+  try {
+    const voterName = voter.user.name ?? "Someone";
+    const voterUsername = voter.user.username;
+
+    await db.notification.create({
+      data: {
+        profileId: data.voteeId,
+        title: "Free vote received",
+        message: `${voterName} sent you a free vote`,
+        type: Notification_Type.VOTE_RECEIVED,
+        icon: Icon.SUCCESS,
+        action: voterUsername ? `/profile/${voterUsername}` : undefined,
+      },
+    });
+  } catch {
+    // Intentionally do not fail the request if notification creation fails
+  }
 
   return c.json(vote, HttpStatusCodes.OK);
 };

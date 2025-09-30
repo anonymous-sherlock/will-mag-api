@@ -668,6 +668,18 @@ export const getProfileStats: AppRouteHandler<GetProfileStatsRoute> = async (c) 
     _sum: { count: true },
   });
 
+  // Aggregate free votes received by this profile
+  const freeVotesReceivedAgg = await db.vote.aggregate({
+    where: { voteeId: profile.id, type: "FREE" },
+    _sum: { count: true },
+  });
+
+  // Aggregate paid votes received by this profile
+  const paidVotesReceivedAgg = await db.vote.aggregate({
+    where: { voteeId: profile.id, type: "PAID" },
+    _sum: { count: true },
+  });
+
   // Aggregate votes given by this profile
   const votesGivenAgg = await db.vote.aggregate({
     where: { voterId: profile.id },
@@ -681,7 +693,9 @@ export const getProfileStats: AppRouteHandler<GetProfileStatsRoute> = async (c) 
   ).length;
 
   const totalVotesReceived = votesReceivedAgg._sum.count || 0;
-  const totalVotes = votesGivenAgg._sum.count || 0;
+  const totalVotesGiven = votesGivenAgg._sum.count || 0;
+  const freeVotesReceived = freeVotesReceivedAgg._sum.count || 0;
+  const paidVotesReceived = paidVotesReceivedAgg._sum.count || 0;
 
   // Calculate earnings based on contests won
   const earningsAgg = await db.contest.aggregate({
@@ -708,8 +722,10 @@ export const getProfileStats: AppRouteHandler<GetProfileStatsRoute> = async (c) 
     totalCompetitions,
     totalEarnings,
     activeContests,
-    totalVotes,
+    totalVotesGiven,
     totalVotesReceived,
+    freeVotesReceived,
+    paidVotesReceived,
     winRate: Math.round(winRate * 100) / 100, // Round to 2 decimal places
     totalParticipants,
   };

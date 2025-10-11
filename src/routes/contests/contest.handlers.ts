@@ -145,34 +145,37 @@ export const create: AppRouteHandler<CreateRoute> = async (c) => {
   const cache = getCacheService();
   await cache.invalidateGlobalCache("contest");
 
+  // Invalidate the specific contest cache
+  await cache.del(`contest:byId:${insertedContest.id}`);
+
   return c.json(insertedContest, HttpStatusCodes.CREATED);
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
   const { id } = c.req.valid("param");
 
-  const contest = await ContestCacheUtils.cacheContestById(
-    id,
-    async () => {
-      const contest = await db.contest.findUnique({
-        where: { id },
-        include: {
-          images: true,
-          awards: true,
-        },
-      });
+  const cache = getCacheService();
+  const cacheKey = `contest:byId:${id}`;
 
-      if (!contest) {
-        return null;
-      }
-
-      return contest;
-    },
-    600, // 10 minutes cache
-  );
+  // Try to get from cache first
+  let contest = await cache.get(cacheKey);
 
   if (!contest) {
-    return sendErrorResponse(c, "notFound", "Contest not found");
+    // Cache miss - fetch from database
+    contest = await db.contest.findUnique({
+      where: { id },
+      include: {
+        images: true,
+        awards: true,
+      },
+    });
+
+    if (!contest) {
+      return sendErrorResponse(c, "notFound", "Contest not found");
+    }
+
+    // Cache the result for 10 minutes
+    await cache.set(cacheKey, contest, { ttl: 600 });
   }
 
   return c.json(contest, HttpStatusCodes.OK);
@@ -266,6 +269,9 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
   await cache.invalidateContestCache(id, "update");
   await cache.invalidateGlobalCache("contest");
 
+  // Invalidate the specific contest cache
+  await cache.del(`contest:byId:${id}`);
+
   return c.json(updatedContest, HttpStatusCodes.OK);
 };
 
@@ -297,6 +303,9 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
   const cache = getCacheService();
   await cache.invalidateContestCache(id, "update");
   await cache.invalidateGlobalCache("contest");
+
+  // Invalidate the specific contest cache
+  await cache.del(`contest:byId:${id}`);
 
   return c.json({ message: "Contest deleted successfully" }, HttpStatusCodes.OK);
 };
@@ -690,7 +699,7 @@ export const uploadContestImages: AppRouteHandler<UploadContestImagesRoute> = as
 
   // Upload files using utapi
   const uploaded = await utapi.uploadFiles(fileArray, {
-    concurrency: 8,
+    concurrency: 4,
     acl: "public-read",
     contentDisposition: "inline",
   });
@@ -806,6 +815,9 @@ export const toggleVoting: AppRouteHandler<ToggleVotingRoute> = async (c) => {
   // Invalidate cache after updating voting status
   const cache = getCacheService();
   await cache.invalidateContestCache(id, "update");
+
+  // Invalidate the specific contest cache
+  await cache.del(`contest:byId:${id}`);
 
   const statusMessage = newVotingStatus ? "Voting enabled" : "Voting disabled";
 

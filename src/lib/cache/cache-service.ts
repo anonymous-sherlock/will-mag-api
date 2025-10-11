@@ -227,7 +227,22 @@ export class CacheService {
    * Invalidate contest-related cache
    */
   async invalidateContestCache(contestId: string, type: "participation" | "vote" | "update"): Promise<void> {
-    const methodName = `on${type.charAt(0).toUpperCase() + type.slice(1)}Change` as keyof typeof cacheInvalidationPatterns.contest;
+    let methodName: keyof typeof cacheInvalidationPatterns.contest;
+
+    switch (type) {
+      case "participation":
+        methodName = "onParticipationChange";
+        break;
+      case "vote":
+        methodName = "onVoteChange";
+        break;
+      case "update":
+        methodName = "onContestUpdate";
+        break;
+      default:
+        throw new Error(`Invalid cache invalidation type: ${type}`);
+    }
+
     const patterns = cacheInvalidationPatterns.contest[methodName](contestId);
     await this.delMany(patterns);
   }

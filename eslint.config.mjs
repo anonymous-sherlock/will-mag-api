@@ -13,6 +13,9 @@ export default antfu({
 }, {
   rules: {
     "no-console": ["warn"],
+    "style/comma-dangle": ["off"],
+    "style/arrow-parens": ["off"],
+    "antfu/if-newline": "off",
     "antfu/no-top-level-await": ["off"],
     "node/prefer-global/process": ["off"],
     "node/no-process-env": ["error"],

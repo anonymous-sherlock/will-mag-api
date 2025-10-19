@@ -68,14 +68,14 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
         });
       },
       `profile:list:page:${page}:limit:${limit}`,
-      300,
+      300
     ),
     CacheUtils.cacheWithInfo(
       async () => {
         return db.profile.count();
       },
       `profile:count:page:${page}:limit:${limit}`,
-      300,
+      300
     ),
   ]);
 
@@ -88,7 +88,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
       data: profiles,
       pagination,
     },
-    HttpStatusCodes.OK,
+    HttpStatusCodes.OK
   );
 };
 
@@ -162,10 +162,9 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
     },
   });
 
-  if (!profile)
-    return sendErrorResponse(c, "notFound", "Profile not found");
+  if (!profile) return sendErrorResponse(c, "notFound", "Profile not found");
 
-  const displayRank = profile.rank?.manualRank ?? profile.rank?.computedRank ?? "N/A" as number | "N/A";
+  const displayRank = profile.rank?.manualRank ?? profile.rank?.computedRank ?? ("N/A" as number | "N/A");
 
   return c.json({ ...profile, rank: displayRank }, HttpStatusCodes.OK);
 };
@@ -221,10 +220,9 @@ export const getByUserId: AppRouteHandler<GetByUserIdRoute> = async (c) => {
     },
   });
 
-  if (!profile)
-    return sendErrorResponse(c, "notFound", "Profile not found");
+  if (!profile) return sendErrorResponse(c, "notFound", "Profile not found");
 
-  const displayRank = profile.rank?.manualRank ?? profile.rank?.computedRank ?? "N/A" as number | "N/A";
+  const displayRank = profile.rank?.manualRank ?? profile.rank?.computedRank ?? ("N/A" as number | "N/A");
 
   return c.json({ ...profile, rank: displayRank }, HttpStatusCodes.OK);
 };
@@ -291,7 +289,7 @@ export const getByUsername: AppRouteHandler<GetByUsernameRoute> = async (c) => {
   }
 
   // Return the profile with included cover image and profile photos
-  const displayRank = user.profile.rank?.manualRank ?? user.profile.rank?.computedRank ?? "N/A" as number | "N/A";
+  const displayRank = user.profile.rank?.manualRank ?? user.profile.rank?.computedRank ?? ("N/A" as number | "N/A");
 
   return c.json({ ...user.profile, rank: displayRank }, HttpStatusCodes.OK);
 };
@@ -304,8 +302,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
     where: { id },
   });
 
-  if (!profile)
-    return sendErrorResponse(c, "notFound", "Profile not found");
+  if (!profile) return sendErrorResponse(c, "notFound", "Profile not found");
 
   // Update profile and user separately
   const [updatedProfile] = await Promise.all([
@@ -337,8 +334,7 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
     where: { id },
   });
 
-  if (!profile)
-    return sendErrorResponse(c, "notFound", "Profile not found");
+  if (!profile) return sendErrorResponse(c, "notFound", "Profile not found");
 
   await db.profile.delete({
     where: { id },
@@ -650,7 +646,7 @@ export const getProfileStats: AppRouteHandler<GetProfileStatsRoute> = async (c) 
     return sendErrorResponse(c, "notFound", "Profile not found");
   }
 
-  const displayRank = profile.rank?.manualRank ?? profile.rank?.computedRank ?? "N/A" as number | "N/A";
+  const displayRank = profile.rank?.manualRank ?? profile.rank?.computedRank ?? ("N/A" as number | "N/A");
 
   const now = new Date();
 
@@ -688,9 +684,7 @@ export const getProfileStats: AppRouteHandler<GetProfileStatsRoute> = async (c) 
 
   // Calculate statistics
   const totalCompetitions = participations.length;
-  const activeContests = participations.filter(p =>
-    p.contest.startDate <= now && p.contest.endDate >= now,
-  ).length;
+  const activeContests = participations.filter((p) => p.contest.startDate <= now && p.contest.endDate >= now).length;
 
   const totalVotesReceived = votesReceivedAgg._sum.count || 0;
   const totalVotesGiven = votesGivenAgg._sum.count || 0;
@@ -787,6 +781,13 @@ export const getActiveParticipationByProfile: AppRouteHandler<GetActiveParticipa
             coverImage: {
               select: { id: true, url: true, key: true },
             },
+            contestRank: {
+              select: {
+                rank: true,
+                freeVotes: true,
+                paidVotes: true,
+              },
+            },
           },
         }),
         db.contestParticipation.count({ where: whereCondition }),
@@ -794,8 +795,9 @@ export const getActiveParticipationByProfile: AppRouteHandler<GetActiveParticipa
 
       const pagination = calculatePaginationMetadata(total, page, limit);
 
-      const data = participations.map(p => ({
+      const data = participations.map((p) => ({
         ...p,
+        rank: p.contestRank?.rank ?? null,
         contest: {
           ...p.contest,
           totalParticipants: p.contest._count.contestParticipations,
@@ -804,7 +806,7 @@ export const getActiveParticipationByProfile: AppRouteHandler<GetActiveParticipa
 
       return { data, pagination };
     },
-    300, // 5 minutes cache
+    300 // 5 minutes cache
   );
 
   return c.json(result, HttpStatusCodes.OK);

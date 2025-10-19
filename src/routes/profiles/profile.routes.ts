@@ -337,6 +337,7 @@ export const getActiveParticipationByProfile = createRoute({
     [HttpStatusCodes.OK]: jsonContent(
       createPaginatedResponseSchema(
         ContestParticipationSelectSchema.extend({
+          rank: z.number().nullable(),
           contest: ContestSelectSchemaWithAwardsandImages.extend({
             totalParticipants: z.number(),
           }),

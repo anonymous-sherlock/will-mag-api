@@ -144,7 +144,8 @@ model Profile {
 
   payments         Payment[]
   stats            ProfileStats?
-  paymentsReceived Payment[]     @relation("PaymentIntendedVotee")
+  paymentsReceived Payment[]        @relation("PaymentIntendedVotee")
+  contestRankings  ContestRanking[] @relation("ProfileContestRankings")
 
   @@fulltext([bio])
   @@fulltext([hobbiesAndPassions])
@@ -276,9 +277,10 @@ model Contest {
   requirements String? @db.LongText
 
   // Audit
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  payments  Payment[] @relation("PaymentIntendedContest")
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  payments  Payment[]        @relation("PaymentIntendedContest")
+  ranks     ContestRanking[] @relation("ContestRanks")
 
   // Indexes
   @@index([status])
@@ -290,6 +292,30 @@ model Contest {
   @@fulltext([name])
   @@fulltext([description])
   @@fulltext([name, description])
+}
+
+model ContestRanking {
+  id              String               @id @default(cuid())
+  profileId       String
+  profile         Profile              @relation("ProfileContestRankings", fields: [profileId], references: [id], onDelete: Cascade)
+  contestId       String
+  contest         Contest              @relation("ContestRanks", fields: [contestId], references: [id], onDelete: Cascade)
+  participation   ContestParticipation @relation("ContestParticipationContestRanking", fields: [participationId], references: [id])
+  participationId String               @unique
+
+  rank Int
+
+  freeVotes Int
+  paidVotes Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([profileId, contestId])
+  @@unique([rank, contestId])
+  @@index([contestId])
+  @@index([profileId])
+  @@index([contestId, profileId])
 }
 
 model Award {
@@ -355,6 +381,8 @@ model ContestParticipation {
   id        String @id @default(cuid())
   profileId String
   contestId String
+
+  contestRank ContestRanking? @relation("ContestParticipationContestRanking")
 
   profile Profile @relation("ProfileContestParticipations", fields: [profileId], references: [id], onDelete: Cascade)
   contest Contest @relation("ContestParticipants", fields: [contestId], references: [id], onDelete: Cascade)

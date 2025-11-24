@@ -10,7 +10,22 @@ import { calculatePaginationMetadata } from "@/lib/queries/query.helper";
 import { utapi } from "@/lib/uploadthing";
 import { generateUniqueSlug } from "@/utils/slugify";
 
-import type { CreateRoute, GetAvailableContestsRoute, GetBySlugRoute, GetContestLeaderboardRoute, GetContestStatsRoute, GetJoinedContestsRoute, GetOneRoute, GetUpcomingContestsRoute, ListRoute, PatchRoute, RemoveContestImageRoute, RemoveRoute, ToggleVotingRoute, UploadContestImagesRoute } from "./contest.routes";
+import type {
+  CreateRoute,
+  GetAvailableContestsRoute,
+  GetBySlugRoute,
+  GetContestLeaderboardRoute,
+  GetContestStatsRoute,
+  GetJoinedContestsRoute,
+  GetOneRoute,
+  GetUpcomingContestsRoute,
+  ListRoute,
+  PatchRoute,
+  RemoveContestImageRoute,
+  RemoveRoute,
+  ToggleVotingRoute,
+  UploadContestImagesRoute,
+} from "./contest.routes";
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const { page, limit, status, search } = c.req.valid("query");
@@ -59,11 +74,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
       }
 
       if (search) {
-        whereClause.OR = [
-          { name: { contains: search } },
-          { description: { contains: search } },
-          { slug: { contains: search } },
-        ];
+        whereClause.OR = [{ name: { contains: search } }, { description: { contains: search } }, { slug: { contains: search } }];
       }
 
       const [contests, total] = await Promise.all([
@@ -78,7 +89,6 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
                 url: true,
                 key: true,
                 caption: true,
-
               },
             },
             awards: {
@@ -103,7 +113,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
         pagination,
       };
     },
-    300, // 5 minutes cache
+    300 // 5 minutes cache
   );
 
   return c.json(result, HttpStatusCodes.OK);
@@ -112,9 +122,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
 export const create: AppRouteHandler<CreateRoute> = async (c) => {
   const { awards, isFeatured, isVerified, isVotingEnabled, ...contest } = c.req.valid("json");
 
-  const providedSlug = typeof contest.slug === "string" && contest.slug.trim().length > 0
-    ? contest.slug.trim()
-    : contest.name;
+  const providedSlug = typeof contest.slug === "string" && contest.slug.trim().length > 0 ? contest.slug.trim() : contest.name;
 
   // Ensure slug uniqueness by suffixing with an incrementing number if needed
   const uniqueSlug = await generateUniqueSlug(providedSlug, async (slug) => {
@@ -201,7 +209,7 @@ export const getBySlug: AppRouteHandler<GetBySlugRoute> = async (c) => {
 
       return contest;
     },
-    600, // 10 minutes cache
+    600 // 10 minutes cache
   );
 
   if (!contest) {
@@ -228,9 +236,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
   // Generate unique slug if slug is being updated
   let finalSlug = contest.slug; // Keep existing slug by default
   if (contestData.slug && trimmedSlug !== contest.slug) {
-    const providedSlug = typeof contestData.slug === "string" && contestData.slug.trim().length > 0
-      ? contestData.slug.trim()
-      : contestData.name ?? contest.name;
+    const providedSlug = typeof contestData.slug === "string" && contestData.slug.trim().length > 0 ? contestData.slug.trim() : contestData.name ?? contest.name;
 
     // Only generate new slug if it's different from current
     finalSlug = await generateUniqueSlug(providedSlug, async (slug) => {
@@ -349,10 +355,13 @@ export const getUpcomingContests: AppRouteHandler<GetUpcomingContestsRoute> = as
 
   const pagination = calculatePaginationMetadata(total, page, limit);
 
-  return c.json({
-    data: contests,
-    pagination,
-  }, HttpStatusCodes.OK);
+  return c.json(
+    {
+      data: contests,
+      pagination,
+    },
+    HttpStatusCodes.OK
+  );
 };
 
 export const getAvailableContests: AppRouteHandler<GetAvailableContestsRoute> = async (c) => {
@@ -408,10 +417,13 @@ export const getAvailableContests: AppRouteHandler<GetAvailableContestsRoute> = 
 
   const pagination = calculatePaginationMetadata(total, page, limit);
 
-  return c.json({
-    data: contests,
-    pagination,
-  }, HttpStatusCodes.OK);
+  return c.json(
+    {
+      data: contests,
+      pagination,
+    },
+    HttpStatusCodes.OK
+  );
 };
 
 export const getJoinedContests: AppRouteHandler<GetJoinedContestsRoute> = async (c) => {
@@ -463,10 +475,13 @@ export const getJoinedContests: AppRouteHandler<GetJoinedContestsRoute> = async 
 
   const pagination = calculatePaginationMetadata(total, page, limit);
 
-  return c.json({
-    data: contests,
-    pagination,
-  }, HttpStatusCodes.OK);
+  return c.json(
+    {
+      data: contests,
+      pagination,
+    },
+    HttpStatusCodes.OK
+  );
 };
 
 export const getContestStats: AppRouteHandler<GetContestStatsRoute> = async (c) => {
@@ -521,9 +536,7 @@ export const getContestStats: AppRouteHandler<GetContestStatsRoute> = async (c) 
         db.contestParticipation.count({ where: { contestId: id, isApproved: true, isParticipating: true } }),
       ]);
 
-      const participationRate = totalParticipants > 0
-        ? (approvedParticipants / totalParticipants) * 100
-        : 0;
+      const participationRate = totalParticipants > 0 ? (approvedParticipants / totalParticipants) * 100 : 0;
 
       const pendingParticipants = totalParticipants - approvedParticipants;
 
@@ -544,7 +557,7 @@ export const getContestStats: AppRouteHandler<GetContestStatsRoute> = async (c) 
         participationRate: Math.round(participationRate * 100) / 100, // 2 decimals
       };
     },
-    300, // 5 minutes cache
+    300 // 5 minutes cache
   );
 
   if (!stats) {
@@ -571,13 +584,16 @@ export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> 
         return null;
       }
 
-      const participants = await db.contestParticipation.findMany({
+      const rankings = await db.contestRanking.findMany({
         where: {
           contestId: id,
-          isParticipating: true,
         },
         include: {
-          coverImage: true,
+          participation: {
+            include: {
+              coverImage: true,
+            },
+          },
           profile: {
             include: {
               coverImage: {
@@ -596,66 +612,34 @@ export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> 
             },
           },
         },
+        orderBy: {
+          rank: "asc",
+        },
         skip: (page - 1) * limit,
         take: limit,
       });
 
-      const participantsWithVotes = await Promise.all(
-        participants.map(async (participation) => {
-          const [freeVotesResult, paidVotesResult] = await Promise.all([
-            db.vote.aggregate({
-              where: {
-                contestId: id,
-                voteeId: participation.profileId,
-                type: "FREE",
-              },
-              _sum: {
-                count: true,
-              },
-            }),
-            db.vote.aggregate({
-              where: {
-                contestId: id,
-                voteeId: participation.profileId,
-                type: "PAID",
-              },
-              _sum: {
-                count: true,
-              },
-            }),
-          ]);
-
-          const freeVotes = freeVotesResult._sum.count || 0;
-          const paidVotes = paidVotesResult._sum.count || 0;
-
-          return {
-            rank: 0,
-            profileId: participation.profileId,
-            username: participation.profile.user.username || "",
-            displayUsername: participation.profile.user.displayUsername,
-            avatarUrl: participation.profile.coverImage?.url || participation.profile.user.image || null,
-            bio: participation.profile.bio,
-            totalVotes: freeVotes + paidVotes,
-            freeVotes,
-            paidVotes,
-            isParticipating: participation.isParticipating || true,
-            coverImage: participation.coverImage?.url || null,
-            isApproved: participation.isApproved,
-          };
-        }),
-      );
-
-      // Sort by total votes (descending) and assign ranks
-      participantsWithVotes.sort((a, b) => b.totalVotes - a.totalVotes);
-      participantsWithVotes.forEach((participant, index) => {
-        participant.rank = index + 1;
+      const participantsWithVotes = rankings.map((ranking) => {
+        return {
+          rank: ranking.rank,
+          profileId: ranking.profileId,
+          username: ranking.profile.user.username || "",
+          displayUsername: ranking.profile.user.displayUsername,
+          avatarUrl: ranking.profile.coverImage?.url || ranking.profile.user.image || null,
+          bio: ranking.profile.bio,
+          totalVotes: ranking.freeVotes + ranking.paidVotes,
+          freeVotes: ranking.freeVotes,
+          paidVotes: ranking.paidVotes,
+          isParticipating: ranking.participation.isParticipating || true,
+          coverImage: ranking.participation.coverImage?.url || null,
+          isApproved: ranking.participation.isApproved,
+        };
       });
 
       // Get total count for pagination
-      const total = await db.contestParticipation.count({
+      const total = await db.contestRanking.count({
         where: {
           contestId: id,
-          isParticipating: true,
         },
       });
 
@@ -666,7 +650,7 @@ export const getContestLeaderboard: AppRouteHandler<GetContestLeaderboardRoute> 
         pagination,
       };
     },
-    300, // 5 minutes cache
+    300 // 5 minutes cache
   );
 
   if (!result) {
@@ -821,8 +805,11 @@ export const toggleVoting: AppRouteHandler<ToggleVotingRoute> = async (c) => {
 
   const statusMessage = newVotingStatus ? "Voting enabled" : "Voting disabled";
 
-  return c.json({
-    message: `${statusMessage} for contest "${contest.name}"`,
-    isVotingEnabled: updatedContest.isVotingEnabled,
-  }, HttpStatusCodes.OK);
+  return c.json(
+    {
+      message: `${statusMessage} for contest "${contest.name}"`,
+      isVotingEnabled: updatedContest.isVotingEnabled,
+    },
+    HttpStatusCodes.OK
+  );
 };

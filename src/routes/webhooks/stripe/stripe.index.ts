@@ -6,7 +6,7 @@ import Stripe from "stripe";
 import { db } from "@/db";
 import { PaymentMetadataSchema } from "@/db/schema/payments.schema";
 import env from "@/env";
-import { Icon, Notification_Type } from "@/generated/prisma";
+import { Icon, Notification_Type } from "@/generated/prisma/index.js";
 import { updateProfileStatsOnVote } from "@/lib/profile-stats";
 import { stripe } from "@/lib/stripe";
 

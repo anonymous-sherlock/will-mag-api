@@ -23,7 +23,9 @@ export const contestRanksUpdate: AppRouteHandler<ContestRanksUpdateRoute> = asyn
     );
   } catch (error) {
     console.error("Error updating contest rankings:", error);
-    return sendErrorResponse(c, "internalServerError", "Failed to update contest rankings");
+    console.error("Error details:", error instanceof Error ? error.message : String(error));
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+    return sendErrorResponse(c, "internalServerError", `Failed to update contest rankings: ${error instanceof Error ? error.message : String(error)}`);
   }
 };
 export const updateAllContestRankings: AppRouteHandler<UpdateAllContestRankingsRoute> = async (c) => {

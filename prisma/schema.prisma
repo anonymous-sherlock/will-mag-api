@@ -316,6 +316,7 @@ model ContestRanking {
   @@index([contestId])
   @@index([profileId])
   @@index([contestId, profileId])
+  @@map("ContestRanking")
 }
 
 model Award {

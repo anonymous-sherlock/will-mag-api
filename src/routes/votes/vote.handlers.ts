@@ -201,14 +201,14 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
   // Calculate price based on vote count (pricing tiers)
   const getPriceForVoteCount = (count: number): number => {
     switch (count) {
+      case 1:
+        return 1; // $1 for 1 vote
       case 5:
-        return 1; // $1 for 5 votes
-      case 25:
-        return 5; // $5 for 25 votes
-      case 50:
-        return 10; // $10 for 50 votes
+        return 5; // $5 for 5 votes
+      case 10:
+        return 10; // $10 for 10 votes
       default:
-        return count * 0.2; // $0.20 per vote for custom votes
+        return count * 1; // $1 per vote for custom votes
     }
   };
 
@@ -307,7 +307,7 @@ export const getLatestVotes: AppRouteHandler<GetLatestVotes> = async (c) => {
   if (search) {
     const fields: (keyof Prisma.UserWhereInput)[] = ["name", "username", "email", "displayUsername"];
 
-    where.OR = fields.map(field => ({
+    where.OR = fields.map((field) => ({
       votee: {
         user: {
           [field]: { contains: search },
@@ -355,7 +355,7 @@ export const getLatestVotes: AppRouteHandler<GetLatestVotes> = async (c) => {
     db.vote.count({ where }),
   ]);
 
-  const formattedVotes = votes.map(vote => ({
+  const formattedVotes = votes.map((vote) => ({
     votee: vote.votee?.user
       ? {
           name: vote.votee.user.name,
@@ -441,7 +441,7 @@ export const getVotesByProfileId: AppRouteHandler<GetVotesByProfileId> = async (
     }),
   ]);
 
-  const formattedVotesReceived = votes.map(vote => ({
+  const formattedVotesReceived = votes.map((vote) => ({
     profileId: vote.voter.user.profile?.id ?? "",
     name: vote.voter.user.name,
     username: vote.voter.user.username ?? "Anonymous User",
@@ -529,7 +529,7 @@ export const getTopVotersForVotee: AppRouteHandler<GetTopVotersForVotee> = async
         comment: latestVote?.comment ?? null,
         lastVoteAt: latestVote?.createdAt.toISOString() ?? "",
       };
-    }),
+    })
   );
 
   return c.json(topVotersWithDetails, HttpStatusCodes.OK);

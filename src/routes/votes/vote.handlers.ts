@@ -245,12 +245,12 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
           currency: "usd",
           unit_amount: unitPrice,
           product_data: {
-            name: activeMultiplier > 1 ? `Votes Boost Pack` : "Back Your Favorite",
+            name: activeMultiplier > 1 ? `Digital Magazine issue Boost Pack` : "Back Your Favorite",
             ...(votee.coverImage?.url ? { images: [votee.coverImage?.url] } : null),
             description:
               activeMultiplier > 1
                 ? `${voteCount} votes boosted by ${activeMultiplier}x = ${voteCount * activeMultiplier} votes for ${votee.user.name}`
-                : `${voteCount} votes for ${votee.user.name}`,
+                : `${voteCount} Digital Magazine issue, Bonus votes for ${votee.user.name}`,
           },
         },
         quantity: voteCount,

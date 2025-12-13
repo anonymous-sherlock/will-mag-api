@@ -250,7 +250,7 @@ export const payVote: AppRouteHandler<PayVote> = async (c) => {
             description:
               activeMultiplier > 1
                 ? `${voteCount} votes boosted by ${activeMultiplier}x = ${voteCount * activeMultiplier} votes for ${votee.user.name}`
-                : `${voteCount} Digital Magazine issue, Bonus votes for ${votee.user.name}`,
+                : `${voteCount} Digital Magazine issue, ${voteCount} Bonus votes for ${votee.user.name}`,
           },
         },
         quantity: voteCount,
